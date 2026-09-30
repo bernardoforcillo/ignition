@@ -1,0 +1,6 @@
+# air (hot-reload) build output
+/tmp/
+
+# local environment overrides
+*.env
+.env

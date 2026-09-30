@@ -1,0 +1,10 @@
+# JS/TS
+node_modules/
+dist/
+dist-ssr/
+.turbo/
+.vite/
+*.local
+
+# editors/OS
+.DS_Store

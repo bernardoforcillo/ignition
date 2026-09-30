@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+// GatewayService is the gateway's own control-plane API, served over
+// Connect RPC. This is separate from the gateway's main job — reverse
+// proxying arbitrary HTTP traffic to upstream services, handled by
+// internal/core and internal/adapter/proxy — and should stay minimal:
+// add RPCs here only for control-plane concerns that genuinely belong
+// to the gateway itself, not as a place to route business logic that
+// belongs in an upstream service.
+package gateway.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/gateway/v1;gatewayv1";
+
+service GatewayService {
+  // Ping is a minimal liveness-style RPC that exists to verify the
+  // Connect transport is wired correctly end-to-end. It is not a
+  // replacement for the plain-HTTP /healthz endpoint, which exists
+  // for probes (kubelet, load balancers) that expect a bare HTTP
+  // response rather than Connect/gRPC framing.
+  rpc Ping(PingRequest) returns (PingResponse);
+}
+
+message PingRequest {
+  // message is echoed back in the response as-is; optional.
+  string message = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}

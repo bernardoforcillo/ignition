@@ -1,0 +1,21 @@
+/*
+ * Shared design tokens for every Ignition client app.
+ *
+ * This file defines a Tailwind v4 `@theme` block, not a full `@import "tailwindcss"`
+ * entry point — the consuming app owns the entry point (its own global stylesheet) and
+ * imports this file for the tokens only, so every client that pulls in @ignition/components gets
+ * the same color/radius/font scale instead of reinventing it per app.
+ */
+@theme {
+	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+	--color-brand-50: oklch(0.97 0.02 260);
+	--color-brand-100: oklch(0.93 0.05 260);
+	--color-brand-300: oklch(0.8 0.12 260);
+	--color-brand-500: oklch(0.6 0.19 260);
+	--color-brand-600: oklch(0.52 0.19 260);
+	--color-brand-700: oklch(0.44 0.17 260);
+	--color-brand-900: oklch(0.28 0.12 260);
+
+	--radius-card: 0.75rem;
+}

@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Shared design tokens (colors, radii, fonts) published by the workspace components package, so
+   every client app that consumes @ignition/components renders with the same theme instead of
+   redefining it. */
+@import "@ignition/components/theme.css";
+
+/*
+ * Tailwind v4's automatic content scanner ignores anything under node_modules by default.
+ * @ignition/components is a workspace package shipped as source (no build step) and consumed
+ * through pnpm's node_modules symlink, so without this line Tailwind's JIT compiler would never
+ * see the class names used inside its components and would tree-shake them out of the build.
+ */
+@source "../../node_modules/@ignition/components";
+
+body {
+	font-family: var(--font-sans);
+}
