@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+// AuthService is the public sign-up / sign-in surface. Every RPC except
+// Logout is callable without an access token; see
+// internal/adapter/httpapi/interceptor.go for the authoritative list.
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1;saasv1";
+
+service AuthService {
+  // SignUp registers an account and mails a verification link. It answers
+  // identically whether or not the address is already registered.
+  rpc SignUp(SignUpRequest) returns (SignUpResponse);
+  // VerifyEmail redeems the token from the verification email.
+  rpc VerifyEmail(VerifyEmailRequest) returns (VerifyEmailResponse);
+  // Login checks the password of a verified account and opens a session.
+  rpc Login(LoginRequest) returns (LoginResponse);
+  // Refresh rotates the refresh token and mints a new access token.
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
+  // Logout revokes the session behind a refresh token. Requires a valid
+  // access token.
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+}
+
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message SignUpResponse {}
+
+message VerifyEmailRequest {
+  string token = 1;
+}
+
+message VerifyEmailResponse {}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}

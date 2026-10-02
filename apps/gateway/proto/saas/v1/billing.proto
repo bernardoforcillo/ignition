@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+// BillingService hands the caller to the payment provider's hosted pages.
+// It needs an access token and permission to update the workspace (owner or
+// admin), and is served only when billing is configured.
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1;saasv1";
+
+service BillingService {
+  // StartCheckout returns the hosted checkout URL for a catalog price.
+  rpc StartCheckout(StartCheckoutRequest) returns (StartCheckoutResponse);
+  // OpenPortal returns the hosted customer-portal URL for the workspace.
+  rpc OpenPortal(OpenPortalRequest) returns (OpenPortalResponse);
+}
+
+message StartCheckoutRequest {
+  string workspace_id = 1;
+  // price_id is the provider price id, one of those in BILLING_PRICES.
+  string price_id = 2;
+}
+
+message StartCheckoutResponse {
+  string url = 1;
+}
+
+message OpenPortalRequest {
+  string workspace_id = 1;
+}
+
+message OpenPortalResponse {
+  string url = 1;
+}
