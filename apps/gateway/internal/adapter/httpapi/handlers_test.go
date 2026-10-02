@@ -205,8 +205,8 @@ func TestFeatureService_CheckFeature(t *testing.T) {
 	}{
 		{
 			name:        "boolean feature on",
-			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonEntitled},
-			wantEnabled: true, wantReason: string(featurelayer.ReasonEntitled),
+			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonFlagDefault},
+			wantEnabled: true, wantReason: string(featurelayer.ReasonFlagDefault),
 		},
 		{
 			name:       "not entitled is an answer, not an error",
@@ -215,16 +215,16 @@ func TestFeatureService_CheckFeature(t *testing.T) {
 		},
 		{
 			name:        "metered feature reports the budget",
-			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonEntitled, Entitlement: limit},
-			usage:       featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonEntitled, Usage: limited(1000, 250)},
-			wantEnabled: true, wantReason: string(featurelayer.ReasonEntitled),
+			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonFlagDefault, Entitlement: limit},
+			usage:       featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonFlagDefault, Usage: limited(1000, 250)},
+			wantEnabled: true, wantReason: string(featurelayer.ReasonFlagDefault),
 			wantLimit: ptr(int64(1000)), wantRemaining: ptr(int64(250)),
 		},
 		{
 			name:        "unlimited meter sets no limit",
-			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonEntitled, Entitlement: limit},
-			usage:       featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonEntitled, Usage: limited(-1, -1)},
-			wantEnabled: true, wantReason: string(featurelayer.ReasonEntitled),
+			evaluate:    featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonFlagDefault, Entitlement: limit},
+			usage:       featurelayer.Decision{Enabled: true, Reason: featurelayer.ReasonFlagDefault, Usage: limited(-1, -1)},
+			wantEnabled: true, wantReason: string(featurelayer.ReasonFlagDefault),
 		},
 		{
 			name:     "usage read failure is internal",

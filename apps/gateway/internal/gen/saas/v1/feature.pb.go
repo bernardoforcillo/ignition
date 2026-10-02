@@ -80,8 +80,8 @@ func (x *CheckFeatureRequest) GetFeatureKey() string {
 type CheckFeatureResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Enabled bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	// reason says why the decision came out as it did, e.g. "entitled",
-	// "not_entitled", "limit_reached", "flag_off".
+	// reason says why the decision came out as it did, e.g. "flag_default",
+	// "no_flag", "not_entitled", "limit_reached", "flag_off".
 	Reason string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	// limit and remaining are set only for a metered feature with a finite limit.
 	Limit         *int64 `protobuf:"varint,3,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
