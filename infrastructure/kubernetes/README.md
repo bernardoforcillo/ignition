@@ -4,15 +4,16 @@
 
 ```
 base/                shared manifests (deployments, services, ingress, HPA, PDB, network policies)
-overlays/dev         1 replica, dev host, namespace ignition-dev
+overlays/developmentelopment 1 replica, dev host, namespace ignition-development
+overlays/staging     production-like replicas, staging host, namespace ignition-staging
 overlays/production  pinned images, more replicas, namespace ignition-prod
 ```
 
 ## Usage
 
 ```sh
-kubectl kustomize infrastructure/kubernetes/overlays/dev   # render
-kubectl apply -k infrastructure/kubernetes/overlays/dev    # deploy
+kubectl kustomize infrastructure/kubernetes/overlays/development   # render
+kubectl apply -k infrastructure/kubernetes/overlays/development    # deploy
 ```
 
 ## Before first deploy
@@ -21,7 +22,7 @@ kubectl apply -k infrastructure/kubernetes/overlays/dev    # deploy
 - Set `GATEWAY_ROUTES` in `base/kustomization.yaml` to your real upstreams
   (the gateway refuses to start without a route).
 - Create the optional auth secret:
-  `kubectl -n ignition-dev create secret generic gateway-secrets --from-literal=GATEWAY_AUTH_TOKEN=...`
+  `kubectl -n ignition-development create secret generic gateway-secrets --from-literal=GATEWAY_AUTH_TOKEN=...`
 - Requires an `nginx` ingress controller in the `ingress-nginx` namespace;
   adjust `ingressClassName` and `networkpolicy.yaml` otherwise. The HPA needs
   metrics-server.
