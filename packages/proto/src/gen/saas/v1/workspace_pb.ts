@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/workspace.proto.
  */
 export const file_saas_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChdzYWFzL3YxL3dvcmtzcGFjZS5wcm90bxIHc2Fhcy52MSIzCglXb3Jrc3BhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJIisKBk1lbWJlchIPCgd1c2VyX2lkGAEgASgJEhAKCHJvbGVfa2V5GAIgASgJIjkKCkludml0YXRpb24SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcm9sZV9rZXkYAyABKAkiNAoWQ3JlYXRlV29ya3NwYWNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkiQAoXQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKwoTR2V0V29ya3NwYWNlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkiPQoUR2V0V29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKgoSTGlzdE1lbWJlcnNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSI3ChNMaXN0TWVtYmVyc1Jlc3BvbnNlEiAKB21lbWJlcnMYASADKAsyDy5zYWFzLnYxLk1lbWJlciJMChNJbnZpdGVNZW1iZXJSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIQCghyb2xlX2tleRgDIAEoCSI/ChRJbnZpdGVNZW1iZXJSZXNwb25zZRInCgppbnZpdGF0aW9uGAEgASgLMhMuc2Fhcy52MS5JbnZpdGF0aW9uIiQKE0FjY2VwdEludml0ZVJlcXVlc3QSDQoFdG9rZW4YASABKAkiPQoUQWNjZXB0SW52aXRlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UymQMKEFdvcmtzcGFjZVNlcnZpY2USVAoPQ3JlYXRlV29ya3NwYWNlEh8uc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXF1ZXN0GiAuc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXNwb25zZRJLCgxHZXRXb3Jrc3BhY2USHC5zYWFzLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHS5zYWFzLnYxLkdldFdvcmtzcGFjZVJlc3BvbnNlEkgKC0xpc3RNZW1iZXJzEhsuc2Fhcy52MS5MaXN0TWVtYmVyc1JlcXVlc3QaHC5zYWFzLnYxLkxpc3RNZW1iZXJzUmVzcG9uc2USSwoMSW52aXRlTWVtYmVyEhwuc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXF1ZXN0Gh0uc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXNwb25zZRJLCgxBY2NlcHRJbnZpdGUSHC5zYWFzLnYxLkFjY2VwdEludml0ZVJlcXVlc3QaHS5zYWFzLnYxLkFjY2VwdEludml0ZVJlc3BvbnNlQktaSWdpdGh1Yi5jb20vYmVybmFyZG9mb3JjaWxsby9pZ25pdGlvbi9nby1wYWNrYWdlcy9wcm90by9nZW4vc2Fhcy92MTtzYWFzdjFiBnByb3RvMw");
+  fileDesc("ChdzYWFzL3YxL3dvcmtzcGFjZS5wcm90bxIHc2Fhcy52MSIzCglXb3Jrc3BhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJIisKBk1lbWJlchIPCgd1c2VyX2lkGAEgASgJEhAKCHJvbGVfa2V5GAIgASgJIjkKCkludml0YXRpb24SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcm9sZV9rZXkYAyABKAkiNAoWQ3JlYXRlV29ya3NwYWNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkiQAoXQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKwoTR2V0V29ya3NwYWNlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkiPQoUR2V0V29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKgoSTGlzdE1lbWJlcnNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSI3ChNMaXN0TWVtYmVyc1Jlc3BvbnNlEiAKB21lbWJlcnMYASADKAsyDy5zYWFzLnYxLk1lbWJlciJMChNJbnZpdGVNZW1iZXJSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIQCghyb2xlX2tleRgDIAEoCSI/ChRJbnZpdGVNZW1iZXJSZXNwb25zZRInCgppbnZpdGF0aW9uGAEgASgLMhMuc2Fhcy52MS5JbnZpdGF0aW9uIiQKE0FjY2VwdEludml0ZVJlcXVlc3QSDQoFdG9rZW4YASABKAkiPQoUQWNjZXB0SW52aXRlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiFwoVTGlzdFdvcmtzcGFjZXNSZXF1ZXN0Ik4KE1dvcmtzcGFjZU1lbWJlcnNoaXASJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2USEAoIcm9sZV9rZXkYAiABKAkiSgoWTGlzdFdvcmtzcGFjZXNSZXNwb25zZRIwCgp3b3Jrc3BhY2VzGAEgAygLMhwuc2Fhcy52MS5Xb3Jrc3BhY2VNZW1iZXJzaGlwMuwDChBXb3Jrc3BhY2VTZXJ2aWNlElEKDkxpc3RXb3Jrc3BhY2VzEh4uc2Fhcy52MS5MaXN0V29ya3NwYWNlc1JlcXVlc3QaHy5zYWFzLnYxLkxpc3RXb3Jrc3BhY2VzUmVzcG9uc2USVAoPQ3JlYXRlV29ya3NwYWNlEh8uc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXF1ZXN0GiAuc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXNwb25zZRJLCgxHZXRXb3Jrc3BhY2USHC5zYWFzLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHS5zYWFzLnYxLkdldFdvcmtzcGFjZVJlc3BvbnNlEkgKC0xpc3RNZW1iZXJzEhsuc2Fhcy52MS5MaXN0TWVtYmVyc1JlcXVlc3QaHC5zYWFzLnYxLkxpc3RNZW1iZXJzUmVzcG9uc2USSwoMSW52aXRlTWVtYmVyEhwuc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXF1ZXN0Gh0uc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXNwb25zZRJLCgxBY2NlcHRJbnZpdGUSHC5zYWFzLnYxLkFjY2VwdEludml0ZVJlcXVlc3QaHS5zYWFzLnYxLkFjY2VwdEludml0ZVJlc3BvbnNlQktaSWdpdGh1Yi5jb20vYmVybmFyZG9mb3JjaWxsby9pZ25pdGlvbi9nby1wYWNrYWdlcy9wcm90by9nZW4vc2Fhcy92MTtzYWFzdjFiBnByb3RvMw");
 
 /**
  * @generated from message saas.v1.Workspace
@@ -282,9 +282,73 @@ export const AcceptInviteResponseSchema: GenMessage<AcceptInviteResponse> = /*@_
   messageDesc(file_saas_v1_workspace, 12);
 
 /**
+ * @generated from message saas.v1.ListWorkspacesRequest
+ */
+export type ListWorkspacesRequest = Message<"saas.v1.ListWorkspacesRequest"> & {
+};
+
+/**
+ * Describes the message saas.v1.ListWorkspacesRequest.
+ * Use `create(ListWorkspacesRequestSchema)` to create a new message.
+ */
+export const ListWorkspacesRequestSchema: GenMessage<ListWorkspacesRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 13);
+
+/**
+ * @generated from message saas.v1.WorkspaceMembership
+ */
+export type WorkspaceMembership = Message<"saas.v1.WorkspaceMembership"> & {
+  /**
+   * @generated from field: saas.v1.Workspace workspace = 1;
+   */
+  workspace?: Workspace | undefined;
+
+  /**
+   * @generated from field: string role_key = 2;
+   */
+  roleKey: string;
+};
+
+/**
+ * Describes the message saas.v1.WorkspaceMembership.
+ * Use `create(WorkspaceMembershipSchema)` to create a new message.
+ */
+export const WorkspaceMembershipSchema: GenMessage<WorkspaceMembership> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 14);
+
+/**
+ * @generated from message saas.v1.ListWorkspacesResponse
+ */
+export type ListWorkspacesResponse = Message<"saas.v1.ListWorkspacesResponse"> & {
+  /**
+   * @generated from field: repeated saas.v1.WorkspaceMembership workspaces = 1;
+   */
+  workspaces: WorkspaceMembership[];
+};
+
+/**
+ * Describes the message saas.v1.ListWorkspacesResponse.
+ * Use `create(ListWorkspacesResponseSchema)` to create a new message.
+ */
+export const ListWorkspacesResponseSchema: GenMessage<ListWorkspacesResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 15);
+
+/**
  * @generated from service saas.v1.WorkspaceService
  */
 export const WorkspaceService: GenService<{
+  /**
+   * ListWorkspaces returns the workspaces the caller belongs to, with the
+   * caller's role in each. The web uses it to decide between onboarding (no
+   * workspace yet) and the app, and to fill the workspace switcher.
+   *
+   * @generated from rpc saas.v1.WorkspaceService.ListWorkspaces
+   */
+  listWorkspaces: {
+    methodKind: "unary";
+    input: typeof ListWorkspacesRequestSchema;
+    output: typeof ListWorkspacesResponseSchema;
+  },
   /**
    * CreateWorkspace makes a workspace owned by the caller.
    *

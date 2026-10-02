@@ -20,6 +20,15 @@ service AuthService {
   // Logout revokes the session behind a refresh token. Requires a valid
   // access token.
   rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // RequestPasswordReset mails a single-use reset link when the address has
+  // an account. It answers identically whether or not the address exists and
+  // is rate limited per client IP and per address.
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+
+  // ResetPassword sets a new password from the emailed token, then revokes
+  // every session of the account so a stolen session does not survive it.
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
 }
 
 message User {
@@ -66,3 +75,16 @@ message LogoutRequest {
 }
 
 message LogoutResponse {}
+
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+message RequestPasswordResetResponse {}
+
+message ResetPasswordRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+message ResetPasswordResponse {}

@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/billing.proto.
  */
 export const file_saas_v1_billing: GenFile = /*@__PURE__*/
-  fileDesc("ChVzYWFzL3YxL2JpbGxpbmcucHJvdG8SB3NhYXMudjEiPgoUU3RhcnRDaGVja291dFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEhAKCHByaWNlX2lkGAIgASgJIiQKFVN0YXJ0Q2hlY2tvdXRSZXNwb25zZRILCgN1cmwYASABKAkiKQoRT3BlblBvcnRhbFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIiEKEk9wZW5Qb3J0YWxSZXNwb25zZRILCgN1cmwYASABKAkypwEKDkJpbGxpbmdTZXJ2aWNlEk4KDVN0YXJ0Q2hlY2tvdXQSHS5zYWFzLnYxLlN0YXJ0Q2hlY2tvdXRSZXF1ZXN0Gh4uc2Fhcy52MS5TdGFydENoZWNrb3V0UmVzcG9uc2USRQoKT3BlblBvcnRhbBIaLnNhYXMudjEuT3BlblBvcnRhbFJlcXVlc3QaGy5zYWFzLnYxLk9wZW5Qb3J0YWxSZXNwb25zZUJLWklnaXRodWIuY29tL2Jlcm5hcmRvZm9yY2lsbG8vaWduaXRpb24vZ28tcGFja2FnZXMvcHJvdG8vZ2VuL3NhYXMvdjE7c2Fhc3YxYgZwcm90bzM");
+  fileDesc("ChVzYWFzL3YxL2JpbGxpbmcucHJvdG8SB3NhYXMudjEiPgoUU3RhcnRDaGVja291dFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEhAKCHByaWNlX2lkGAIgASgJIiQKFVN0YXJ0Q2hlY2tvdXRSZXNwb25zZRILCgN1cmwYASABKAkiKQoRT3BlblBvcnRhbFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIiEKEk9wZW5Qb3J0YWxSZXNwb25zZRILCgN1cmwYASABKAkiLgoWR2V0U3Vic2NyaXB0aW9uUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkifgoXR2V0U3Vic2NyaXB0aW9uUmVzcG9uc2USDwoHcGxhbl9pZBgBIAEoCRISCgphZGRfb25faWRzGAIgAygJEg4KBnN0YXR1cxgDIAEoCRIaChJjdXJyZW50X3BlcmlvZF9lbmQYBCABKAkSEgoKY2FuX21hbmFnZRgFIAEoCCITChFMaXN0UHJpY2VzUmVxdWVzdCIzCgVQcmljZRIQCghwcmljZV9pZBgBIAEoCRIMCgRraW5kGAIgASgJEgoKAmlkGAMgASgJIjQKEkxpc3RQcmljZXNSZXNwb25zZRIeCgZwcmljZXMYASADKAsyDi5zYWFzLnYxLlByaWNlMsQCCg5CaWxsaW5nU2VydmljZRJUCg9HZXRTdWJzY3JpcHRpb24SHy5zYWFzLnYxLkdldFN1YnNjcmlwdGlvblJlcXVlc3QaIC5zYWFzLnYxLkdldFN1YnNjcmlwdGlvblJlc3BvbnNlEkUKCkxpc3RQcmljZXMSGi5zYWFzLnYxLkxpc3RQcmljZXNSZXF1ZXN0Ghsuc2Fhcy52MS5MaXN0UHJpY2VzUmVzcG9uc2USTgoNU3RhcnRDaGVja291dBIdLnNhYXMudjEuU3RhcnRDaGVja291dFJlcXVlc3QaHi5zYWFzLnYxLlN0YXJ0Q2hlY2tvdXRSZXNwb25zZRJFCgpPcGVuUG9ydGFsEhouc2Fhcy52MS5PcGVuUG9ydGFsUmVxdWVzdBobLnNhYXMudjEuT3BlblBvcnRhbFJlc3BvbnNlQktaSWdpdGh1Yi5jb20vYmVybmFyZG9mb3JjaWxsby9pZ25pdGlvbi9nby1wYWNrYWdlcy9wcm90by9nZW4vc2Fhcy92MTtzYWFzdjFiBnByb3RvMw");
 
 /**
  * @generated from message saas.v1.StartCheckoutRequest
@@ -92,9 +92,157 @@ export const OpenPortalResponseSchema: GenMessage<OpenPortalResponse> = /*@__PUR
   messageDesc(file_saas_v1_billing, 3);
 
 /**
+ * @generated from message saas.v1.GetSubscriptionRequest
+ */
+export type GetSubscriptionRequest = Message<"saas.v1.GetSubscriptionRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+};
+
+/**
+ * Describes the message saas.v1.GetSubscriptionRequest.
+ * Use `create(GetSubscriptionRequestSchema)` to create a new message.
+ */
+export const GetSubscriptionRequestSchema: GenMessage<GetSubscriptionRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_billing, 4);
+
+/**
+ * @generated from message saas.v1.GetSubscriptionResponse
+ */
+export type GetSubscriptionResponse = Message<"saas.v1.GetSubscriptionResponse"> & {
+  /**
+   * plan_id is the features-catalog plan the workspace holds (e.g. "free").
+   *
+   * @generated from field: string plan_id = 1;
+   */
+  planId: string;
+
+  /**
+   * @generated from field: repeated string add_on_ids = 2;
+   */
+  addOnIds: string[];
+
+  /**
+   * status is billing's lifecycle state: trialing, active, past_due,
+   * canceled, incomplete, or empty when the provider never reported one.
+   *
+   * @generated from field: string status = 3;
+   */
+  status: string;
+
+  /**
+   * current_period_end is an RFC 3339 timestamp, empty when unknown.
+   *
+   * @generated from field: string current_period_end = 4;
+   */
+  currentPeriodEnd: string;
+
+  /**
+   * can_manage is true when the caller may open the customer portal: the
+   * workspace has a provider customer and the caller may update it.
+   *
+   * @generated from field: bool can_manage = 5;
+   */
+  canManage: boolean;
+};
+
+/**
+ * Describes the message saas.v1.GetSubscriptionResponse.
+ * Use `create(GetSubscriptionResponseSchema)` to create a new message.
+ */
+export const GetSubscriptionResponseSchema: GenMessage<GetSubscriptionResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_billing, 5);
+
+/**
+ * @generated from message saas.v1.ListPricesRequest
+ */
+export type ListPricesRequest = Message<"saas.v1.ListPricesRequest"> & {
+};
+
+/**
+ * Describes the message saas.v1.ListPricesRequest.
+ * Use `create(ListPricesRequestSchema)` to create a new message.
+ */
+export const ListPricesRequestSchema: GenMessage<ListPricesRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_billing, 6);
+
+/**
+ * @generated from message saas.v1.Price
+ */
+export type Price = Message<"saas.v1.Price"> & {
+  /**
+   * @generated from field: string price_id = 1;
+   */
+  priceId: string;
+
+  /**
+   * kind is "plan" or "addon".
+   *
+   * @generated from field: string kind = 2;
+   */
+  kind: string;
+
+  /**
+   * id is the plan or add-on id this price buys.
+   *
+   * @generated from field: string id = 3;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message saas.v1.Price.
+ * Use `create(PriceSchema)` to create a new message.
+ */
+export const PriceSchema: GenMessage<Price> = /*@__PURE__*/
+  messageDesc(file_saas_v1_billing, 7);
+
+/**
+ * @generated from message saas.v1.ListPricesResponse
+ */
+export type ListPricesResponse = Message<"saas.v1.ListPricesResponse"> & {
+  /**
+   * @generated from field: repeated saas.v1.Price prices = 1;
+   */
+  prices: Price[];
+};
+
+/**
+ * Describes the message saas.v1.ListPricesResponse.
+ * Use `create(ListPricesResponseSchema)` to create a new message.
+ */
+export const ListPricesResponseSchema: GenMessage<ListPricesResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_billing, 8);
+
+/**
  * @generated from service saas.v1.BillingService
  */
 export const BillingService: GenService<{
+  /**
+   * GetSubscription returns what the workspace is currently entitled to as
+   * billing understands it: the plan, add-ons, status and period. Needs
+   * workspace membership.
+   *
+   * @generated from rpc saas.v1.BillingService.GetSubscription
+   */
+  getSubscription: {
+    methodKind: "unary";
+    input: typeof GetSubscriptionRequestSchema;
+    output: typeof GetSubscriptionResponseSchema;
+  },
+  /**
+   * ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
+   * render plan cards without hard-coding provider price ids.
+   *
+   * @generated from rpc saas.v1.BillingService.ListPrices
+   */
+  listPrices: {
+    methodKind: "unary";
+    input: typeof ListPricesRequestSchema;
+    output: typeof ListPricesResponseSchema;
+  },
   /**
    * StartCheckout returns the hosted checkout URL for a catalog price.
    *

@@ -36,6 +36,12 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// BillingServiceGetSubscriptionProcedure is the fully-qualified name of the BillingService's
+	// GetSubscription RPC.
+	BillingServiceGetSubscriptionProcedure = "/saas.v1.BillingService/GetSubscription"
+	// BillingServiceListPricesProcedure is the fully-qualified name of the BillingService's ListPrices
+	// RPC.
+	BillingServiceListPricesProcedure = "/saas.v1.BillingService/ListPrices"
 	// BillingServiceStartCheckoutProcedure is the fully-qualified name of the BillingService's
 	// StartCheckout RPC.
 	BillingServiceStartCheckoutProcedure = "/saas.v1.BillingService/StartCheckout"
@@ -46,6 +52,13 @@ const (
 
 // BillingServiceClient is a client for the saas.v1.BillingService service.
 type BillingServiceClient interface {
+	// GetSubscription returns what the workspace is currently entitled to as
+	// billing understands it: the plan, add-ons, status and period. Needs
+	// workspace membership.
+	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
+	// ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
+	// render plan cards without hard-coding provider price ids.
+	ListPrices(context.Context, *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error)
 	// StartCheckout returns the hosted checkout URL for a catalog price.
 	StartCheckout(context.Context, *connect.Request[v1.StartCheckoutRequest]) (*connect.Response[v1.StartCheckoutResponse], error)
 	// OpenPortal returns the hosted customer-portal URL for the workspace.
@@ -63,6 +76,18 @@ func NewBillingServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 	baseURL = strings.TrimRight(baseURL, "/")
 	billingServiceMethods := v1.File_saas_v1_billing_proto.Services().ByName("BillingService").Methods()
 	return &billingServiceClient{
+		getSubscription: connect.NewClient[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse](
+			httpClient,
+			baseURL+BillingServiceGetSubscriptionProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("GetSubscription")),
+			connect.WithClientOptions(opts...),
+		),
+		listPrices: connect.NewClient[v1.ListPricesRequest, v1.ListPricesResponse](
+			httpClient,
+			baseURL+BillingServiceListPricesProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("ListPrices")),
+			connect.WithClientOptions(opts...),
+		),
 		startCheckout: connect.NewClient[v1.StartCheckoutRequest, v1.StartCheckoutResponse](
 			httpClient,
 			baseURL+BillingServiceStartCheckoutProcedure,
@@ -80,8 +105,20 @@ func NewBillingServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // billingServiceClient implements BillingServiceClient.
 type billingServiceClient struct {
-	startCheckout *connect.Client[v1.StartCheckoutRequest, v1.StartCheckoutResponse]
-	openPortal    *connect.Client[v1.OpenPortalRequest, v1.OpenPortalResponse]
+	getSubscription *connect.Client[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse]
+	listPrices      *connect.Client[v1.ListPricesRequest, v1.ListPricesResponse]
+	startCheckout   *connect.Client[v1.StartCheckoutRequest, v1.StartCheckoutResponse]
+	openPortal      *connect.Client[v1.OpenPortalRequest, v1.OpenPortalResponse]
+}
+
+// GetSubscription calls saas.v1.BillingService.GetSubscription.
+func (c *billingServiceClient) GetSubscription(ctx context.Context, req *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
+	return c.getSubscription.CallUnary(ctx, req)
+}
+
+// ListPrices calls saas.v1.BillingService.ListPrices.
+func (c *billingServiceClient) ListPrices(ctx context.Context, req *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error) {
+	return c.listPrices.CallUnary(ctx, req)
 }
 
 // StartCheckout calls saas.v1.BillingService.StartCheckout.
@@ -96,6 +133,13 @@ func (c *billingServiceClient) OpenPortal(ctx context.Context, req *connect.Requ
 
 // BillingServiceHandler is an implementation of the saas.v1.BillingService service.
 type BillingServiceHandler interface {
+	// GetSubscription returns what the workspace is currently entitled to as
+	// billing understands it: the plan, add-ons, status and period. Needs
+	// workspace membership.
+	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
+	// ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
+	// render plan cards without hard-coding provider price ids.
+	ListPrices(context.Context, *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error)
 	// StartCheckout returns the hosted checkout URL for a catalog price.
 	StartCheckout(context.Context, *connect.Request[v1.StartCheckoutRequest]) (*connect.Response[v1.StartCheckoutResponse], error)
 	// OpenPortal returns the hosted customer-portal URL for the workspace.
@@ -109,6 +153,18 @@ type BillingServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	billingServiceMethods := v1.File_saas_v1_billing_proto.Services().ByName("BillingService").Methods()
+	billingServiceGetSubscriptionHandler := connect.NewUnaryHandler(
+		BillingServiceGetSubscriptionProcedure,
+		svc.GetSubscription,
+		connect.WithSchema(billingServiceMethods.ByName("GetSubscription")),
+		connect.WithHandlerOptions(opts...),
+	)
+	billingServiceListPricesHandler := connect.NewUnaryHandler(
+		BillingServiceListPricesProcedure,
+		svc.ListPrices,
+		connect.WithSchema(billingServiceMethods.ByName("ListPrices")),
+		connect.WithHandlerOptions(opts...),
+	)
 	billingServiceStartCheckoutHandler := connect.NewUnaryHandler(
 		BillingServiceStartCheckoutProcedure,
 		svc.StartCheckout,
@@ -123,6 +179,10 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 	)
 	return "/saas.v1.BillingService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case BillingServiceGetSubscriptionProcedure:
+			billingServiceGetSubscriptionHandler.ServeHTTP(w, r)
+		case BillingServiceListPricesProcedure:
+			billingServiceListPricesHandler.ServeHTTP(w, r)
 		case BillingServiceStartCheckoutProcedure:
 			billingServiceStartCheckoutHandler.ServeHTTP(w, r)
 		case BillingServiceOpenPortalProcedure:
@@ -135,6 +195,14 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 
 // UnimplementedBillingServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedBillingServiceHandler struct{}
+
+func (UnimplementedBillingServiceHandler) GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.BillingService.GetSubscription is not implemented"))
+}
+
+func (UnimplementedBillingServiceHandler) ListPrices(context.Context, *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.BillingService.ListPrices is not implemented"))
+}
 
 func (UnimplementedBillingServiceHandler) StartCheckout(context.Context, *connect.Request[v1.StartCheckoutRequest]) (*connect.Response[v1.StartCheckoutResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.BillingService.StartCheckout is not implemented"))

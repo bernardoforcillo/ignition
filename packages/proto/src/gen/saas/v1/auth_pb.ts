@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/auth.proto.
  */
 export const file_saas_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("ChJzYWFzL3YxL2F1dGgucHJvdG8SB3NhYXMudjEiIQoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCSIwCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJIhAKDlNpZ25VcFJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSIVChNWZXJpZnlFbWFpbFJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJZCg1Mb2dpblJlc3BvbnNlEhsKBHVzZXIYASABKAsyDS5zYWFzLnYxLlVzZXISFAoMYWNjZXNzX3Rva2VuGAIgASgJEhUKDXJlZnJlc2hfdG9rZW4YAyABKAkiJwoOUmVmcmVzaFJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJbCg9SZWZyZXNoUmVzcG9uc2USGwoEdXNlchgBIAEoCzINLnNhYXMudjEuVXNlchIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSFQoNcmVmcmVzaF90b2tlbhgDIAEoCSImCg1Mb2dvdXRSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiEAoOTG9nb3V0UmVzcG9uc2UywwIKC0F1dGhTZXJ2aWNlEjkKBlNpZ25VcBIWLnNhYXMudjEuU2lnblVwUmVxdWVzdBoXLnNhYXMudjEuU2lnblVwUmVzcG9uc2USSAoLVmVyaWZ5RW1haWwSGy5zYWFzLnYxLlZlcmlmeUVtYWlsUmVxdWVzdBocLnNhYXMudjEuVmVyaWZ5RW1haWxSZXNwb25zZRI2CgVMb2dpbhIVLnNhYXMudjEuTG9naW5SZXF1ZXN0GhYuc2Fhcy52MS5Mb2dpblJlc3BvbnNlEjwKB1JlZnJlc2gSFy5zYWFzLnYxLlJlZnJlc2hSZXF1ZXN0Ghguc2Fhcy52MS5SZWZyZXNoUmVzcG9uc2USOQoGTG9nb3V0EhYuc2Fhcy52MS5Mb2dvdXRSZXF1ZXN0Ghcuc2Fhcy52MS5Mb2dvdXRSZXNwb25zZUJLWklnaXRodWIuY29tL2Jlcm5hcmRvZm9yY2lsbG8vaWduaXRpb24vZ28tcGFja2FnZXMvcHJvdG8vZ2VuL3NhYXMvdjE7c2Fhc3YxYgZwcm90bzM");
+  fileDesc("ChJzYWFzL3YxL2F1dGgucHJvdG8SB3NhYXMudjEiIQoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCSIwCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJIhAKDlNpZ25VcFJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSIVChNWZXJpZnlFbWFpbFJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJZCg1Mb2dpblJlc3BvbnNlEhsKBHVzZXIYASABKAsyDS5zYWFzLnYxLlVzZXISFAoMYWNjZXNzX3Rva2VuGAIgASgJEhUKDXJlZnJlc2hfdG9rZW4YAyABKAkiJwoOUmVmcmVzaFJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJbCg9SZWZyZXNoUmVzcG9uc2USGwoEdXNlchgBIAEoCzINLnNhYXMudjEuVXNlchIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSFQoNcmVmcmVzaF90b2tlbhgDIAEoCSImCg1Mb2dvdXRSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiEAoOTG9nb3V0UmVzcG9uc2UiLAobUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIh4KHFJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2UiOwoUUmVzZXRQYXNzd29yZFJlcXVlc3QSDQoFdG9rZW4YASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIhcKFVJlc2V0UGFzc3dvcmRSZXNwb25zZTL4AwoLQXV0aFNlcnZpY2USOQoGU2lnblVwEhYuc2Fhcy52MS5TaWduVXBSZXF1ZXN0Ghcuc2Fhcy52MS5TaWduVXBSZXNwb25zZRJICgtWZXJpZnlFbWFpbBIbLnNhYXMudjEuVmVyaWZ5RW1haWxSZXF1ZXN0Ghwuc2Fhcy52MS5WZXJpZnlFbWFpbFJlc3BvbnNlEjYKBUxvZ2luEhUuc2Fhcy52MS5Mb2dpblJlcXVlc3QaFi5zYWFzLnYxLkxvZ2luUmVzcG9uc2USPAoHUmVmcmVzaBIXLnNhYXMudjEuUmVmcmVzaFJlcXVlc3QaGC5zYWFzLnYxLlJlZnJlc2hSZXNwb25zZRI5CgZMb2dvdXQSFi5zYWFzLnYxLkxvZ291dFJlcXVlc3QaFy5zYWFzLnYxLkxvZ291dFJlc3BvbnNlEmMKFFJlcXVlc3RQYXNzd29yZFJlc2V0EiQuc2Fhcy52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QaJS5zYWFzLnYxLlJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2USTgoNUmVzZXRQYXNzd29yZBIdLnNhYXMudjEuUmVzZXRQYXNzd29yZFJlcXVlc3QaHi5zYWFzLnYxLlJlc2V0UGFzc3dvcmRSZXNwb25zZUJLWklnaXRodWIuY29tL2Jlcm5hcmRvZm9yY2lsbG8vaWduaXRpb24vZ28tcGFja2FnZXMvcHJvdG8vZ2VuL3NhYXMvdjE7c2Fhc3YxYgZwcm90bzM");
 
 /**
  * @generated from message saas.v1.User
@@ -227,6 +227,71 @@ export const LogoutResponseSchema: GenMessage<LogoutResponse> = /*@__PURE__*/
   messageDesc(file_saas_v1_auth, 10);
 
 /**
+ * @generated from message saas.v1.RequestPasswordResetRequest
+ */
+export type RequestPasswordResetRequest = Message<"saas.v1.RequestPasswordResetRequest"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message saas.v1.RequestPasswordResetRequest.
+ * Use `create(RequestPasswordResetRequestSchema)` to create a new message.
+ */
+export const RequestPasswordResetRequestSchema: GenMessage<RequestPasswordResetRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 11);
+
+/**
+ * @generated from message saas.v1.RequestPasswordResetResponse
+ */
+export type RequestPasswordResetResponse = Message<"saas.v1.RequestPasswordResetResponse"> & {
+};
+
+/**
+ * Describes the message saas.v1.RequestPasswordResetResponse.
+ * Use `create(RequestPasswordResetResponseSchema)` to create a new message.
+ */
+export const RequestPasswordResetResponseSchema: GenMessage<RequestPasswordResetResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 12);
+
+/**
+ * @generated from message saas.v1.ResetPasswordRequest
+ */
+export type ResetPasswordRequest = Message<"saas.v1.ResetPasswordRequest"> & {
+  /**
+   * @generated from field: string token = 1;
+   */
+  token: string;
+
+  /**
+   * @generated from field: string new_password = 2;
+   */
+  newPassword: string;
+};
+
+/**
+ * Describes the message saas.v1.ResetPasswordRequest.
+ * Use `create(ResetPasswordRequestSchema)` to create a new message.
+ */
+export const ResetPasswordRequestSchema: GenMessage<ResetPasswordRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 13);
+
+/**
+ * @generated from message saas.v1.ResetPasswordResponse
+ */
+export type ResetPasswordResponse = Message<"saas.v1.ResetPasswordResponse"> & {
+};
+
+/**
+ * Describes the message saas.v1.ResetPasswordResponse.
+ * Use `create(ResetPasswordResponseSchema)` to create a new message.
+ */
+export const ResetPasswordResponseSchema: GenMessage<ResetPasswordResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 14);
+
+/**
  * @generated from service saas.v1.AuthService
  */
 export const AuthService: GenService<{
@@ -281,6 +346,29 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof LogoutRequestSchema;
     output: typeof LogoutResponseSchema;
+  },
+  /**
+   * RequestPasswordReset mails a single-use reset link when the address has
+   * an account. It answers identically whether or not the address exists and
+   * is rate limited per client IP and per address.
+   *
+   * @generated from rpc saas.v1.AuthService.RequestPasswordReset
+   */
+  requestPasswordReset: {
+    methodKind: "unary";
+    input: typeof RequestPasswordResetRequestSchema;
+    output: typeof RequestPasswordResetResponseSchema;
+  },
+  /**
+   * ResetPassword sets a new password from the emailed token, then revokes
+   * every session of the account so a stolen session does not survive it.
+   *
+   * @generated from rpc saas.v1.AuthService.ResetPassword
+   */
+  resetPassword: {
+    methodKind: "unary";
+    input: typeof ResetPasswordRequestSchema;
+    output: typeof ResetPasswordResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_saas_v1_auth, 0);

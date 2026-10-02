@@ -210,6 +210,274 @@ func (x *OpenPortalResponse) GetUrl() string {
 	return ""
 }
 
+type GetSubscriptionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionRequest) Reset() {
+	*x = GetSubscriptionRequest{}
+	mi := &file_saas_v1_billing_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionRequest) ProtoMessage() {}
+
+func (x *GetSubscriptionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_billing_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionRequest.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionRequest) Descriptor() ([]byte, []int) {
+	return file_saas_v1_billing_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetSubscriptionRequest) GetWorkspaceId() string {
+	if x != nil {
+		return x.WorkspaceId
+	}
+	return ""
+}
+
+type GetSubscriptionResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// plan_id is the features-catalog plan the workspace holds (e.g. "free").
+	PlanId   string   `protobuf:"bytes,1,opt,name=plan_id,json=planId,proto3" json:"plan_id,omitempty"`
+	AddOnIds []string `protobuf:"bytes,2,rep,name=add_on_ids,json=addOnIds,proto3" json:"add_on_ids,omitempty"`
+	// status is billing's lifecycle state: trialing, active, past_due,
+	// canceled, incomplete, or empty when the provider never reported one.
+	Status string `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	// current_period_end is an RFC 3339 timestamp, empty when unknown.
+	CurrentPeriodEnd string `protobuf:"bytes,4,opt,name=current_period_end,json=currentPeriodEnd,proto3" json:"current_period_end,omitempty"`
+	// can_manage is true when the caller may open the customer portal: the
+	// workspace has a provider customer and the caller may update it.
+	CanManage     bool `protobuf:"varint,5,opt,name=can_manage,json=canManage,proto3" json:"can_manage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionResponse) Reset() {
+	*x = GetSubscriptionResponse{}
+	mi := &file_saas_v1_billing_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionResponse) ProtoMessage() {}
+
+func (x *GetSubscriptionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_billing_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionResponse.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionResponse) Descriptor() ([]byte, []int) {
+	return file_saas_v1_billing_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetSubscriptionResponse) GetPlanId() string {
+	if x != nil {
+		return x.PlanId
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetAddOnIds() []string {
+	if x != nil {
+		return x.AddOnIds
+	}
+	return nil
+}
+
+func (x *GetSubscriptionResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetCurrentPeriodEnd() string {
+	if x != nil {
+		return x.CurrentPeriodEnd
+	}
+	return ""
+}
+
+func (x *GetSubscriptionResponse) GetCanManage() bool {
+	if x != nil {
+		return x.CanManage
+	}
+	return false
+}
+
+type ListPricesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPricesRequest) Reset() {
+	*x = ListPricesRequest{}
+	mi := &file_saas_v1_billing_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPricesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPricesRequest) ProtoMessage() {}
+
+func (x *ListPricesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_billing_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPricesRequest.ProtoReflect.Descriptor instead.
+func (*ListPricesRequest) Descriptor() ([]byte, []int) {
+	return file_saas_v1_billing_proto_rawDescGZIP(), []int{6}
+}
+
+type Price struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	PriceId string                 `protobuf:"bytes,1,opt,name=price_id,json=priceId,proto3" json:"price_id,omitempty"`
+	// kind is "plan" or "addon".
+	Kind string `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	// id is the plan or add-on id this price buys.
+	Id            string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Price) Reset() {
+	*x = Price{}
+	mi := &file_saas_v1_billing_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Price) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Price) ProtoMessage() {}
+
+func (x *Price) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_billing_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Price.ProtoReflect.Descriptor instead.
+func (*Price) Descriptor() ([]byte, []int) {
+	return file_saas_v1_billing_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *Price) GetPriceId() string {
+	if x != nil {
+		return x.PriceId
+	}
+	return ""
+}
+
+func (x *Price) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Price) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListPricesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Prices        []*Price               `protobuf:"bytes,1,rep,name=prices,proto3" json:"prices,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPricesResponse) Reset() {
+	*x = ListPricesResponse{}
+	mi := &file_saas_v1_billing_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPricesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPricesResponse) ProtoMessage() {}
+
+func (x *ListPricesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_billing_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPricesResponse.ProtoReflect.Descriptor instead.
+func (*ListPricesResponse) Descriptor() ([]byte, []int) {
+	return file_saas_v1_billing_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListPricesResponse) GetPrices() []*Price {
+	if x != nil {
+		return x.Prices
+	}
+	return nil
+}
+
 var File_saas_v1_billing_proto protoreflect.FileDescriptor
 
 const file_saas_v1_billing_proto_rawDesc = "" +
@@ -223,8 +491,28 @@ const file_saas_v1_billing_proto_rawDesc = "" +
 	"\x11OpenPortalRequest\x12!\n" +
 	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"&\n" +
 	"\x12OpenPortalResponse\x12\x10\n" +
-	"\x03url\x18\x01 \x01(\tR\x03url2\xa7\x01\n" +
-	"\x0eBillingService\x12N\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\";\n" +
+	"\x16GetSubscriptionRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"\xb5\x01\n" +
+	"\x17GetSubscriptionResponse\x12\x17\n" +
+	"\aplan_id\x18\x01 \x01(\tR\x06planId\x12\x1c\n" +
+	"\n" +
+	"add_on_ids\x18\x02 \x03(\tR\baddOnIds\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12,\n" +
+	"\x12current_period_end\x18\x04 \x01(\tR\x10currentPeriodEnd\x12\x1d\n" +
+	"\n" +
+	"can_manage\x18\x05 \x01(\bR\tcanManage\"\x13\n" +
+	"\x11ListPricesRequest\"F\n" +
+	"\x05Price\x12\x19\n" +
+	"\bprice_id\x18\x01 \x01(\tR\apriceId\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\"<\n" +
+	"\x12ListPricesResponse\x12&\n" +
+	"\x06prices\x18\x01 \x03(\v2\x0e.saas.v1.PriceR\x06prices2\xc4\x02\n" +
+	"\x0eBillingService\x12T\n" +
+	"\x0fGetSubscription\x12\x1f.saas.v1.GetSubscriptionRequest\x1a .saas.v1.GetSubscriptionResponse\x12E\n" +
+	"\n" +
+	"ListPrices\x12\x1a.saas.v1.ListPricesRequest\x1a\x1b.saas.v1.ListPricesResponse\x12N\n" +
 	"\rStartCheckout\x12\x1d.saas.v1.StartCheckoutRequest\x1a\x1e.saas.v1.StartCheckoutResponse\x12E\n" +
 	"\n" +
 	"OpenPortal\x12\x1a.saas.v1.OpenPortalRequest\x1a\x1b.saas.v1.OpenPortalResponseBKZIgithub.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1b\x06proto3"
@@ -241,23 +529,33 @@ func file_saas_v1_billing_proto_rawDescGZIP() []byte {
 	return file_saas_v1_billing_proto_rawDescData
 }
 
-var file_saas_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_saas_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_saas_v1_billing_proto_goTypes = []any{
-	(*StartCheckoutRequest)(nil),  // 0: saas.v1.StartCheckoutRequest
-	(*StartCheckoutResponse)(nil), // 1: saas.v1.StartCheckoutResponse
-	(*OpenPortalRequest)(nil),     // 2: saas.v1.OpenPortalRequest
-	(*OpenPortalResponse)(nil),    // 3: saas.v1.OpenPortalResponse
+	(*StartCheckoutRequest)(nil),    // 0: saas.v1.StartCheckoutRequest
+	(*StartCheckoutResponse)(nil),   // 1: saas.v1.StartCheckoutResponse
+	(*OpenPortalRequest)(nil),       // 2: saas.v1.OpenPortalRequest
+	(*OpenPortalResponse)(nil),      // 3: saas.v1.OpenPortalResponse
+	(*GetSubscriptionRequest)(nil),  // 4: saas.v1.GetSubscriptionRequest
+	(*GetSubscriptionResponse)(nil), // 5: saas.v1.GetSubscriptionResponse
+	(*ListPricesRequest)(nil),       // 6: saas.v1.ListPricesRequest
+	(*Price)(nil),                   // 7: saas.v1.Price
+	(*ListPricesResponse)(nil),      // 8: saas.v1.ListPricesResponse
 }
 var file_saas_v1_billing_proto_depIdxs = []int32{
-	0, // 0: saas.v1.BillingService.StartCheckout:input_type -> saas.v1.StartCheckoutRequest
-	2, // 1: saas.v1.BillingService.OpenPortal:input_type -> saas.v1.OpenPortalRequest
-	1, // 2: saas.v1.BillingService.StartCheckout:output_type -> saas.v1.StartCheckoutResponse
-	3, // 3: saas.v1.BillingService.OpenPortal:output_type -> saas.v1.OpenPortalResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	7, // 0: saas.v1.ListPricesResponse.prices:type_name -> saas.v1.Price
+	4, // 1: saas.v1.BillingService.GetSubscription:input_type -> saas.v1.GetSubscriptionRequest
+	6, // 2: saas.v1.BillingService.ListPrices:input_type -> saas.v1.ListPricesRequest
+	0, // 3: saas.v1.BillingService.StartCheckout:input_type -> saas.v1.StartCheckoutRequest
+	2, // 4: saas.v1.BillingService.OpenPortal:input_type -> saas.v1.OpenPortalRequest
+	5, // 5: saas.v1.BillingService.GetSubscription:output_type -> saas.v1.GetSubscriptionResponse
+	8, // 6: saas.v1.BillingService.ListPrices:output_type -> saas.v1.ListPricesResponse
+	1, // 7: saas.v1.BillingService.StartCheckout:output_type -> saas.v1.StartCheckoutResponse
+	3, // 8: saas.v1.BillingService.OpenPortal:output_type -> saas.v1.OpenPortalResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_saas_v1_billing_proto_init() }
@@ -271,7 +569,7 @@ func file_saas_v1_billing_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_saas_v1_billing_proto_rawDesc), len(file_saas_v1_billing_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -36,6 +36,9 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// WorkspaceServiceListWorkspacesProcedure is the fully-qualified name of the WorkspaceService's
+	// ListWorkspaces RPC.
+	WorkspaceServiceListWorkspacesProcedure = "/saas.v1.WorkspaceService/ListWorkspaces"
 	// WorkspaceServiceCreateWorkspaceProcedure is the fully-qualified name of the WorkspaceService's
 	// CreateWorkspace RPC.
 	WorkspaceServiceCreateWorkspaceProcedure = "/saas.v1.WorkspaceService/CreateWorkspace"
@@ -55,6 +58,10 @@ const (
 
 // WorkspaceServiceClient is a client for the saas.v1.WorkspaceService service.
 type WorkspaceServiceClient interface {
+	// ListWorkspaces returns the workspaces the caller belongs to, with the
+	// caller's role in each. The web uses it to decide between onboarding (no
+	// workspace yet) and the app, and to fill the workspace switcher.
+	ListWorkspaces(context.Context, *connect.Request[v1.ListWorkspacesRequest]) (*connect.Response[v1.ListWorkspacesResponse], error)
 	// CreateWorkspace makes a workspace owned by the caller.
 	CreateWorkspace(context.Context, *connect.Request[v1.CreateWorkspaceRequest]) (*connect.Response[v1.CreateWorkspaceResponse], error)
 	// GetWorkspace returns a workspace the caller belongs to.
@@ -78,6 +85,12 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 	baseURL = strings.TrimRight(baseURL, "/")
 	workspaceServiceMethods := v1.File_saas_v1_workspace_proto.Services().ByName("WorkspaceService").Methods()
 	return &workspaceServiceClient{
+		listWorkspaces: connect.NewClient[v1.ListWorkspacesRequest, v1.ListWorkspacesResponse](
+			httpClient,
+			baseURL+WorkspaceServiceListWorkspacesProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ListWorkspaces")),
+			connect.WithClientOptions(opts...),
+		),
 		createWorkspace: connect.NewClient[v1.CreateWorkspaceRequest, v1.CreateWorkspaceResponse](
 			httpClient,
 			baseURL+WorkspaceServiceCreateWorkspaceProcedure,
@@ -113,11 +126,17 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 
 // workspaceServiceClient implements WorkspaceServiceClient.
 type workspaceServiceClient struct {
+	listWorkspaces  *connect.Client[v1.ListWorkspacesRequest, v1.ListWorkspacesResponse]
 	createWorkspace *connect.Client[v1.CreateWorkspaceRequest, v1.CreateWorkspaceResponse]
 	getWorkspace    *connect.Client[v1.GetWorkspaceRequest, v1.GetWorkspaceResponse]
 	listMembers     *connect.Client[v1.ListMembersRequest, v1.ListMembersResponse]
 	inviteMember    *connect.Client[v1.InviteMemberRequest, v1.InviteMemberResponse]
 	acceptInvite    *connect.Client[v1.AcceptInviteRequest, v1.AcceptInviteResponse]
+}
+
+// ListWorkspaces calls saas.v1.WorkspaceService.ListWorkspaces.
+func (c *workspaceServiceClient) ListWorkspaces(ctx context.Context, req *connect.Request[v1.ListWorkspacesRequest]) (*connect.Response[v1.ListWorkspacesResponse], error) {
+	return c.listWorkspaces.CallUnary(ctx, req)
 }
 
 // CreateWorkspace calls saas.v1.WorkspaceService.CreateWorkspace.
@@ -147,6 +166,10 @@ func (c *workspaceServiceClient) AcceptInvite(ctx context.Context, req *connect.
 
 // WorkspaceServiceHandler is an implementation of the saas.v1.WorkspaceService service.
 type WorkspaceServiceHandler interface {
+	// ListWorkspaces returns the workspaces the caller belongs to, with the
+	// caller's role in each. The web uses it to decide between onboarding (no
+	// workspace yet) and the app, and to fill the workspace switcher.
+	ListWorkspaces(context.Context, *connect.Request[v1.ListWorkspacesRequest]) (*connect.Response[v1.ListWorkspacesResponse], error)
 	// CreateWorkspace makes a workspace owned by the caller.
 	CreateWorkspace(context.Context, *connect.Request[v1.CreateWorkspaceRequest]) (*connect.Response[v1.CreateWorkspaceResponse], error)
 	// GetWorkspace returns a workspace the caller belongs to.
@@ -166,6 +189,12 @@ type WorkspaceServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	workspaceServiceMethods := v1.File_saas_v1_workspace_proto.Services().ByName("WorkspaceService").Methods()
+	workspaceServiceListWorkspacesHandler := connect.NewUnaryHandler(
+		WorkspaceServiceListWorkspacesProcedure,
+		svc.ListWorkspaces,
+		connect.WithSchema(workspaceServiceMethods.ByName("ListWorkspaces")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workspaceServiceCreateWorkspaceHandler := connect.NewUnaryHandler(
 		WorkspaceServiceCreateWorkspaceProcedure,
 		svc.CreateWorkspace,
@@ -198,6 +227,8 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 	)
 	return "/saas.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case WorkspaceServiceListWorkspacesProcedure:
+			workspaceServiceListWorkspacesHandler.ServeHTTP(w, r)
 		case WorkspaceServiceCreateWorkspaceProcedure:
 			workspaceServiceCreateWorkspaceHandler.ServeHTTP(w, r)
 		case WorkspaceServiceGetWorkspaceProcedure:
@@ -216,6 +247,10 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 
 // UnimplementedWorkspaceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWorkspaceServiceHandler struct{}
+
+func (UnimplementedWorkspaceServiceHandler) ListWorkspaces(context.Context, *connect.Request[v1.ListWorkspacesRequest]) (*connect.Response[v1.ListWorkspacesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.ListWorkspaces is not implemented"))
+}
 
 func (UnimplementedWorkspaceServiceHandler) CreateWorkspace(context.Context, *connect.Request[v1.CreateWorkspaceRequest]) (*connect.Response[v1.CreateWorkspaceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.CreateWorkspace is not implemented"))

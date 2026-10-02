@@ -663,6 +663,138 @@ func (x *AcceptInviteResponse) GetWorkspace() *Workspace {
 	return nil
 }
 
+type ListWorkspacesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorkspacesRequest) Reset() {
+	*x = ListWorkspacesRequest{}
+	mi := &file_saas_v1_workspace_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkspacesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkspacesRequest) ProtoMessage() {}
+
+func (x *ListWorkspacesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_workspace_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorkspacesRequest.ProtoReflect.Descriptor instead.
+func (*ListWorkspacesRequest) Descriptor() ([]byte, []int) {
+	return file_saas_v1_workspace_proto_rawDescGZIP(), []int{13}
+}
+
+type WorkspaceMembership struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Workspace     *Workspace             `protobuf:"bytes,1,opt,name=workspace,proto3" json:"workspace,omitempty"`
+	RoleKey       string                 `protobuf:"bytes,2,opt,name=role_key,json=roleKey,proto3" json:"role_key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkspaceMembership) Reset() {
+	*x = WorkspaceMembership{}
+	mi := &file_saas_v1_workspace_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkspaceMembership) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkspaceMembership) ProtoMessage() {}
+
+func (x *WorkspaceMembership) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_workspace_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkspaceMembership.ProtoReflect.Descriptor instead.
+func (*WorkspaceMembership) Descriptor() ([]byte, []int) {
+	return file_saas_v1_workspace_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *WorkspaceMembership) GetWorkspace() *Workspace {
+	if x != nil {
+		return x.Workspace
+	}
+	return nil
+}
+
+func (x *WorkspaceMembership) GetRoleKey() string {
+	if x != nil {
+		return x.RoleKey
+	}
+	return ""
+}
+
+type ListWorkspacesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Workspaces    []*WorkspaceMembership `protobuf:"bytes,1,rep,name=workspaces,proto3" json:"workspaces,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWorkspacesResponse) Reset() {
+	*x = ListWorkspacesResponse{}
+	mi := &file_saas_v1_workspace_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWorkspacesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWorkspacesResponse) ProtoMessage() {}
+
+func (x *ListWorkspacesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_workspace_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWorkspacesResponse.ProtoReflect.Descriptor instead.
+func (*ListWorkspacesResponse) Descriptor() ([]byte, []int) {
+	return file_saas_v1_workspace_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListWorkspacesResponse) GetWorkspaces() []*WorkspaceMembership {
+	if x != nil {
+		return x.Workspaces
+	}
+	return nil
+}
+
 var File_saas_v1_workspace_proto protoreflect.FileDescriptor
 
 const file_saas_v1_workspace_proto_rawDesc = "" +
@@ -704,8 +836,17 @@ const file_saas_v1_workspace_proto_rawDesc = "" +
 	"\x13AcceptInviteRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"H\n" +
 	"\x14AcceptInviteResponse\x120\n" +
-	"\tworkspace\x18\x01 \x01(\v2\x12.saas.v1.WorkspaceR\tworkspace2\x99\x03\n" +
-	"\x10WorkspaceService\x12T\n" +
+	"\tworkspace\x18\x01 \x01(\v2\x12.saas.v1.WorkspaceR\tworkspace\"\x17\n" +
+	"\x15ListWorkspacesRequest\"b\n" +
+	"\x13WorkspaceMembership\x120\n" +
+	"\tworkspace\x18\x01 \x01(\v2\x12.saas.v1.WorkspaceR\tworkspace\x12\x19\n" +
+	"\brole_key\x18\x02 \x01(\tR\aroleKey\"V\n" +
+	"\x16ListWorkspacesResponse\x12<\n" +
+	"\n" +
+	"workspaces\x18\x01 \x03(\v2\x1c.saas.v1.WorkspaceMembershipR\n" +
+	"workspaces2\xec\x03\n" +
+	"\x10WorkspaceService\x12Q\n" +
+	"\x0eListWorkspaces\x12\x1e.saas.v1.ListWorkspacesRequest\x1a\x1f.saas.v1.ListWorkspacesResponse\x12T\n" +
 	"\x0fCreateWorkspace\x12\x1f.saas.v1.CreateWorkspaceRequest\x1a .saas.v1.CreateWorkspaceResponse\x12K\n" +
 	"\fGetWorkspace\x12\x1c.saas.v1.GetWorkspaceRequest\x1a\x1d.saas.v1.GetWorkspaceResponse\x12H\n" +
 	"\vListMembers\x12\x1b.saas.v1.ListMembersRequest\x1a\x1c.saas.v1.ListMembersResponse\x12K\n" +
@@ -724,7 +865,7 @@ func file_saas_v1_workspace_proto_rawDescGZIP() []byte {
 	return file_saas_v1_workspace_proto_rawDescData
 }
 
-var file_saas_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_saas_v1_workspace_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_saas_v1_workspace_proto_goTypes = []any{
 	(*Workspace)(nil),               // 0: saas.v1.Workspace
 	(*Member)(nil),                  // 1: saas.v1.Member
@@ -739,6 +880,9 @@ var file_saas_v1_workspace_proto_goTypes = []any{
 	(*InviteMemberResponse)(nil),    // 10: saas.v1.InviteMemberResponse
 	(*AcceptInviteRequest)(nil),     // 11: saas.v1.AcceptInviteRequest
 	(*AcceptInviteResponse)(nil),    // 12: saas.v1.AcceptInviteResponse
+	(*ListWorkspacesRequest)(nil),   // 13: saas.v1.ListWorkspacesRequest
+	(*WorkspaceMembership)(nil),     // 14: saas.v1.WorkspaceMembership
+	(*ListWorkspacesResponse)(nil),  // 15: saas.v1.ListWorkspacesResponse
 }
 var file_saas_v1_workspace_proto_depIdxs = []int32{
 	0,  // 0: saas.v1.CreateWorkspaceResponse.workspace:type_name -> saas.v1.Workspace
@@ -746,21 +890,25 @@ var file_saas_v1_workspace_proto_depIdxs = []int32{
 	1,  // 2: saas.v1.ListMembersResponse.members:type_name -> saas.v1.Member
 	2,  // 3: saas.v1.InviteMemberResponse.invitation:type_name -> saas.v1.Invitation
 	0,  // 4: saas.v1.AcceptInviteResponse.workspace:type_name -> saas.v1.Workspace
-	3,  // 5: saas.v1.WorkspaceService.CreateWorkspace:input_type -> saas.v1.CreateWorkspaceRequest
-	5,  // 6: saas.v1.WorkspaceService.GetWorkspace:input_type -> saas.v1.GetWorkspaceRequest
-	7,  // 7: saas.v1.WorkspaceService.ListMembers:input_type -> saas.v1.ListMembersRequest
-	9,  // 8: saas.v1.WorkspaceService.InviteMember:input_type -> saas.v1.InviteMemberRequest
-	11, // 9: saas.v1.WorkspaceService.AcceptInvite:input_type -> saas.v1.AcceptInviteRequest
-	4,  // 10: saas.v1.WorkspaceService.CreateWorkspace:output_type -> saas.v1.CreateWorkspaceResponse
-	6,  // 11: saas.v1.WorkspaceService.GetWorkspace:output_type -> saas.v1.GetWorkspaceResponse
-	8,  // 12: saas.v1.WorkspaceService.ListMembers:output_type -> saas.v1.ListMembersResponse
-	10, // 13: saas.v1.WorkspaceService.InviteMember:output_type -> saas.v1.InviteMemberResponse
-	12, // 14: saas.v1.WorkspaceService.AcceptInvite:output_type -> saas.v1.AcceptInviteResponse
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	0,  // 5: saas.v1.WorkspaceMembership.workspace:type_name -> saas.v1.Workspace
+	14, // 6: saas.v1.ListWorkspacesResponse.workspaces:type_name -> saas.v1.WorkspaceMembership
+	13, // 7: saas.v1.WorkspaceService.ListWorkspaces:input_type -> saas.v1.ListWorkspacesRequest
+	3,  // 8: saas.v1.WorkspaceService.CreateWorkspace:input_type -> saas.v1.CreateWorkspaceRequest
+	5,  // 9: saas.v1.WorkspaceService.GetWorkspace:input_type -> saas.v1.GetWorkspaceRequest
+	7,  // 10: saas.v1.WorkspaceService.ListMembers:input_type -> saas.v1.ListMembersRequest
+	9,  // 11: saas.v1.WorkspaceService.InviteMember:input_type -> saas.v1.InviteMemberRequest
+	11, // 12: saas.v1.WorkspaceService.AcceptInvite:input_type -> saas.v1.AcceptInviteRequest
+	15, // 13: saas.v1.WorkspaceService.ListWorkspaces:output_type -> saas.v1.ListWorkspacesResponse
+	4,  // 14: saas.v1.WorkspaceService.CreateWorkspace:output_type -> saas.v1.CreateWorkspaceResponse
+	6,  // 15: saas.v1.WorkspaceService.GetWorkspace:output_type -> saas.v1.GetWorkspaceResponse
+	8,  // 16: saas.v1.WorkspaceService.ListMembers:output_type -> saas.v1.ListMembersResponse
+	10, // 17: saas.v1.WorkspaceService.InviteMember:output_type -> saas.v1.InviteMemberResponse
+	12, // 18: saas.v1.WorkspaceService.AcceptInvite:output_type -> saas.v1.AcceptInviteResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_saas_v1_workspace_proto_init() }
@@ -774,7 +922,7 @@ func file_saas_v1_workspace_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_saas_v1_workspace_proto_rawDesc), len(file_saas_v1_workspace_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

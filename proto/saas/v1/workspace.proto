@@ -8,6 +8,11 @@ package saas.v1;
 option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
 
 service WorkspaceService {
+  // ListWorkspaces returns the workspaces the caller belongs to, with the
+  // caller's role in each. The web uses it to decide between onboarding (no
+  // workspace yet) and the app, and to fill the workspace switcher.
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse);
+
   // CreateWorkspace makes a workspace owned by the caller.
   rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse);
   // GetWorkspace returns a workspace the caller belongs to.
@@ -80,4 +85,15 @@ message AcceptInviteRequest {
 
 message AcceptInviteResponse {
   Workspace workspace = 1;
+}
+
+message ListWorkspacesRequest {}
+
+message WorkspaceMembership {
+  Workspace workspace = 1;
+  string role_key = 2;
+}
+
+message ListWorkspacesResponse {
+  repeated WorkspaceMembership workspaces = 1;
 }
