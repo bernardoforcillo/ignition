@@ -29,6 +29,8 @@ type subscriptionSink struct {
 	store     subscriptionStore
 	customers customerSetter
 	states    stateSetter
+	// events is optional (nil sends nothing).
+	events EventSink
 }
 
 var _ billing.SubscriptionSink = (*subscriptionSink)(nil)
@@ -52,7 +54,26 @@ func (s *subscriptionSink) SetSubscription(ctx context.Context, workspaceID stri
 	case !errors.Is(err, entitlement.ErrNoSubscription):
 		return fmt.Errorf("reading current subscription: %w", err)
 	}
-	return s.store.Set(ctx, out)
+	if err := s.store.Set(ctx, out); err != nil {
+		return err
+	}
+	s.reportChange(ctx, workspaceID, sub)
+	return nil
+}
+
+// reportChange tells product analytics that a workspace's plan changed. Only the server can say
+// so: the change arrives by provider webhook, long after the browser left the checkout page. The
+// distinct id is the workspace (no person involved) and the event carries ids and a status only.
+func (s *subscriptionSink) reportChange(ctx context.Context, workspaceID string, sub billing.Subscription) {
+	if s.events == nil {
+		return
+	}
+	s.events.Capture(ctx, "workspace:"+workspaceID, "subscription_changed", map[string]any{
+		"plan_id":                 sub.PlanID,
+		"status":                  string(sub.Status),
+		"add_on_count":            len(sub.AddOnIDs),
+		"$process_person_profile": false,
+	})
 }
 
 // toEntitlement maps a billing subscription onto featurelayer's. billing

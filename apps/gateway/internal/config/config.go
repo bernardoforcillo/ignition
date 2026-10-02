@@ -36,6 +36,9 @@ type Config struct {
 	RateLimitBurst  int
 	ShutdownTimeout time.Duration
 
+	// Telemetry configures logging format and error/event reporting.
+	Telemetry Telemetry
+
 	// TrustedProxies are the reverse-proxy networks whose X-Forwarded-For is believed. Empty
 	// means the TCP peer is always the client.
 	TrustedProxies []netip.Prefix
@@ -43,6 +46,18 @@ type Config struct {
 	// SaaS is nil unless DATABASE_URL is set; nil means the gateway is a
 	// pure proxy (plus the Ping RPC).
 	SaaS *SaaS
+}
+
+// Telemetry holds the observability settings. Logs always go to stdout (where the platform, e.g.
+// Cloud Logging on GCP, collects them); PostHog receives only critical errors and a few business
+// events, and only when an API key is set.
+type Telemetry struct {
+	PostHogAPIKey string
+	PostHogHost   string
+	// Environment tags every reported event, e.g. "production".
+	Environment string
+	// GCPLogFormat writes severity/message/timestamp the way Cloud Logging expects.
+	GCPLogFormat bool
 }
 
 // SaaS holds the settings of the optional SaaS surface (accounts,
@@ -111,6 +126,10 @@ const (
 // The SaaS surface is optional and enabled only when DATABASE_URL is set;
 // with it unset none of the variables below are read.
 //
+//	LOG_FORMAT                "json" (default) or "gcp" (Cloud Logging severity/message/timestamp)
+//	ENVIRONMENT               tag on reported events, default "development"
+//	POSTHOG_API_KEY           optional; enables critical-error and business-event reporting to PostHog
+//	POSTHOG_HOST              PostHog ingestion host, default https://eu.i.posthog.com
 //	TRUSTED_PROXIES           optional; comma-separated CIDRs/IPs of reverse proxies whose
 //	                          X-Forwarded-For is trusted (the per-IP auth rate limits key on it)
 //	DATABASE_URL              Postgres DSN; enables the SaaS surface
@@ -170,6 +189,12 @@ func Load() (Config, error) {
 		cfg.ShutdownTimeout = d
 	}
 
+	tel, err := loadTelemetry()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Telemetry = tel
+
 	proxies, err := parseTrustedProxies(os.Getenv("TRUSTED_PROXIES"))
 	if err != nil {
 		return Config{}, err
@@ -183,6 +208,22 @@ func Load() (Config, error) {
 	cfg.SaaS = saas
 
 	return cfg, nil
+}
+
+func loadTelemetry() (Telemetry, error) {
+	t := Telemetry{
+		PostHogAPIKey: os.Getenv("POSTHOG_API_KEY"),
+		PostHogHost:   os.Getenv("POSTHOG_HOST"),
+		Environment:   getEnv("ENVIRONMENT", "development"),
+	}
+	switch format := strings.ToLower(getEnv("LOG_FORMAT", "json")); format {
+	case "json":
+	case "gcp":
+		t.GCPLogFormat = true
+	default:
+		return Telemetry{}, fmt.Errorf("config: invalid LOG_FORMAT %q: want json or gcp", format)
+	}
+	return t, nil
 }
 
 // parseTrustedProxies reads "10.0.0.0/8, 192.168.1.5, fd00::/8". A bare address is a single-host

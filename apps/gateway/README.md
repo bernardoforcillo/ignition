@@ -77,6 +77,10 @@ Factor III ("Config").
 | `RATE_LIMIT_RPS`            | disabled | Requests/second per client IP, token-bucket. Unset or `<=0` disables the limiter. |
 | `RATE_LIMIT_BURST`          | `20`    | Token bucket burst size (only relevant once `RATE_LIMIT_RPS` is set).   |
 | `GATEWAY_SHUTDOWN_TIMEOUT`  | `10s`   | Grace period for in-flight requests during shutdown.                    |
+| `LOG_FORMAT` | `json` | `json`, or `gcp` for Cloud Logging (`severity`, `message`, `timestamp`). All logs go to stdout either way. |
+| `ENVIRONMENT` | `development` | Tag on reported events, e.g. `production`. |
+| `POSTHOG_API_KEY` | — | Enables reporting to PostHog: **only** Error-level logs (as exceptions with a stack trace) and the server-authoritative `subscription_changed` event. Unset: nothing leaves the process. |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | PostHog ingestion host (EU region by default). |
 | `TRUSTED_PROXIES`           | —       | Comma-separated CIDRs/IPs of the reverse proxies whose `X-Forwarded-For` is trusted (per-IP auth rate limits key on the client it names). Unset: the TCP peer is the client. |
 
 #### SaaS variables

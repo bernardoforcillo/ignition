@@ -62,8 +62,27 @@ func (s *Services) Ready(ctx context.Context) error { return s.db.Ping(ctx) }
 // was given only on success; on a Build error the caller still owns it.
 func (s *Services) Close() error { return s.db.Close() }
 
+// EventSink receives the few server-authoritative business events worth sending to product
+// analytics (the browser reports everything it can see itself). Implemented by the telemetry
+// module; nil disables them.
+type EventSink interface {
+	Capture(ctx context.Context, id, event string, props map[string]any)
+}
+
+// Option customizes Build.
+type Option func(*options)
+
+type options struct{ events EventSink }
+
+// WithEvents sends server-authoritative business events to sink.
+func WithEvents(sink EventSink) Option { return func(o *options) { o.events = sink } }
+
 // Build applies every migration and wires the services over db.
-func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.Logger) (*Services, error) {
+func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.Logger, opts ...Option) (*Services, error) {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	if err := database.Migrate(ctx, db, Migrations()...); err != nil {
 		return nil, err
 	}
@@ -108,7 +127,7 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 		directory:  dir,
 	}
 	if cfg.Billing != nil {
-		if err := s.wireBilling(db, *cfg.Billing, subs, freePlan, logger); err != nil {
+		if err := s.wireBilling(db, *cfg.Billing, subs, freePlan, logger, o.events); err != nil {
 			return nil, err
 		}
 	}
@@ -139,7 +158,7 @@ func newMailer(cfg config.SaaS, logger *slog.Logger) (*mailer.Mailer, error) {
 	return m, nil
 }
 
-func (s *Services) wireBilling(db *database.DB, cfg config.Billing, subs subscriptionStore, freePlan entitlement.PlanID, logger *slog.Logger) error {
+func (s *Services) wireBilling(db *database.DB, cfg config.Billing, subs subscriptionStore, freePlan entitlement.PlanID, logger *slog.Logger, events EventSink) error {
 	catalog, err := newCatalog(cfg, freePlan)
 	if err != nil {
 		return err
@@ -155,7 +174,7 @@ func (s *Services) wireBilling(db *database.DB, cfg config.Billing, subs subscri
 	if err != nil {
 		return fmt.Errorf("saas: stripe: %w", err)
 	}
-	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs, customers: customers, states: states}, &eventStore{db: db.DB}, logger)
+	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs, customers: customers, states: states, events: events}, &eventStore{db: db.DB}, logger)
 	prices := make([]core.PriceInfo, len(cfg.Prices))
 	for i, p := range cfg.Prices {
 		prices[i] = core.PriceInfo{PriceID: p.ProviderPriceID, Kind: p.Kind, ID: p.ID}

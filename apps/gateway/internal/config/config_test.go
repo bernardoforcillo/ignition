@@ -12,7 +12,7 @@ import (
 var saasEnvKeys = []string{
 	"DATABASE_URL", "AUTH_SECRET", "APP_URL", "COMPANY_NAME", "MAIL_FROM", "MAIL_REPLY_TO",
 	"ASSET_BASE_URL", "RESEND_API_KEY", "ACCESS_TTL", "REFRESH_TTL",
-	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN", "TRUSTED_PROXIES",
+	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN", "TRUSTED_PROXIES", "LOG_FORMAT", "ENVIRONMENT", "POSTHOG_API_KEY", "POSTHOG_HOST",
 	"RESEND_BASE_URL", "STRIPE_API_BASE_URL",
 }
 
@@ -257,6 +257,43 @@ func TestLoad_TrustedProxies(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("trusted proxies = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestLoad_Telemetry(t *testing.T) {
+	tests := []struct {
+		name    string
+		env     map[string]string
+		want    Telemetry
+		wantErr string
+	}{
+		{"defaults: json logs, no PostHog", nil, Telemetry{Environment: "development"}, ""},
+		{"gcp format and PostHog", map[string]string{"LOG_FORMAT": "GCP", "ENVIRONMENT": "production", "POSTHOG_API_KEY": "phc_x", "POSTHOG_HOST": "https://eu.i.posthog.com"},
+			Telemetry{PostHogAPIKey: "phc_x", PostHogHost: "https://eu.i.posthog.com", Environment: "production", GCPLogFormat: true}, ""},
+		{"unknown format is a startup error", map[string]string{"LOG_FORMAT": "xml"}, Telemetry{}, "LOG_FORMAT"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			legacyEnv(t)
+			for k, v := range tc.env {
+				t.Setenv(k, v)
+			}
+
+			cfg, err := Load()
+
+			if tc.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("err = %v, want one mentioning %q", err, tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Telemetry != tc.want {
+				t.Fatalf("telemetry = %+v, want %+v", cfg.Telemetry, tc.want)
 			}
 		})
 	}

@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
+	"github.com/bernardoforcillo/ignition/go-packages/telemetry"
 
 	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
 )
@@ -58,6 +59,8 @@ func authInterceptor(verifier tokenVerifier) connect.Interceptor {
 			if err != nil || claims.Subject == "" {
 				return nil, connect.NewError(connect.CodeUnauthenticated, errUnauthenticated)
 			}
+			// The account id also attributes any error logged while serving this request.
+			ctx = telemetry.WithDistinctID(ctx, claims.Subject)
 			return next(context.WithValue(ctx, subjectKey{}, claims.Subject), req)
 		}
 	})

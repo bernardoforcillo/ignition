@@ -36,6 +36,7 @@ COPY go-packages/features/go.mod go-packages/features/go.sum go-packages/feature
 COPY go-packages/identity/go.mod go-packages/identity/go.sum go-packages/identity/
 COPY go-packages/mailer/go.mod go-packages/mailer/go.mod
 COPY go-packages/proto/go.mod go-packages/proto/go.sum go-packages/proto/
+COPY go-packages/telemetry/go.mod go-packages/telemetry/go.sum go-packages/telemetry/
 COPY apps/gateway/go.mod apps/gateway/go.sum apps/gateway/
 RUN go -C apps/gateway mod download
 

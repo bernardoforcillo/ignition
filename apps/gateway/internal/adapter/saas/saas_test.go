@@ -417,3 +417,57 @@ type failingSubs struct{ *fakeSubs }
 func (failingSubs) Subscription(context.Context, string) (*entitlement.Subscription, error) {
 	return nil, errors.New("db down")
 }
+
+type fakeEvents struct {
+	got []capturedEvent
+}
+
+type capturedEvent struct {
+	id, event string
+	props     map[string]any
+}
+
+func (f *fakeEvents) Capture(_ context.Context, id, event string, props map[string]any) {
+	f.got = append(f.got, capturedEvent{id, event, props})
+}
+
+func TestSubscriptionSink_ReportsAPlanChangeWithoutPersonalData(t *testing.T) {
+	events := &fakeEvents{}
+	sink := &subscriptionSink{store: newFakeSubs(), customers: newFakeCustomers(), states: newFakeStates(), events: events}
+
+	err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{CustomerID: "cus_1", PlanID: "pro", AddOnIDs: []string{"extra"}, Status: billing.StatusActive})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events.got) != 1 {
+		t.Fatalf("got %d events, want 1", len(events.got))
+	}
+	e := events.got[0]
+	if e.id != "workspace:ws-1" || e.event != "subscription_changed" {
+		t.Errorf("event = %+v", e)
+	}
+	if e.props["plan_id"] != "pro" || e.props["status"] != "active" || e.props["add_on_count"] != 1 || e.props["$process_person_profile"] != false {
+		t.Errorf("props = %v", e.props)
+	}
+	for k, v := range e.props {
+		if s, ok := v.(string); ok && (strings.Contains(s, "cus_") || strings.Contains(s, "@")) {
+			t.Errorf("property %s=%q leaks an id or address", k, s)
+		}
+	}
+}
+
+func TestSubscriptionSink_ReportsNothingWhenTheWriteFails(t *testing.T) {
+	events := &fakeEvents{}
+	subs := newFakeSubs()
+	subs.setErr = errors.New("db down")
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers(), states: newFakeStates(), events: events}
+
+	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro"}); err == nil {
+		t.Fatal("expected the write error")
+	}
+
+	if len(events.got) != 0 {
+		t.Errorf("reported %v for a change that did not happen", events.got)
+	}
+}

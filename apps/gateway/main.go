@@ -16,6 +16,7 @@ import (
 	"syscall"
 
 	"github.com/bernardoforcillo/ignition/go-packages/database"
+	"github.com/bernardoforcillo/ignition/go-packages/telemetry"
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/proxy"
@@ -39,6 +40,16 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	// Observability: every log goes to stdout (collected by the platform); only Error-level records
+	// and a few business events reach PostHog, and only when POSTHOG_API_KEY is set.
+	tel, err := newTelemetry(cfg.Telemetry)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tel.Close() }()
+	logger = tel.Logger()
+	slog.SetDefault(logger)
+
 	// Translate config's plain RouteSpec values into the domain's
 	// Route type. This conversion belongs here, not in package config,
 	// because config is the shared-foundations layer (beneath domain)
@@ -58,7 +69,7 @@ func run(logger *slog.Logger) error {
 	// proxy it always was.
 	var saasAPI *httpapi.SaaS
 	if cfg.SaaS != nil {
-		services, err := buildSaaS(context.Background(), *cfg.SaaS, logger)
+		services, err := buildSaaS(context.Background(), *cfg.SaaS, logger, tel)
 		if err != nil {
 			return err
 		}
@@ -127,12 +138,12 @@ func run(logger *slog.Logger) error {
 
 // buildSaaS opens the database and wires the SaaS services over it,
 // running their migrations. The returned services own the database.
-func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger) (*saas.Services, error) {
+func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger, events saas.EventSink) (*saas.Services, error) {
 	db, err := database.Open(ctx, database.Config{DSN: cfg.DatabaseURL})
 	if err != nil {
 		return nil, err
 	}
-	services, err := saas.Build(ctx, cfg, db, logger)
+	services, err := saas.Build(ctx, cfg, db, logger, saas.WithEvents(events))
 	if err != nil {
 		_ = db.Close()
 		return nil, err
@@ -160,4 +171,19 @@ func newSaaSAPI(s *saas.Services, appURL string, trustedProxies []netip.Prefix) 
 		api.BillingWebhook = s.BillingWebhook
 	}
 	return api
+}
+
+// newTelemetry builds the logger and PostHog reporter from config.
+func newTelemetry(cfg config.Telemetry) (*telemetry.Telemetry, error) {
+	format := telemetry.FormatJSON
+	if cfg.GCPLogFormat {
+		format = telemetry.FormatGCP
+	}
+	return telemetry.New(telemetry.Config{
+		APIKey:      cfg.PostHogAPIKey,
+		Host:        cfg.PostHogHost,
+		ServiceName: "gateway",
+		Environment: cfg.Environment,
+		LogFormat:   format,
+	}, os.Stdout)
 }
