@@ -10,3 +10,11 @@
 **/.vscode
 **/.DS_Store
 infrastructure
+
+# Agent mirrors are symlinks; Docker COPY needs literal paths.
+AGENTS.md
+CLAUDE.md
+.agents
+.codex
+.cursor
+.claude
