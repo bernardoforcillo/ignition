@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 
+import { RouteError } from "~/features/error-boundary";
 import { appRoutes } from "~/routes/app";
 import { forgotPasswordRoute } from "~/routes/forgot-password";
 import { acceptInviteRoute } from "~/routes/invite";
@@ -22,7 +23,10 @@ const routeTree = rootRoute.addChildren([
 	appRoutes,
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+	routeTree,
+	defaultErrorComponent: ({ error }) => RouteError({ error }),
+});
 
 // Register the router instance for full type-safety on <Link>, useNavigate, etc.
 declare module "@tanstack/react-router" {

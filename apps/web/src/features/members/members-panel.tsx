@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useRef, useState } from "react";
 import { useCurrentWorkspace } from "~/features/workspace";
+import { analytics } from "~/lib/analytics";
 import { inviteMember, membersQuery } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
 import { emailError, useFocusFirstInvalid } from "~/lib/forms";
@@ -44,6 +45,10 @@ export function MembersPanel() {
 	const invite = useMutation({
 		mutationFn: () => inviteMember(workspaceId, email.trim(), roleKey),
 		onSuccess: (res) => {
+			analytics.track("invitation_sent", {
+				location: "members",
+				role_key: roleKey,
+			});
 			setSent((list) => [
 				{ id: res.invitation?.id ?? email, email: email.trim() },
 				...list,

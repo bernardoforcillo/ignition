@@ -2,7 +2,7 @@ import { Alert, Button, Card, Dialog, TextField } from "@ignition/components";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { type FormEvent, useRef, useState } from "react";
-
+import { analytics } from "~/lib/analytics";
 import { deleteAccount, exportData, meQuery } from "~/lib/api";
 import { downloadBytes } from "~/lib/download";
 import { errorMessage } from "~/lib/errors";
@@ -23,6 +23,7 @@ export function SettingsPanel() {
 				res.data as Uint8Array<ArrayBuffer>,
 				res.filename || "ignition-export.json",
 			);
+			analytics.track("data_exported", { location: "settings" });
 		},
 	});
 
@@ -42,6 +43,7 @@ export function SettingsPanel() {
 	const removal = useMutation({
 		mutationFn: () => deleteAccount(password),
 		onSuccess: () => {
+			analytics.track("account_deleted", { location: "settings" });
 			// The server already revoked every session; just forget them locally.
 			clearSession();
 			router.navigate({ to: "/login", search: {} });

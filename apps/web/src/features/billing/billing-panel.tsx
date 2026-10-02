@@ -9,6 +9,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { useCurrentWorkspace } from "~/features/workspace";
+import { analytics } from "~/lib/analytics";
 import {
 	openPortal,
 	pricesQuery,
@@ -40,8 +41,21 @@ export function BillingPanel() {
 			goTo(await startCheckout(workspaceId, priceId)),
 	});
 	const portal = useMutation({
-		mutationFn: async () => goTo(await openPortal(workspaceId)),
+		mutationFn: async () => {
+			analytics.track("billing_portal_opened", { location: "billing" });
+			goTo(await openPortal(workspaceId));
+		},
 	});
+
+	const choose = (priceId: string) => {
+		const price = prices.data?.find((p) => p.priceId === priceId);
+		analytics.track("checkout_started", {
+			location: "billing",
+			kind: price?.kind ?? "unknown",
+			target_id: price?.id ?? "unknown",
+		});
+		checkout.mutate(priceId);
+	};
 
 	const loadError = subscription.error ?? prices.error;
 
@@ -131,7 +145,7 @@ export function BillingPanel() {
 					items={plans}
 					ownedIds={[sub.planId]}
 					pendingId={checkout.isPending ? checkout.variables : undefined}
-					onChoose={(priceId) => checkout.mutate(priceId)}
+					onChoose={choose}
 				/>
 				{addOns.length > 0 ? (
 					<PriceSection
@@ -139,7 +153,7 @@ export function BillingPanel() {
 						items={addOns}
 						ownedIds={sub.addOnIds}
 						pendingId={checkout.isPending ? checkout.variables : undefined}
-						onChoose={(priceId) => checkout.mutate(priceId)}
+						onChoose={choose}
 					/>
 				) : null}
 			</>

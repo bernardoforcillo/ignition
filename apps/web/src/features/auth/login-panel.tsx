@@ -2,7 +2,7 @@ import { Alert, Button, TextField } from "@ignition/components";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { type FormEvent, useRef, useState } from "react";
-
+import { analytics } from "~/lib/analytics";
 import { errorMessage } from "~/lib/errors";
 import { emailError, useFocusFirstInvalid } from "~/lib/forms";
 import { safeRedirect } from "~/lib/redirect";
@@ -24,7 +24,10 @@ export function LoginPanel({ redirectTo }: Props) {
 
 	const mutation = useMutation({
 		mutationFn: () => login(email.trim(), password),
-		onSuccess: () => router.history.push(safeRedirect(redirectTo)),
+		onSuccess: () => {
+			analytics.track("login_succeeded", { location: "login" });
+			router.history.push(safeRedirect(redirectTo));
+		},
 	});
 
 	const onSubmit = (event: FormEvent) => {

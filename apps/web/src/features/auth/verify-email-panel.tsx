@@ -1,7 +1,7 @@
 import { Alert, Skeleton } from "@ignition/components";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-
+import { analytics } from "~/lib/analytics";
 import { verifyEmail } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
 
@@ -13,7 +13,11 @@ type Props = { token?: string };
 export function VerifyEmailPanel({ token }: Props) {
 	const query = useQuery({
 		queryKey: ["verify-email", token],
-		queryFn: () => verifyEmail(token ?? ""),
+		queryFn: async () => {
+			const result = await verifyEmail(token ?? "");
+			analytics.track("email_verified", { location: "verify_email" });
+			return result;
+		},
 		enabled: Boolean(token),
 		retry: false,
 		staleTime: Number.POSITIVE_INFINITY,

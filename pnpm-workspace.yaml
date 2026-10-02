@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  core-js: false
   esbuild: true
 # Refuse to resolve any package version published less than 7 days ago (10080 minutes):
 # most supply-chain attacks target a package's latest version and are yanked within days.

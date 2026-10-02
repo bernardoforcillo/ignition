@@ -1,5 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 
+import { ConsentBanner } from "~/features/consent";
 import { useApplyTheme } from "~/features/theme-toggle";
 
 export function RootLayout() {
@@ -7,6 +8,7 @@ export function RootLayout() {
 	return (
 		<div className="min-h-screen bg-surface text-fg">
 			<Outlet />
+			<ConsentBanner />
 		</div>
 	);
 }

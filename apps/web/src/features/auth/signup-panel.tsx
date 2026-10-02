@@ -2,7 +2,7 @@ import { Alert, Button, TextField } from "@ignition/components";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type FormEvent, useRef, useState } from "react";
-
+import { analytics } from "~/lib/analytics";
 import { signUp } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
 import {
@@ -24,6 +24,8 @@ export function SignupPanel() {
 
 	const mutation = useMutation({
 		mutationFn: () => signUp(email.trim(), password),
+		onSuccess: () =>
+			analytics.track("signup_submitted", { location: "signup" }),
 	});
 
 	const onSubmit = (event: FormEvent) => {

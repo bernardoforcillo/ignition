@@ -2,7 +2,7 @@ import { Alert, Button, TextField } from "@ignition/components";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { type FormEvent, useRef, useState } from "react";
-
+import { analytics } from "~/lib/analytics";
 import { createWorkspace, refreshWorkspaces } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
 import { useFocusFirstInvalid } from "~/lib/forms";
@@ -32,6 +32,7 @@ export function OnboardingPanel() {
 		},
 		onSuccess: (workspace) => {
 			setWorkspaceId(workspace.id);
+			analytics.track("workspace_created", { location: "onboarding" });
 			router.history.push("/app");
 		},
 	});

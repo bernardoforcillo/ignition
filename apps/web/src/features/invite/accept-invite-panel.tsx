@@ -2,7 +2,7 @@ import { Alert, Skeleton } from "@ignition/components";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
-
+import { analytics } from "~/lib/analytics";
 import { acceptInvite, refreshWorkspaces } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
 import { useAuthStore } from "~/stores/auth";
@@ -24,6 +24,7 @@ export function AcceptInvitePanel({ token }: Props) {
 		queryKey: ["accept-invite", token],
 		queryFn: async () => {
 			const workspace = await acceptInvite(token ?? "");
+			analytics.track("invitation_accepted", { location: "invite_accept" });
 			await refreshWorkspaces();
 			return workspace;
 		},

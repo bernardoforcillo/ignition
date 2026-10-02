@@ -20,8 +20,8 @@
 		"@ignition/proto": "workspace:*",
 		"@tanstack/react-query": "^5.104.0",
 		"@tanstack/react-router": "^1.170.40",
-		"moment": "^2.31.0",
 		"motion": "^13.4.6",
+		"posthog-js": "^1.434.14",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
 		"zustand": "^5.0.15"
