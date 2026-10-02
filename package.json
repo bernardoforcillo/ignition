@@ -9,7 +9,9 @@
 		"format": "turbo run format",
 		"typecheck": "turbo run typecheck",
 		"prepare": "husky",
-		"gen": "turbo gen"
+		"gen": "turbo gen",
+		"gen:proto": "go tool buf generate",
+		"lint:proto": "go tool buf lint"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",

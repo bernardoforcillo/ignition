@@ -7,4 +7,6 @@ use (
 	./go-packages/features
 	./go-packages/identity
 	./go-packages/mailer
+	./go-packages/proto
+	./tools
 )
