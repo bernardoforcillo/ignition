@@ -24,10 +24,11 @@ file decides.
   a layer, interface, generic helper, option or config flag only when a second
   *real* caller exists. Prefer deleting code to adding it.
 - **Reuse, in this order: search → reuse → extract.**
-  - Search `packages/*` and the other apps before writing a helper, component
-    or type.
+  - Search `packages/*`, `go-packages/*` and the other apps before writing a
+    helper, component or type. Auth, workspaces, feature gating, billing,
+    database access and email already exist (`saas-packages.md`).
   - The moment a **second deployable** (app or service) needs code, move it to
-    `packages/<pkg>`. Never copy it.
+    `packages/<pkg>` (TypeScript) or `go-packages/<pkg>` (Go). Never copy it.
   - Inside one deployable, extract on the **third** copy.
 - **SOLID, in concrete terms:**
   - *Single responsibility* — one reason to change per file. Don't grow a file

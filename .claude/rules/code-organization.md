@@ -23,7 +23,8 @@ know about this".
 4. **Capabilities / vendors** — `apps/gateway/internal/adapter/<x>` (proxy, and
    later a database, cache, email…). Each wraps exactly one external system
    behind an interface **defined by the domain layer**.
-5. **Supporting foundations** — `packages/*`, cross-cutting config
+5. **Supporting foundations** — `packages/*`, `go-packages/*` (domain libraries
+   wired in `main.go`, see `saas-packages.md`), cross-cutting config
    (`internal/config`), and mechanism shared by several domains. The one layer
    importable from more than one place in the chain above, and the one that must
    hold no product decisions.

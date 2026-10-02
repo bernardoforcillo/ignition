@@ -1,15 +1,16 @@
 ---
 paths:
   - "apps/gateway/**/*.go"
+  - "go-packages/**/*.go"
 trigger: glob
-globs: apps/gateway/**/*.go
+globs: apps/gateway/**/*.go,go-packages/**/*.go
 description: Go services keep a hexagonal layout (core, adapter, config) wired only in main.go, use native Connect for RPC, map errors once at the inbound adapter, and read config and log through one place each
 alwaysApply: false
 ---
 
 # Rule: a Go service is core ← adapter, wired in one place
 
-Go code under `apps/` follows the layout `apps/gateway` already has. It is what
+Go code under `apps/` and `go-packages/` follows the layout `apps/gateway` already has. It is what
 lets logic be tested with fakes and a transport be added without touching it.
 
 **The failure modes:**
@@ -41,6 +42,22 @@ apps/<svc>/
 - **Adapters assert their port**: `var _ core.Forwarder = (*Proxy)(nil)`.
 - **Constructors take required dependencies as parameters.** `Set*`/`With*`
   only for a dependency that is genuinely optional.
+
+## Library modules (`go-packages/*`)
+
+Reusable domain code lives in its own Go module under `go-packages/<name>`
+(listed in `go.work`); see `saas-packages.md` for the ones that ship. A library
+module:
+
+- reads **no environment** (a `FromEnv` constructor at most), owns no transport
+  and no `main`;
+- declares the ports it needs (`Mailer`, `SubscriptionSink`, `EventStore`) next to
+  the code that uses them, and exports sentinel errors for the transport layer;
+- is wired **only** in the composition root: `apps/gateway/main.go` through
+  `internal/adapter/saas`, which builds the stores, senders and services and hands
+  the transport layer small consumer-side interfaces;
+- never imports another `go-packages` module unless the dependency is the point
+  (billing and features stay decoupled through a port the app implements).
 
 ## Do
 

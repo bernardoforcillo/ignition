@@ -31,8 +31,14 @@ kubectl apply -k development/ignition-development
 - Replace `ghcr.io/OWNER/...` image names (and pin real tags in production) and the `example.com` hosts.
 - Set `GATEWAY_ROUTES` in each `gateway/configmap.yaml` to your real upstreams
   (the gateway refuses to start without a route).
-- Optional auth secret:
+- Secrets: the gateway reads an optional Secret `gateway-secrets` (`envFrom`).
   `kubectl -n ignition-development create secret generic gateway-secrets --from-literal=GATEWAY_AUTH_TOKEN=...`
+  Add `DATABASE_URL` to switch the SaaS surface on, together with `AUTH_SECRET`
+  (>= 32 bytes) and, when used, `RESEND_API_KEY`, `STRIPE_API_KEY`,
+  `STRIPE_WEBHOOK_SECRET` and `BILLING_PRICES`. `APP_URL`, `COMPANY_NAME` and
+  `MAIL_FROM` are in each `gateway/configmap.yaml`. Never commit these values.
+- The gateway image is built from the repo root:
+  `docker build -f apps/gateway/Dockerfile .`
 - Requires an `nginx` ingress controller in the `ingress-nginx` namespace
   (adjust `ingressClassName` and `networkpolicy.yaml` otherwise) and
   metrics-server for the HPA.

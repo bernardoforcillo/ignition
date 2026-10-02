@@ -1,8 +1,9 @@
 ---
 paths:
   - "apps/**/*.go"
+  - "go-packages/**/*.go"
 trigger: glob
-globs: apps/**/*.go
+globs: apps/**/*.go,go-packages/**/*.go
 description: Go tests follow the layer they cover — table tests and hand-written fakes for core, error-mapping tests for inbound adapters — and every bug fix starts with a failing test
 alwaysApply: false
 ---
@@ -24,7 +25,11 @@ alwaysApply: false
 - **Inbound adapters**: test the error-to-code mapping and request handling with
   `httptest` and a fake core.
 - **Outbound adapters**: integration tests that start with
-  `if testing.Short() { t.Skip("needs external service") }`.
+  `if testing.Short() { t.Skip("needs external service") }`. Database-backed
+  tests use `go-packages/database/dbtest` and skip without `TEST_DATABASE_URL`;
+  point that variable at a scratch database, the tests truncate tables.
+- **Provider clients** (Resend, Stripe) are tested against `httptest`, never the
+  real API; signatures and retry classification are tested explicitly.
 - **Every bug fix starts with a failing test** that reproduces it.
 - **Names state behavior**: `TestMatch_LongestPrefixWins`.
 - No coverage threshold: a test must protect a behavior someone relies on.

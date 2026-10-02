@@ -9,3 +9,8 @@ data:
   RATE_LIMIT_RPS: "50"
   RATE_LIMIT_BURST: "100"
   GATEWAY_SHUTDOWN_TIMEOUT: "10s"
+  # SaaS surface (go-packages). It stays off until DATABASE_URL is provided through the
+  # gateway-secrets Secret; these are the non-secret settings it needs once on.
+  APP_URL: "https://example.com"
+  COMPANY_NAME: "Ignition"
+  MAIL_FROM: "Ignition <hello@example.com>"

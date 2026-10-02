@@ -19,9 +19,13 @@ agents read them by path. Open the matching rule **before** the work it covers.
 
 - Every change: simplest thing that works, reuse before writing, SOLID, leave
   touched legacy better → `.claude/rules/engineering-principles.md`
-- Go code under `apps/` — layout, transport, errors, config, logging →
+- Go code under `apps/` and `go-packages/` — layout, transport, errors, config,
+  logging, library modules →
   `.claude/rules/go-service-architecture.md`
 - Go tests → `.claude/rules/go-testing.md`
+- Auth, workspaces/RBAC, feature gating, billing, database, email (the SaaS
+  packages), the email template export →
+  `.claude/rules/saas-packages.md`
 - Frontend layout, feature folders, imports, shared UI →
   `.claude/rules/frontend-architecture.md`
 - Editing a `.proto`, `buf*.yaml` or generated code →
@@ -57,6 +61,22 @@ lessons into the memory wiki.
 Subagents (`.claude/agents/`, Claude Code only): `software-architect` reviews a
 design against `system-design.md` and `code-organization.md`; `librarian` runs
 the memory-wiki ingest.
+
+## SaaS building blocks
+
+Reuse these instead of writing a second version (details and extension points in
+`.claude/rules/saas-packages.md`):
+
+- `go-packages/database` — Postgres (drops) and ordered migrations.
+- `go-packages/identity` — sign-up/login/refresh, workspaces, RBAC, invitations.
+- `go-packages/features` — feature catalog, plans, flags and metered limits.
+- `go-packages/billing` — subscription billing, Stripe webhooks, idempotent events.
+- `go-packages/mailer` + `packages/mailer` — react.email templates, exported to
+  static HTML for the Go mailer, sent through Resend.
+
+They are wired in `apps/gateway` (`internal/adapter/saas`) and enabled by
+`DATABASE_URL`. After editing an email template run
+`pnpm --filter @ignition/mailer export` and commit the output.
 
 ## Memory wiki
 
