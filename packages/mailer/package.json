@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"type": "module",
-	"description": "Transactional email: react.email templates, exported to static HTML for the Go mailer, plus a Resend sender for Node apps.",
+	"description": "Transactional email templates (react.email), exported to static HTML. Email is only ever sent from Go (go-packages/mailer).",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
 	"exports": {
@@ -20,8 +20,7 @@
 	},
 	"dependencies": {
 		"@react-email/render": "^2.1.0",
-		"react": "^19.3.0",
-		"resend": "^6.30.0"
+		"react": "^19.3.0"
 	},
 	"devDependencies": {
 		"@types/node": "^26.6.3",

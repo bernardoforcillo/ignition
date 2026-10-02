@@ -1,7 +1,8 @@
 # @ignition/mailer
 
-react.email templates for the product's transactional email, plus a Resend sender
-for Node apps.
+react.email templates for the product's transactional email. **This package
+never sends anything**: it is a design-time tool whose output is committed HTML,
+and email is sent only from Go (`go-packages/mailer`).
 
 ```sh
 pnpm --filter @ignition/mailer dev           # preview at http://localhost:3030
@@ -15,6 +16,5 @@ pnpm --filter @ignition/mailer check:export  # fail if the committed export is s
   `brand.ts` the footer copy to replace, `static/` the images (served at
   `<origin>/static/...`; the preview server serves them itself).
 - `src/templates.ts` — the registry: component, subject and variables per email.
-- `src/send.ts` — `createMailer({ apiKey, from }).send("verify-email", { link }, { to })`.
 - `scripts/export.tsx` — renders each template with `{{.Variable}}` placeholders
   for the Go mailer (see `go-packages/mailer/README.md`).

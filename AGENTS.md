@@ -72,7 +72,8 @@ Reuse these instead of writing a second version (details and extension points in
 - `go-packages/features` — feature catalog, plans, flags and metered limits.
 - `go-packages/billing` — subscription billing, Stripe webhooks, idempotent events.
 - `go-packages/mailer` + `packages/mailer` — react.email templates, exported to
-  static HTML for the Go mailer, sent through Resend.
+  static HTML for the Go mailer. **Email is sent only from Go** (Resend client in
+  `go-packages/mailer`); never add an email SDK to a JS package.
 
 They are wired in `apps/gateway` (`internal/adapter/saas`) and enabled by
 `DATABASE_URL`. After editing an email template run

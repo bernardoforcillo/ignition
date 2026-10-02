@@ -75,10 +75,13 @@ Variables are PascalCase in Go (`workspaceName` becomes `WorkspaceName`, `url` b
   network: retry) and `resend.ErrRejected` (validation, auth: do not).
   Pass `SendTemplateOnce` an idempotency key when your caller retries.
 
-## Node apps
+## Only Go sends
 
-`@ignition/mailer` also exports `createMailer({ apiKey, from })`, which renders
-the same templates and sends through the Resend SDK for Node/Edge code.
+Email leaves the system from this module and nowhere else. `packages/mailer` has
+no sender, no provider SDK and no API key: it only renders templates at build
+time. A TypeScript app that needs an email calls a Go service (an RPC that ends in
+the `Mailer`), so there is one place that holds the provider key, escapes data,
+validates links and retries.
 
 ## Tests
 

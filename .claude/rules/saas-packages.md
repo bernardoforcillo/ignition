@@ -34,7 +34,7 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
 | `go-packages/features` | feature catalog, plans, flags, metered limits (featurelayer), pg stores | features, plans and add-ons in `features/catalog.go` |
 | `go-packages/billing` | provider port, Stripe webhooks, idempotent event handling | a price-to-plan entry in the catalog config; a provider by implementing `billing.Provider` |
 | `go-packages/mailer` | embedded templates, Resend sender, `*Mailer` | a typed `Send...` method per email a service sends |
-| `packages/mailer` | the React/react.email templates, the Node sender | a template in `src/emails/` + an entry in `src/templates.ts` |
+| `packages/mailer` | the React/react.email templates and their export (design-time only, sends nothing) | a template in `src/emails/` + an entry in `src/templates.ts` |
 
 ## Do
 
@@ -65,6 +65,9 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
 
 ## Do NOT
 
+- Don't send email from TypeScript or add a provider SDK (Resend, SendGrid, ...)
+  to any `package.json`: **email is sent only from Go**, through
+  `go-packages/mailer`. A TS app that needs one calls a Go RPC.
 - Don't read env in a library module, or import one `go-packages` module from
   another to share a type (use a port).
 - Don't hand-edit `go-packages/mailer/templates/`; it is generated.
@@ -77,6 +80,8 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
 ```bash
 # generated email output is current (should print nothing)
 pnpm --filter @ignition/mailer check:export 2>&1 | grep -i stale
+# no email SDK or sender in the JS workspaces (should print nothing)
+grep -rEn '"(resend|nodemailer|@sendgrid/mail|postmark)"' --include=package.json apps packages | grep -v node_modules
 # every library module vets and passes its short tests
 for m in go-packages/*/; do (cd "$m" && go vet ./... && go test -short -race ./...); done
 # library modules read no env outside a FromEnv constructor (review each hit)
