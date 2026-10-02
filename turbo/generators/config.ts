@@ -3,6 +3,8 @@ import type { PlopTypes } from "@turbo/gen";
 const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const kebab = (value: string) =>
 	KEBAB_CASE.test(value) || "Use lowercase kebab-case";
+const port = (value: string) =>
+	/^\d{2,5}$/.test(value) || "Enter a port number";
 
 const WEB = "apps/web/src";
 const COMPONENTS = "packages/components/src";
@@ -141,29 +143,96 @@ export default function generator(plop: PlopTypes.NodePlopAPI): void {
 				name: "port",
 				message: "Container port:",
 				default: "8080",
-				validate: (value: string) =>
-					/^\d{2,5}$/.test(value) || "Enter a port number",
+				validate: port,
 			},
 		],
-		actions: ENVIRONMENTS.flatMap(({ env, replicas }) => {
-			const dir = `${K8S}/${env}/ignition-${env}`;
-			const extra = { env, replicas };
-			return [
-				...["deployment", "service", "pdb", "kustomization"].map(
-					(file): PlopTypes.ActionType => ({
-						type: "add",
-						path: `${dir}/{{name}}/${file}.yaml`,
-						templateFile: `templates/deployment/${file}.yaml.hbs`,
-						data: extra,
-					}),
-				),
-				{
-					type: "modify",
-					path: `${dir}/kustomization.yaml`,
-					transform: (contents, data) =>
-						appendLine(`  - ${data.name}`)(contents),
-				} satisfies PlopTypes.ActionType,
+		actions: deploymentActions(),
+	});
+
+	plop.setGenerator("service", {
+		description:
+			"Scaffold a Go service in apps/<name>: main, config, http transport, Dockerfile, go.work entry and manifests",
+		prompts: [
+			{
+				type: "input",
+				name: "name",
+				message: "Service name (kebab-case, e.g. billing-api):",
+				validate: kebab,
+			},
+			{
+				type: "input",
+				name: "port",
+				message: "Listen port:",
+				default: "8080",
+				validate: port,
+			},
+			{
+				type: "confirm",
+				name: "manifests",
+				message: "Also scaffold the Kubernetes manifests in every environment?",
+				default: true,
+			},
+		],
+		actions: (data) => {
+			const dir = "apps/{{name}}";
+			const files: [string, string][] = [
+				["go.mod", "go.mod.hbs"],
+				["main.go", "main.go.hbs"],
+				["Dockerfile", "Dockerfile.hbs"],
+				[".air.toml", "air.toml.hbs"],
+				[".gitignore", "gitignore.hbs"],
+				["README.md", "README.md.hbs"],
+				["internal/config/config.go", "config.go.hbs"],
+				["internal/config/config_test.go", "config_test.go.hbs"],
+				["internal/adapter/httpapi/server.go", "server.go.hbs"],
+				["internal/adapter/httpapi/health.go", "health.go.hbs"],
+				["internal/adapter/httpapi/health_test.go", "health_test.go.hbs"],
 			];
-		}),
+			const actions: PlopTypes.ActionType[] = files.map(
+				([target, template]): PlopTypes.ActionType => ({
+					type: "add",
+					path: `${dir}/${target}`,
+					templateFile: `templates/service/${template}`,
+				}),
+			);
+			actions.push({
+				type: "modify",
+				path: "go.work",
+				// Register the module after the last apps/ entry; idempotent.
+				transform: (contents, answers) => {
+					const line = `\t./apps/${answers.name}\n`;
+					if (contents.includes(line)) return contents;
+					return contents.replace(
+						/(\t\.\/apps\/[^\n]+\n)(?!\t\.\/apps\/)/,
+						`$1${line}`,
+					);
+				},
+			});
+			if (data?.manifests) actions.push(...deploymentActions());
+			return actions;
+		},
+	});
+}
+
+/** The same deployment, service and PDB in every environment, registered in each kustomization. */
+function deploymentActions(): PlopTypes.ActionType[] {
+	return ENVIRONMENTS.flatMap(({ env, replicas }) => {
+		const dir = `${K8S}/${env}/ignition-${env}`;
+		const extra = { env, replicas };
+		return [
+			...["deployment", "service", "pdb", "kustomization"].map(
+				(file): PlopTypes.ActionType => ({
+					type: "add",
+					path: `${dir}/{{name}}/${file}.yaml`,
+					templateFile: `templates/deployment/${file}.yaml.hbs`,
+					data: extra,
+				}),
+			),
+			{
+				type: "modify",
+				path: `${dir}/kustomization.yaml`,
+				transform: (contents, data) => appendLine(`  - ${data.name}`)(contents),
+			} satisfies PlopTypes.ActionType,
+		];
 	});
 }

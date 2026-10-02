@@ -1,0 +1,34 @@
+# {{name}}
+
+A Go service scaffolded by `pnpm gen service`. It follows `.claude/rules/go-service-architecture.md`:
+
+```
+main.go                       composition root: the only file that wires concrete adapters
+internal/config/              environment -> Config, validated at startup (the only os.Getenv)
+internal/adapter/httpapi/     transport: probes, request logging, panic recovery, your routes
+```
+
+Add `internal/core/` (stdlib only, declares the ports it needs) when there is a business
+decision to make, and outbound adapters under `internal/adapter/<x>/` when it talks to a database,
+a queue or another service. Wire them in `main.go`.
+
+## Run
+
+```sh
+cd apps/{{name}} && go run .        # or `air` for hot reload
+curl localhost:{{port}}/healthz
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `LISTEN_ADDR` | `:{{port}}` | Address the server listens on. |
+| `SHUTDOWN_TIMEOUT` | `10s` | Grace period for in-flight requests on shutdown. |
+
+## Build and deploy
+
+```sh
+docker build -f apps/{{name}}/Dockerfile -t {{name}} .   # context is the repo root
+```
+
+Kubernetes manifests live under `infrastructure/kubernetes/<environment>/<namespace>/{{name}}/`.
+Replace the `ghcr.io/OWNER/ignition-{{name}}` image placeholder before deploying.

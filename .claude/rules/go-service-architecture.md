@@ -23,6 +23,9 @@ lets logic be tested with fakes and a transport be added without touching it.
 3. **Wiring everywhere.** Constructors that read env vars or build their own
    dependencies cannot be reused or tested.
 
+Scaffold a new service with `pnpm gen service`: it writes this layout, registers the
+module in `go.work` and (optionally) the Kubernetes manifests in every environment.
+
 ## Layout
 
 ```text

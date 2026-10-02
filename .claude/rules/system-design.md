@@ -35,7 +35,8 @@ Don't add an `apps/<name>` service until there is a **proven, isolated
 bottleneck** or a genuinely separate ownership boundary. The hexagonal layout
 already isolates domains inside one binary; add a core domain or an adapter
 first. See `kubernetes-manifests.md` and `git-flow.md` for what a new deployable
-costs (Dockerfile, manifests in every environment, CI).
+costs (Dockerfile, manifests in every environment, CI); `pnpm gen service` scaffolds the
+repetitive part.
 
 ## Gateway / routing
 

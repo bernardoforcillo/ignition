@@ -96,7 +96,8 @@ may already have recorded lessons. PRDs, specs and plans live in
   `biome check --write --staged`, `commit-msg` runs commitlint.
 - **Scaffold with `pnpm gen`** (Turbo generators in `turbo/generators/`): `feature`
   (web feature, api module, route, nav link), `component` (shared atom or
-  molecule) and `deployment` (the same manifests in every environment). Prefer a
+  molecule), `deployment` (the same manifests in every environment) and `service`
+  (a Go service in `apps/<name>` with its `go.work` entry and, optionally, manifests). Prefer a
   generator to copying a sibling; improve the template when a convention changes.
 - Declare per-package tasks (`build`, `dev`, `lint`, `typecheck`) as scripts so
   Turbo can orchestrate them.
