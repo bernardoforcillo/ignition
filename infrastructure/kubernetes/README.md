@@ -13,8 +13,12 @@ production/ignition-production/
   namespace.yaml  networkpolicy.yaml
   gateway/   deployment.yaml service.yaml configmap.yaml hpa.yaml pdb.yaml
   web/       deployment.yaml service.yaml pdb.yaml
-  ingress/   ingress.yaml
+  ingress/   ingress.yaml   (staging and production only)
 ```
+
+`development` is not exposed publicly (no Ingress): reach it with
+`kubectl port-forward`. `staging` is served at `dev.example.com`, `production`
+at `example.com`.
 
 ## Usage
 
