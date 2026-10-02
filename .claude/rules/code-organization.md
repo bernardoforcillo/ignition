@@ -63,9 +63,10 @@ next step, not yet in place.
 
 - Kebab-case for files and folders: one predictable format everywhere.
 - pnpm gates dependency build scripts (`allowBuilds` in `pnpm-workspace.yaml`)
-  and can refuse too-fresh versions (`minimumReleaseAge`): most compromised
-  packages are caught and yanked within days. Don't lower either to work around
-  a failure without understanding why.
+  and refuse versions younger than 7 days (`minimumReleaseAge: 10080`): most
+  compromised packages are caught and yanked within days. Don't lower either, or
+  add a `minimumReleaseAgeExclude` entry, without understanding why the version
+  is new.
 - **Go and pnpm have different threat models.** Go modules run no install-time
   scripts; their defense is `go.sum` plus the checksum database. What Go lacks
   is vulnerability scanning: run `govulncheck` in the service's lint step.

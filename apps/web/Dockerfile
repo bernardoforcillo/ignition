@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Build from the repo root: docker build -f apps/web/Dockerfile .
 
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /src
 RUN corepack enable
 COPY . .
