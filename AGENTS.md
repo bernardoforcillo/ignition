@@ -39,6 +39,8 @@ agents read them by path. Open the matching rule **before** the work it covers.
 - Branches, commit hygiene, worktrees, agent worktrees →
   `.claude/rules/git-flow.md`
 - Touching the memory wiki → `.claude/rules/memory-wiki.md`
+- Logs, error tracking, analytics events, consent, PostHog (what goes to stdout vs
+  PostHog, privacy, URL scrubbing) → `.claude/rules/observability.md`
 - Adding, moving or removing an agent rule, skill, MCP config or instruction
   file → `.claude/rules/agent-resources-via-symlinks.md`
 
@@ -56,7 +58,7 @@ it through **relative symlinks** (map and checks in the rule above).
 
 Skills (`.claude/skills/<name>/SKILL.md`): `commit` — a Conventional-Commits
 message that passes commitlint; `capture-learnings` — distil a finished plan's
-lessons into the memory wiki.
+lessons into the memory wiki; `add-analytics-event` — a typed, consent-safe PostHog event.
 
 Subagents (`.claude/agents/`, Claude Code only): `software-architect` reviews a
 design against `system-design.md` and `code-organization.md`; `librarian` runs
@@ -71,6 +73,8 @@ Reuse these instead of writing a second version (details and extension points in
 - `go-packages/identity` — sign-up/login/refresh, workspaces, RBAC, invitations.
 - `go-packages/features` — feature catalog, plans, flags and metered limits.
 - `go-packages/billing` — subscription billing, Stripe webhooks, idempotent events.
+- `go-packages/telemetry` — stdout JSON logs (GCP-ready), Error-level reports and
+  business events to PostHog; the browser side is `apps/web/src/lib/analytics`.
 - `go-packages/mailer` + `packages/mailer` — react.email templates, exported to
   static HTML for the Go mailer. **Email is sent only from Go** (Resend client in
   `go-packages/mailer`); never add an email SDK to a JS package.
