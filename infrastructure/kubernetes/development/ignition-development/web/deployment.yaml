@@ -28,6 +28,13 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            # 30 x 5s = 150s to boot before anything gives up on the pod.
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /

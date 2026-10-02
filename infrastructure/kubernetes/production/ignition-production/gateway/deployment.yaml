@@ -7,7 +7,8 @@ metadata:
     app.kubernetes.io/name: gateway
     app.kubernetes.io/part-of: ignition
 spec:
-  replicas: 2
+  # No `replicas`: the HPA in hpa.yaml owns the count; a pinned value here
+  # would fight the autoscaler on every apply.
   selector:
     matchLabels:
       app.kubernetes.io/name: gateway
@@ -41,6 +42,13 @@ spec:
             - secretRef:
                 name: gateway-secrets
                 optional: true
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            # 30 x 5s = 150s to boot before anything gives up on the pod.
+            failureThreshold: 30
           livenessProbe:
             httpGet:
               path: /healthz

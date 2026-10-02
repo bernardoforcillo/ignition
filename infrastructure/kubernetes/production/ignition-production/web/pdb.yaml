@@ -4,7 +4,9 @@ metadata:
   name: web
   namespace: ignition-production
 spec:
-  minAvailable: 1
+  # maxUnavailable (not minAvailable) so a node drain is never blocked when
+  # an environment runs a single replica.
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: web
