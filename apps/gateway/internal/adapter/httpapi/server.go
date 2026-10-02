@@ -30,6 +30,7 @@
 package httpapi
 
 import (
+	"context"
 	stdlog "log"
 	"log/slog"
 	"net/http"
@@ -54,6 +55,10 @@ type ServerConfig struct {
 	RateLimitRPS   float64
 	RateLimitBurst int
 	Logger         *slog.Logger
+
+	// SaaS is the optional accounts/workspaces/features/billing surface;
+	// nil serves the pure proxy (plus Ping) exactly as before.
+	SaaS *SaaS
 }
 
 // NewServer builds the gateway's top-level http.Handler (an
@@ -68,6 +73,9 @@ type ServerConfig struct {
 //   - the generated Connect handler for the gateway's own minimal
 //     control-plane RPC (see internal/gen and
 //     proto/gateway/v1/gateway.proto), mounted via amaro.App.Mount.
+//   - when cfg.SaaS is set: the SaaS Connect services (auth, workspace,
+//     feature, billing) and POST /webhooks/stripe, registered before the
+//     catch-all so they always win over it.
 //   - everything else — the reverse-proxy catch-all, gated by
 //     Amaro's own rate-limit and key-auth middleware, and delegating
 //     the actual routing decision to Router.Match and the actual
@@ -99,10 +107,18 @@ func NewServer(cfg ServerConfig) *amaro.App {
 	app.Use(middleware.Recover(cfg.Logger))
 
 	app.GET("/healthz", healthzHandler)
-	app.GET("/readyz", readyzHandler(cfg.Router))
+	var ready func(context.Context) error
+	if cfg.SaaS != nil {
+		ready = cfg.SaaS.Ready
+	}
+	app.GET("/readyz", readyzHandler(cfg.Router, ready))
 
 	connectPath, connectHandler := gatewayv1connect.NewGatewayServiceHandler(newGatewayService())
 	app.Mount(connectPath, connectHandler)
+
+	if cfg.SaaS != nil {
+		mountSaaS(app, cfg.SaaS)
+	}
 
 	// The reverse-proxy catch-all. Registered the same way
 	// amaro.App.Mount registers a mounted http.Handler internally

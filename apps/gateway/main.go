@@ -16,8 +16,10 @@ import (
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/proxy"
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/saas"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
+	"github.com/bernardoforcillo/ignition/go-packages/database"
 )
 
 func main() {
@@ -49,6 +51,19 @@ func run(logger *slog.Logger) error {
 	// the transport layer as its interface type (core.Forwarder).
 	forwarder := proxy.New()
 
+	// The SaaS surface (accounts, workspaces, features, billing) exists
+	// only when DATABASE_URL is set; otherwise the gateway is the pure
+	// proxy it always was.
+	var saasAPI *httpapi.SaaS
+	if cfg.SaaS != nil {
+		services, err := buildSaaS(context.Background(), *cfg.SaaS, logger)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = services.Close() }()
+		saasAPI = newSaaSAPI(services, cfg.SaaS.AppURL)
+	}
+
 	handler := httpapi.NewServer(httpapi.ServerConfig{
 		Router:         router,
 		Forwarder:      forwarder,
@@ -56,6 +71,7 @@ func run(logger *slog.Logger) error {
 		RateLimitRPS:   cfg.RateLimitRPS,
 		RateLimitBurst: cfg.RateLimitBurst,
 		Logger:         logger,
+		SaaS:           saasAPI,
 	})
 
 	// Connect RPC needs HTTP/2 to stream, and this service has no TLS
@@ -105,4 +121,38 @@ func run(logger *slog.Logger) error {
 	}
 	logger.Info("gateway stopped")
 	return nil
+}
+
+// buildSaaS opens the database and wires the SaaS services over it,
+// running their migrations. The returned services own the database.
+func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger) (*saas.Services, error) {
+	db, err := database.Open(ctx, database.Config{DSN: cfg.DatabaseURL})
+	if err != nil {
+		return nil, err
+	}
+	services, err := saas.Build(ctx, cfg, db, logger)
+	if err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	return services, nil
+}
+
+// newSaaSAPI hands the built services to the transport as the interfaces
+// it declares. Billing is left nil (not a typed-nil interface) when it is
+// not configured, which is how the transport knows to skip its routes.
+func newSaaSAPI(s *saas.Services, appURL string) *httpapi.SaaS {
+	api := &httpapi.SaaS{
+		Auth:       s.Auth,
+		Tokens:     s.Auth,
+		Workspaces: s.Workspaces,
+		Features:   s.Features,
+		AppURL:     appURL,
+		Ready:      s.Ready,
+	}
+	if s.Billing != nil {
+		api.Billing = s.Billing
+		api.BillingWebhook = s.BillingWebhook
+	}
+	return api
 }

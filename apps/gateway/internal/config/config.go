@@ -34,7 +34,57 @@ type Config struct {
 	RateLimitRPS    float64
 	RateLimitBurst  int
 	ShutdownTimeout time.Duration
+
+	// SaaS is nil unless DATABASE_URL is set; nil means the gateway is a
+	// pure proxy (plus the Ping RPC).
+	SaaS *SaaS
 }
+
+// SaaS holds the settings of the optional SaaS surface (accounts,
+// workspaces, features, billing). All fields are plain values: the
+// composition root and internal/adapter/saas turn them into services.
+type SaaS struct {
+	DatabaseURL string
+
+	AuthSecret []byte
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
+
+	AppURL       string
+	AssetBaseURL string
+	CompanyName  string
+	MailFrom     string
+	MailReplyTo  string
+	// ResendAPIKey empty means "log mails instead of sending them".
+	ResendAPIKey string
+
+	// Billing is nil unless STRIPE_WEBHOOK_SECRET is set.
+	Billing *Billing
+}
+
+// Billing holds the Stripe settings; it exists only when the webhook
+// secret is configured.
+type Billing struct {
+	StripeAPIKey        string
+	StripeWebhookSecret string
+	// FreePlan empty means "the feature catalog's free plan"; the saas
+	// adapter fills it in, since config must not know the catalog.
+	FreePlan string
+	Prices   []PriceSpec
+}
+
+// PriceSpec maps one provider price id to a plan or add-on.
+type PriceSpec struct {
+	ProviderPriceID string
+	Kind            string // "plan" or "addon"
+	ID              string
+}
+
+const (
+	minAuthSecretLen  = 32
+	defaultAccessTTL  = 15 * time.Minute
+	defaultRefreshTTL = 720 * time.Hour
+)
 
 // Load builds a Config from environment variables:
 //
@@ -46,6 +96,24 @@ type Config struct {
 //	RATE_LIMIT_RPS            requests/sec per client IP; unset or <=0 disables
 //	RATE_LIMIT_BURST          token bucket burst size, default 20
 //	GATEWAY_SHUTDOWN_TIMEOUT  graceful shutdown timeout, default "10s"
+//
+// The SaaS surface is optional and enabled only when DATABASE_URL is set;
+// with it unset none of the variables below are read.
+//
+//	DATABASE_URL              Postgres DSN; enables the SaaS surface
+//	AUTH_SECRET               required with SaaS: access-token signing key, >= 32 bytes
+//	APP_URL                   required with SaaS: public web app URL (mail links, checkout return URLs)
+//	COMPANY_NAME              required with SaaS: name shown in emails
+//	MAIL_FROM                 required with SaaS: sender, e.g. "Ignition <hello@example.com>"
+//	MAIL_REPLY_TO             optional reply-to address
+//	ASSET_BASE_URL            optional origin serving email images, default APP_URL
+//	RESEND_API_KEY            optional; unset logs mails (recipient+subject) instead of sending
+//	ACCESS_TTL                access-token lifetime, default "15m"
+//	REFRESH_TTL               refresh-token lifetime, default "720h"
+//	STRIPE_WEBHOOK_SECRET     enables billing (POST /webhooks/stripe, BillingService) when set
+//	STRIPE_API_KEY            Stripe key for checkout/portal calls (with billing)
+//	BILLING_PRICES            "price_id=plan:<plan>,price_id=addon:<add-on>,..." price catalog
+//	BILLING_FREE_PLAN         plan a lapsed workspace falls back to, default the features catalog's free plan
 func Load() (Config, error) {
 	cfg := Config{
 		ListenAddr:      getEnv("GATEWAY_LISTEN_ADDR", ":8080"),
@@ -85,7 +153,92 @@ func Load() (Config, error) {
 		cfg.ShutdownTimeout = d
 	}
 
+	saas, err := loadSaaS()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SaaS = saas
+
 	return cfg, nil
+}
+
+// loadSaaS returns nil when DATABASE_URL is unset (SaaS disabled).
+func loadSaaS() (*SaaS, error) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return nil, nil
+	}
+	s := &SaaS{
+		DatabaseURL:  dsn,
+		AuthSecret:   []byte(os.Getenv("AUTH_SECRET")),
+		AccessTTL:    defaultAccessTTL,
+		RefreshTTL:   defaultRefreshTTL,
+		AppURL:       os.Getenv("APP_URL"),
+		AssetBaseURL: os.Getenv("ASSET_BASE_URL"),
+		CompanyName:  os.Getenv("COMPANY_NAME"),
+		MailFrom:     os.Getenv("MAIL_FROM"),
+		MailReplyTo:  os.Getenv("MAIL_REPLY_TO"),
+		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
+	}
+	if len(s.AuthSecret) < minAuthSecretLen {
+		return nil, fmt.Errorf("config: AUTH_SECRET must be at least %d bytes when DATABASE_URL is set", minAuthSecretLen)
+	}
+	for _, r := range []struct{ name, value string }{
+		{"APP_URL", s.AppURL},
+		{"COMPANY_NAME", s.CompanyName},
+		{"MAIL_FROM", s.MailFrom},
+	} {
+		if r.value == "" {
+			return nil, fmt.Errorf("config: %s is required when DATABASE_URL is set", r.name)
+		}
+	}
+	for _, d := range []struct {
+		name string
+		dst  *time.Duration
+	}{{"ACCESS_TTL", &s.AccessTTL}, {"REFRESH_TTL", &s.RefreshTTL}} {
+		v := os.Getenv(d.name)
+		if v == "" {
+			continue
+		}
+		parsed, err := time.ParseDuration(v)
+		if err != nil || parsed <= 0 {
+			return nil, fmt.Errorf("config: invalid %s %q: want a positive duration", d.name, v)
+		}
+		*d.dst = parsed
+	}
+
+	if secret := os.Getenv("STRIPE_WEBHOOK_SECRET"); secret != "" {
+		prices, err := parsePrices(os.Getenv("BILLING_PRICES"))
+		if err != nil {
+			return nil, err
+		}
+		s.Billing = &Billing{
+			StripeAPIKey:        os.Getenv("STRIPE_API_KEY"),
+			StripeWebhookSecret: secret,
+			FreePlan:            os.Getenv("BILLING_FREE_PLAN"),
+			Prices:              prices,
+		}
+	}
+	return s, nil
+}
+
+// parsePrices reads "price_id=plan:pro,price_id=addon:extra".
+func parsePrices(raw string) ([]PriceSpec, error) {
+	var prices []PriceSpec
+	for _, pair := range strings.Split(raw, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		id, target, ok := strings.Cut(pair, "=")
+		kind, name, ok2 := strings.Cut(target, ":")
+		id, kind, name = strings.TrimSpace(id), strings.TrimSpace(kind), strings.TrimSpace(name)
+		if !ok || !ok2 || id == "" || name == "" || (kind != "plan" && kind != "addon") {
+			return nil, fmt.Errorf("config: invalid BILLING_PRICES entry %q, want price_id=plan:<id> or price_id=addon:<id>", pair)
+		}
+		prices = append(prices, PriceSpec{ProviderPriceID: id, Kind: kind, ID: name})
+	}
+	return prices, nil
 }
 
 func parseRoutes() ([]RouteSpec, error) {
