@@ -16,6 +16,8 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
 	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
+
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
 )
 
 // The interfaces below are declared here, by their consumer, and
@@ -29,14 +31,28 @@ type authService interface {
 	Login(ctx context.Context, email, password, clientIP, userAgent string) (auth.Tokens, error)
 	Refresh(ctx context.Context, refreshToken string) (auth.Tokens, error)
 	Logout(ctx context.Context, refreshToken string) error
+	RequestPasswordReset(ctx context.Context, email, clientIP string) error
+	ResetPassword(ctx context.Context, token, newPassword string) error
 }
 
 type workspaceService interface {
+	ListFor(ctx context.Context, userID string) ([]workspace.Membership, error)
 	Create(ctx context.Context, userID, name, slug string) (workspace.Workspace, error)
 	Get(ctx context.Context, userID, workspaceID string) (workspace.Workspace, error)
 	ListMembers(ctx context.Context, userID, workspaceID string) ([]workspace.Member, error)
 	Invite(ctx context.Context, userID, workspaceID, email, roleKey string) (workspace.Invitation, error)
 	AcceptInvite(ctx context.Context, userID, token string) (workspace.Workspace, error)
+}
+
+// memberEmails resolves member addresses for ListMembers.
+type memberEmails interface {
+	Emails(ctx context.Context, userIDs []string) (map[string]string, error)
+}
+
+type accountService interface {
+	Me(ctx context.Context, userID string) (auth.User, error)
+	Export(ctx context.Context, userID string) (data []byte, filename string, err error)
+	Delete(ctx context.Context, userID, password string) error
 }
 
 type workspaceMembership interface {
@@ -55,6 +71,8 @@ type featureChecker interface {
 type checkoutStarter interface {
 	StartCheckout(ctx context.Context, req billing.CheckoutRequest) (string, error)
 	OpenPortal(ctx context.Context, workspaceID, returnURL string) (string, error)
+	Subscription(ctx context.Context, workspaceID string) (core.SubscriptionInfo, error)
+	Prices() []core.PriceInfo
 }
 
 // SaaS is everything the transport needs to serve the SaaS surface. The
@@ -63,9 +81,11 @@ type checkoutStarter interface {
 type SaaS struct {
 	Auth       authService
 	Tokens     tokenVerifier
+	Account    accountService
 	Workspaces interface {
 		workspaceService
 		workspaceAuthorizer
+		memberEmails
 	}
 	Features featureChecker
 
@@ -75,7 +95,7 @@ type SaaS struct {
 	BillingWebhook http.Handler
 
 	// Clients resolves the real client address behind trusted reverse proxies (the per-IP
-	// rate-limit budgets of sign-up and login key on it). Nil trusts no proxy: the TCP peer is used.
+	// rate-limit budgets of sign-up, login and password reset key on it). Nil trusts no proxy: the TCP peer is used.
 	Clients *ClientIPResolver
 
 	// AppURL is the public web app origin; checkout and portal return
@@ -100,7 +120,10 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth, clients: s.Clients}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
-		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces}, opts)
+		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces, emails: s.Workspaces}, opts)
+	})
+	mustMount(app, func() (string, http.Handler) {
+		return saasv1connect.NewAccountServiceHandler(&accountHandler{account: s.Account}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
 		return saasv1connect.NewFeatureServiceHandler(&featureHandler{features: s.Features, members: s.Workspaces}, opts)

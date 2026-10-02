@@ -80,4 +80,29 @@ func (h *authHandler) Logout(ctx context.Context, req *connect.Request[saasv1.Lo
 	return connect.NewResponse(&saasv1.LogoutResponse{}), nil
 }
 
+// RequestPasswordReset answers with the same empty success whether or not the address has an
+// account; only the per-IP rate limit can make it fail, and that depends on the caller alone.
+func (h *authHandler) RequestPasswordReset(ctx context.Context, req *connect.Request[saasv1.RequestPasswordResetRequest]) (*connect.Response[saasv1.RequestPasswordResetResponse], error) {
+	if req.Msg.GetEmail() == "" {
+		return nil, requiredField("email")
+	}
+	if err := h.auth.RequestPasswordReset(ctx, req.Msg.GetEmail(), h.clients.Resolve(req.Peer().Addr, req.Header())); err != nil {
+		return nil, toConnectError(ctx, err)
+	}
+	return connect.NewResponse(&saasv1.RequestPasswordResetResponse{}), nil
+}
+
+func (h *authHandler) ResetPassword(ctx context.Context, req *connect.Request[saasv1.ResetPasswordRequest]) (*connect.Response[saasv1.ResetPasswordResponse], error) {
+	if req.Msg.GetToken() == "" {
+		return nil, requiredField("token")
+	}
+	if req.Msg.GetNewPassword() == "" {
+		return nil, requiredField("new_password")
+	}
+	if err := h.auth.ResetPassword(ctx, req.Msg.GetToken(), req.Msg.GetNewPassword()); err != nil {
+		return nil, toConnectError(ctx, err)
+	}
+	return connect.NewResponse(&saasv1.ResetPasswordResponse{}), nil
+}
+
 func userMessage(u auth.User) *saasv1.User { return &saasv1.User{Id: u.ID, Email: u.Email} }

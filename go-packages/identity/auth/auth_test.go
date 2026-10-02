@@ -22,6 +22,7 @@ const (
 type fakeMailer struct {
 	verifications []mail
 	existing      []string
+	resets        []mail
 	err           error
 }
 
@@ -35,6 +36,24 @@ func (m *fakeMailer) SendVerification(_ context.Context, to, link string) error 
 func (m *fakeMailer) SendAccountExists(_ context.Context, to string) error {
 	m.existing = append(m.existing, to)
 	return nil
+}
+
+func (m *fakeMailer) SendPasswordReset(_ context.Context, to, link string) error {
+	m.resets = append(m.resets, mail{to, link})
+	return m.err
+}
+
+// resetToken pulls the token out of the last reset link.
+func (m *fakeMailer) resetToken(t *testing.T) string {
+	t.Helper()
+	if len(m.resets) == 0 {
+		t.Fatal("no password reset email was sent")
+	}
+	u, err := url.Parse(m.resets[len(m.resets)-1].link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u.Query().Get("token")
 }
 
 // token pulls the token query parameter out of the last verification link.
@@ -78,6 +97,7 @@ func newTestService(t *testing.T, rl RateLimiter) (*Service, *fakeMailer, *clock
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.spawn = func(f func()) { f() } // deterministic: the detached send runs inline
 	return s, m, c
 }
 

@@ -63,6 +63,10 @@ type SaaS struct {
 	// ResendAPIKey empty means "log mails instead of sending them".
 	ResendAPIKey string
 
+	// ResendBaseURL overrides Resend's API origin. Test-only (end-to-end tests point it at a
+	// fake that captures the emails); empty means the real API.
+	ResendBaseURL string
+
 	// Billing is nil unless STRIPE_WEBHOOK_SECRET is set.
 	Billing *Billing
 }
@@ -76,6 +80,8 @@ type Billing struct {
 	// adapter fills it in, since config must not know the catalog.
 	FreePlan string
 	Prices   []PriceSpec
+	// StripeAPIBaseURL overrides Stripe's API origin. Test-only, like SaaS.ResendBaseURL.
+	StripeAPIBaseURL string
 }
 
 // PriceSpec maps one provider price id to a plan or add-on.
@@ -115,12 +121,16 @@ const (
 //	MAIL_REPLY_TO             optional reply-to address
 //	ASSET_BASE_URL            optional origin serving email images, default APP_URL
 //	RESEND_API_KEY            optional; unset logs mails (recipient+subject) instead of sending
+//	RESEND_BASE_URL           TEST ONLY: Resend API origin, so an end-to-end test can capture mails;
+//	                          leave unset in every real deployment
 //	ACCESS_TTL                access-token lifetime, default "15m"
 //	REFRESH_TTL               refresh-token lifetime, default "720h"
 //	STRIPE_WEBHOOK_SECRET     enables billing (POST /webhooks/stripe, BillingService) when set
 //	STRIPE_API_KEY            Stripe key for checkout/portal calls (with billing)
 //	BILLING_PRICES            "price_id=plan:<plan>,price_id=addon:<add-on>,..." price catalog
 //	BILLING_FREE_PLAN         plan a lapsed workspace falls back to, default the features catalog's free plan
+//	STRIPE_API_BASE_URL       TEST ONLY: Stripe API origin for an end-to-end fake; leave unset in
+//	                          every real deployment
 func Load() (Config, error) {
 	cfg := Config{
 		ListenAddr:      getEnv("GATEWAY_LISTEN_ADDR", ":8080"),
@@ -214,6 +224,8 @@ func loadSaaS() (*SaaS, error) {
 		MailFrom:     os.Getenv("MAIL_FROM"),
 		MailReplyTo:  os.Getenv("MAIL_REPLY_TO"),
 		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
+
+		ResendBaseURL: os.Getenv("RESEND_BASE_URL"),
 	}
 	if len(s.AuthSecret) < minAuthSecretLen {
 		return nil, fmt.Errorf("config: AUTH_SECRET must be at least %d bytes when DATABASE_URL is set", minAuthSecretLen)
@@ -252,6 +264,7 @@ func loadSaaS() (*SaaS, error) {
 			StripeWebhookSecret: secret,
 			FreePlan:            os.Getenv("BILLING_FREE_PLAN"),
 			Prices:              prices,
+			StripeAPIBaseURL:    os.Getenv("STRIPE_API_BASE_URL"),
 		}
 	}
 	return s, nil

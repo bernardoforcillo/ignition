@@ -20,6 +20,7 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
 )
 
 // fakeSubs is an in-memory subscriptionStore.
@@ -90,7 +91,7 @@ func TestSubscriptionSink_KeepsExistingGrants(t *testing.T) {
 	subs := newFakeSubs()
 	grant := entitlement.Override("data.export", nil, "support override")
 	subs.byTenant["ws-1"] = entitlement.Subscription{TenantID: "ws-1", Plan: "free", Grants: []entitlement.Grant{grant}}
-	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers(), states: newFakeStates()}
 
 	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro", Status: billing.StatusActive}); err != nil {
 		t.Fatal(err)
@@ -103,7 +104,7 @@ func TestSubscriptionSink_KeepsExistingGrants(t *testing.T) {
 
 func TestSubscriptionSink_FirstSubscriptionForAWorkspace(t *testing.T) {
 	subs := newFakeSubs()
-	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers(), states: newFakeStates()}
 	if err := sink.SetSubscription(t.Context(), "ws-new", billing.Subscription{PlanID: "pro"}); err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestSubscriptionSink_FirstSubscriptionForAWorkspace(t *testing.T) {
 func TestSubscriptionSink_StoreFailureIsReturnedSoTheProviderRetries(t *testing.T) {
 	subs := newFakeSubs()
 	subs.setErr = errors.New("db down")
-	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers(), states: newFakeStates()}
 	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro"}); err == nil {
 		t.Fatal("a failed write must surface")
 	}
@@ -285,7 +286,7 @@ func TestSubscriptionSink_RemembersTheCustomerForThePortal(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			customers := newFakeCustomers()
-			sink := &subscriptionSink{store: newFakeSubs(), customers: customers}
+			sink := &subscriptionSink{store: newFakeSubs(), customers: customers, states: newFakeStates()}
 
 			if err := sink.SetSubscription(t.Context(), "ws-1", tc.in); err != nil {
 				t.Fatal(err)
@@ -302,7 +303,7 @@ func TestSubscriptionSink_CustomerWriteFailureSurfacesAndSkipsTheSubscription(t 
 	subs := newFakeSubs()
 	customers := newFakeCustomers()
 	customers.setErr = errors.New("db down")
-	sink := &subscriptionSink{store: subs, customers: customers}
+	sink := &subscriptionSink{store: subs, customers: customers, states: newFakeStates()}
 
 	err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{CustomerID: "cus_1", PlanID: "pro"})
 
@@ -315,3 +316,104 @@ func TestSubscriptionSink_CustomerWriteFailureSurfacesAndSkipsTheSubscription(t 
 }
 
 func discard() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
+
+type fakeStates struct {
+	status map[string]billing.Status
+	end    map[string]time.Time
+	err    error
+}
+
+func newFakeStates() *fakeStates {
+	return &fakeStates{status: map[string]billing.Status{}, end: map[string]time.Time{}}
+}
+
+func (f *fakeStates) set(_ context.Context, ws string, st billing.Status, end time.Time) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.status[ws], f.end[ws] = st, end
+	return nil
+}
+
+func (f *fakeStates) state(_ context.Context, ws string) (string, time.Time, bool, error) {
+	st, ok := f.status[ws]
+	return string(st), f.end[ws], ok, f.err
+}
+
+func TestSubscriptionSink_RecordsStatusAndPeriodEndForGetSubscription(t *testing.T) {
+	states := newFakeStates()
+	end := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	sink := &subscriptionSink{store: newFakeSubs(), customers: newFakeCustomers(), states: states}
+
+	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro", Status: billing.StatusPastDue, PeriodEnd: end}); err != nil {
+		t.Fatal(err)
+	}
+	if states.status["ws-1"] != billing.StatusPastDue || !states.end["ws-1"].Equal(end) {
+		t.Fatalf("recorded %v / %v, want past_due / %v", states.status["ws-1"], states.end["ws-1"], end)
+	}
+}
+
+func TestSubscriptionSink_StateWriteFailureSurfacesSoTheProviderRetries(t *testing.T) {
+	states := newFakeStates()
+	states.err = errors.New("db down")
+	sink := &subscriptionSink{store: newFakeSubs(), customers: newFakeCustomers(), states: states}
+	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro"}); err == nil {
+		t.Fatal("a failed state write must surface")
+	}
+}
+
+// fakeBillingState is the read side Checkout.Subscription uses.
+type fakeBillingState struct {
+	*fakeStates
+	customers map[string]bool
+}
+
+func (f fakeBillingState) has(_ context.Context, ws string) (bool, error) {
+	return f.customers[ws], nil
+}
+
+func TestCheckout_SubscriptionCombinesEntitlementAndBillingState(t *testing.T) {
+	subs := newFakeSubs()
+	subs.byTenant["ws-paid"] = entitlement.Subscription{TenantID: "ws-paid", Plan: "pro", AddOns: []entitlement.AddOnID{"extra-api-calls"}}
+	subs.byTenant["ws-free"] = entitlement.Subscription{TenantID: "ws-free", Plan: "free"}
+	states := newFakeStates()
+	end := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	states.status["ws-paid"], states.end["ws-paid"] = billing.StatusActive, end
+	c := &Checkout{subs: subs, freePlan: "free", state: fakeBillingState{states, map[string]bool{"ws-paid": true}}}
+
+	tests := []struct {
+		name string
+		ws   string
+		want core.SubscriptionInfo
+	}{
+		{"paying workspace", "ws-paid", core.SubscriptionInfo{PlanID: "pro", AddOnIDs: []string{"extra-api-calls"}, Status: "active", CurrentPeriodEnd: end, HasCustomer: true}},
+		{"free workspace that never paid has no status", "ws-free", core.SubscriptionInfo{PlanID: "free"}},
+		{"workspace without a subscription row is on the free plan", "ws-none", core.SubscriptionInfo{PlanID: "free"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := c.Subscription(t.Context(), tc.ws)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.PlanID != tc.want.PlanID || got.Status != tc.want.Status || !got.CurrentPeriodEnd.Equal(tc.want.CurrentPeriodEnd) ||
+				got.HasCustomer != tc.want.HasCustomer || strings.Join(got.AddOnIDs, ",") != strings.Join(tc.want.AddOnIDs, ",") {
+				t.Fatalf("got %+v, want %+v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestCheckout_SubscriptionStoreFailureIsReturned(t *testing.T) {
+	subs := newFakeSubs()
+	c := &Checkout{subs: failingSubs{subs}, freePlan: "free", state: fakeBillingState{newFakeStates(), nil}}
+	if _, err := c.Subscription(t.Context(), "ws-1"); err == nil {
+		t.Fatal("a store failure must not read as the free plan")
+	}
+}
+
+type failingSubs struct{ *fakeSubs }
+
+func (failingSubs) Subscription(context.Context, string) (*entitlement.Subscription, error) {
+	return nil, errors.New("db down")
+}

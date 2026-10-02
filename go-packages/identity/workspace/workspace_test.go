@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -164,7 +165,7 @@ func TestInviteAccept_MemberJoinsWithInvitedRole(t *testing.T) {
 	if got := m.sent[0]; got.to != "bob@example.com" || got.workspace != "Acme" {
 		t.Fatalf("mail = %+v", got)
 	}
-	if got := m.sent[0].link; len(got) < 36 || got[:36] != "https://app.test/accept-invite?token" {
+	if got := m.sent[0].link; !strings.HasPrefix(got, "https://app.test/invite/accept?token=") {
 		t.Fatalf("link = %q", got)
 	}
 
@@ -399,3 +400,33 @@ func TestRemoveMember_RevokesAccess(t *testing.T) {
 }
 
 func act(a string) aa.Action { return aa.Action(a) }
+
+func TestListFor_ReturnsEveryMembershipWithTheCallersRole(t *testing.T) {
+	ctx := context.Background()
+	s, m := newTestService(t)
+	mine, _ := s.Create(ctx, "ada", "Mine", "")
+	theirs, _ := s.Create(ctx, "bob", "Theirs", "")
+	other, _ := s.Create(ctx, "bob", "Not Ada's", "")
+	inviteAndAccept(t, s, m, "bob", theirs.ID, "ada", "member")
+
+	got, err := s.ListFor(ctx, "ada")
+	if err != nil {
+		t.Fatal(err)
+	}
+	roles := map[string]string{}
+	for _, mem := range got {
+		roles[mem.Workspace.ID] = mem.RoleKey
+	}
+	want := map[string]string{mine.ID: "owner", theirs.ID: "member"}
+	if len(roles) != 2 || roles[mine.ID] != want[mine.ID] || roles[theirs.ID] != want[theirs.ID] {
+		t.Fatalf("memberships = %v, want %v (and not %s)", roles, want, other.ID)
+	}
+}
+
+func TestListFor_UserWithoutWorkspacesGetsAnEmptyList(t *testing.T) {
+	s, _ := newTestService(t)
+	got, err := s.ListFor(context.Background(), "nobody")
+	if err != nil || len(got) != 0 {
+		t.Fatalf("got %v, %v; want empty", got, err)
+	}
+}

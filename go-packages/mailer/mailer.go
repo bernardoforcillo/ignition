@@ -4,7 +4,8 @@
 // that this package embeds, so Go services render and send email without a Node runtime. Delivery
 // goes through a Sender; the Resend implementation lives in the resend subpackage.
 //
-// *Mailer satisfies the Mailer ports of go-packages/identity (auth and workspace) structurally.
+// *Mailer satisfies the Mailer ports of go-packages/identity (auth: verification, account-exists,
+// password reset; workspace: invitation) structurally.
 package mailer
 
 import (
@@ -140,6 +141,11 @@ func (m *Mailer) SendVerification(ctx context.Context, to, link string) error {
 // SendAccountExists tells the real holder of an address that someone tried to sign up with it.
 func (m *Mailer) SendAccountExists(ctx context.Context, to string) error {
 	return m.SendTemplate(ctx, "account-exists", to, map[string]string{"Url": m.cfg.AppURL + "/login"})
+}
+
+// SendPasswordReset delivers the single-use link that sets a new password.
+func (m *Mailer) SendPasswordReset(ctx context.Context, to, link string) error {
+	return m.SendTemplate(ctx, "password-reset", to, map[string]string{"Url": link})
 }
 
 // SendInvitation delivers the accept link for an invitation to a workspace.

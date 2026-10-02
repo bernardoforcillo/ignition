@@ -13,6 +13,7 @@ var saasEnvKeys = []string{
 	"DATABASE_URL", "AUTH_SECRET", "APP_URL", "COMPANY_NAME", "MAIL_FROM", "MAIL_REPLY_TO",
 	"ASSET_BASE_URL", "RESEND_API_KEY", "ACCESS_TTL", "REFRESH_TTL",
 	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN", "TRUSTED_PROXIES",
+	"RESEND_BASE_URL", "STRIPE_API_BASE_URL",
 }
 
 // legacyEnv sets the minimum the proxy needs and clears every SaaS variable.
@@ -135,6 +136,28 @@ func TestLoad_BillingEnabledOnlyWithWebhookSecret(t *testing.T) {
 	b := cfg.SaaS.Billing
 	if b == nil || b.StripeAPIKey != "sk_test" || b.StripeWebhookSecret != "whsec_1" || b.FreePlan != "" {
 		t.Fatalf("Billing = %+v", b)
+	}
+}
+
+func TestLoad_TestOnlyProviderBaseURLs(t *testing.T) {
+	saasEnv(t)
+	t.Setenv("STRIPE_WEBHOOK_SECRET", "whsec_1")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SaaS.ResendBaseURL != "" || cfg.SaaS.Billing.StripeAPIBaseURL != "" {
+		t.Fatalf("base URLs must default to empty (the real APIs): %+v", cfg.SaaS)
+	}
+
+	t.Setenv("RESEND_BASE_URL", "http://127.0.0.1:9001")
+	t.Setenv("STRIPE_API_BASE_URL", "http://127.0.0.1:9002")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SaaS.ResendBaseURL != "http://127.0.0.1:9001" || cfg.SaaS.Billing.StripeAPIBaseURL != "http://127.0.0.1:9002" {
+		t.Fatalf("base URLs = %q / %q", cfg.SaaS.ResendBaseURL, cfg.SaaS.Billing.StripeAPIBaseURL)
 	}
 }
 

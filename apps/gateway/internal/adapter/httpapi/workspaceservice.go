@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"log/slog"
 
 	"connectrpc.com/connect"
 
@@ -14,7 +15,26 @@ import (
 // workspace service itself enforces membership and the role permissions
 // (invite needs the invite permission); this handler authenticates via
 // the interceptor's subject and delegates.
-type workspaceHandler struct{ workspaces workspaceService }
+type workspaceHandler struct {
+	workspaces workspaceService
+	emails     memberEmails
+}
+
+func (h *workspaceHandler) ListWorkspaces(ctx context.Context, _ *connect.Request[saasv1.ListWorkspacesRequest]) (*connect.Response[saasv1.ListWorkspacesResponse], error) {
+	user, err := subjectOrErr(ctx)
+	if err != nil {
+		return nil, err
+	}
+	memberships, err := h.workspaces.ListFor(ctx, user)
+	if err != nil {
+		return nil, toConnectError(ctx, err)
+	}
+	out := make([]*saasv1.WorkspaceMembership, len(memberships))
+	for i, m := range memberships {
+		out[i] = &saasv1.WorkspaceMembership{Workspace: workspaceMessage(m.Workspace), RoleKey: m.RoleKey}
+	}
+	return connect.NewResponse(&saasv1.ListWorkspacesResponse{Workspaces: out}), nil
+}
 
 func (h *workspaceHandler) CreateWorkspace(ctx context.Context, req *connect.Request[saasv1.CreateWorkspaceRequest]) (*connect.Response[saasv1.CreateWorkspaceResponse], error) {
 	user, err := subjectOrErr(ctx)
@@ -58,11 +78,27 @@ func (h *workspaceHandler) ListMembers(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, toConnectError(ctx, err)
 	}
+	emails := h.memberEmails(ctx, members)
 	out := make([]*saasv1.Member, len(members))
 	for i, m := range members {
-		out[i] = &saasv1.Member{UserId: m.UserID, RoleKey: m.RoleKey}
+		out[i] = &saasv1.Member{UserId: m.UserID, RoleKey: m.RoleKey, Email: emails[m.UserID]}
 	}
 	return connect.NewResponse(&saasv1.ListMembersResponse{Members: out}), nil
+}
+
+// memberEmails resolves the members' addresses. They are a convenience for the member list, so a
+// lookup failure is logged and the addresses are left empty rather than failing the call.
+func (h *workspaceHandler) memberEmails(ctx context.Context, members []workspace.Member) map[string]string {
+	ids := make([]string, len(members))
+	for i, m := range members {
+		ids[i] = m.UserID
+	}
+	emails, err := h.emails.Emails(ctx, ids)
+	if err != nil {
+		slog.WarnContext(ctx, "resolving member emails failed; returning none", "error", err)
+		return nil
+	}
+	return emails
 }
 
 func (h *workspaceHandler) InviteMember(ctx context.Context, req *connect.Request[saasv1.InviteMemberRequest]) (*connect.Response[saasv1.InviteMemberResponse], error) {

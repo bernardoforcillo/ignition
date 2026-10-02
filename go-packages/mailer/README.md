@@ -29,12 +29,12 @@ m, err := mailer.New(sender, mailer.Config{
 	AssetBaseURL: "https://app.example.com", // serves <origin>/static/... (defaults to AppURL)
 }, slog.Default())
 
-err = m.SendVerification(ctx, "ada@example.com", "https://app.example.com/verify?token=...")
+err = m.SendVerification(ctx, "ada@example.com", "https://app.example.com/verify-email?token=...")
 err = m.SendTemplate(ctx, "welcome", "ada@example.com", map[string]string{"Url": "https://app.example.com"})
 ```
 
 `*mailer.Mailer` satisfies the `Mailer` ports of `go-packages/identity`
-(`SendVerification`, `SendAccountExists`, `SendInvitation`) directly: pass it to
+(`SendVerification`, `SendAccountExists`, `SendPasswordReset`, `SendInvitation`) directly: pass it to
 `auth.NewService` and `workspace.NewService`.
 
 Local development without a key: `mailer.NewLogSender(logger)` logs the
@@ -47,7 +47,7 @@ The ten templates come from the react.email
 (`activation`, `welcome`, `password-reset`, `subscription-confirmation`,
 `subscription-update`, `feature-announcement`, `product-update`, `text-only`)
 plus two in the same style: `account-exists` and `workspace-invitation`.
-`SendVerification` uses `activation`.
+`SendVerification` uses `activation`, `SendPasswordReset` uses `password-reset`.
 
 `CompanyName` and `AssetBaseUrl` are filled in by the `Mailer` from its `Config`
 and cannot be overridden by a caller. Everything else is passed in the data map

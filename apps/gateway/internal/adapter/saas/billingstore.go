@@ -2,7 +2,10 @@ package saas
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bernardoforcillo/drops/pg"
 
@@ -75,4 +78,53 @@ func (s *customerStore) customer(ctx context.Context, workspaceID string) (strin
 		return "", fmt.Errorf("scanning billing customer: %w", err)
 	}
 	return id, nil
+}
+
+// stateStore keeps the provider's last word on a workspace's subscription (status, period end).
+type stateStore struct{ db *pg.DB }
+
+// stateSetter is the write side the subscription sink needs.
+type stateSetter interface {
+	set(ctx context.Context, workspaceID string, status billing.Status, periodEnd time.Time) error
+}
+
+func (s *stateStore) set(ctx context.Context, workspaceID string, status billing.Status, periodEnd time.Time) error {
+	var end any // NULL when billing did not report a period
+	if !periodEnd.IsZero() {
+		end = periodEnd.UTC()
+	}
+	if _, err := s.db.Exec(ctx, `
+		INSERT INTO billing_subscriptions (workspace_id, status, current_period_end) VALUES ($1, $2, $3)
+		ON CONFLICT (workspace_id) DO UPDATE
+		SET status = EXCLUDED.status, current_period_end = EXCLUDED.current_period_end, updated_at = now()`,
+		workspaceID, string(status), end); err != nil {
+		return fmt.Errorf("recording billing state: %w", err)
+	}
+	return nil
+}
+
+// state returns the recorded status and period end; ok is false when billing never reported one.
+func (s *stateStore) state(ctx context.Context, workspaceID string) (status string, periodEnd time.Time, ok bool, err error) {
+	rows, err := s.db.Query(ctx, `SELECT status, current_period_end FROM billing_subscriptions WHERE workspace_id = $1`, workspaceID)
+	if err != nil {
+		return "", time.Time{}, false, fmt.Errorf("reading billing state: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	if !rows.Next() {
+		return "", time.Time{}, false, rows.Err()
+	}
+	var end sql.NullTime
+	if err := rows.Scan(&status, &end); err != nil {
+		return "", time.Time{}, false, fmt.Errorf("scanning billing state: %w", err)
+	}
+	return status, end.Time, true, nil
+}
+
+// hasCustomer reports whether the workspace has a provider customer.
+func (s *customerStore) has(ctx context.Context, workspaceID string) (bool, error) {
+	_, err := s.customer(ctx, workspaceID)
+	if errors.Is(err, core.ErrNoBillingCustomer) {
+		return false, nil
+	}
+	return err == nil, err
 }

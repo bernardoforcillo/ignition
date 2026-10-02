@@ -27,6 +27,15 @@ const (
 	loginRateWindow  = 15 * time.Minute
 	signupRateMax    = 10
 	signupRateWindow = time.Hour
+	// Password reset: a per-IP ceiling that is answered with ErrRateLimited, and a per-address
+	// one that is answered like any other request (no mail, same response) so the limit does not
+	// become a probe for which addresses exist, nor a way to flood a victim's inbox.
+	resetIPRateMax       = 10
+	resetIPRateWindow    = time.Hour
+	resetEmailRateMax    = 3
+	resetEmailRateWindow = time.Hour
+	// resetSendTimeout bounds the detached mail send of a reset request.
+	resetSendTimeout = 30 * time.Second
 
 	minSecretLen = 32
 	// unknownIP buckets callers whose address could not be resolved; authlayer
@@ -42,6 +51,9 @@ var (
 	ErrWeakPassword       = errors.New("password does not meet requirements")
 	ErrRateLimited        = errors.New("too many attempts; try again later")
 	ErrInvalidConfig      = errors.New("invalid auth config")
+	// ErrAccountNotFound means the account behind an otherwise valid access token is gone
+	// (deleted). A transport answers it like an invalid token.
+	ErrAccountNotFound = errors.New("account not found")
 )
 
 // Mailer delivers the emails authentication needs. Implementations live in the
@@ -52,6 +64,8 @@ type Mailer interface {
 	// SendAccountExists tells the real holder of an address that someone tried
 	// to sign up with it, instead of telling the caller (enumeration safety).
 	SendAccountExists(ctx context.Context, to string) error
+	// SendPasswordReset delivers the single-use link that sets a new password.
+	SendPasswordReset(ctx context.Context, to, link string) error
 }
 
 // RateLimiter reports whether one more request under key is allowed within
@@ -76,6 +90,7 @@ type User struct {
 	ID         string
 	Email      string
 	VerifiedAt *time.Time
+	CreatedAt  time.Time
 }
 
 // Tokens is the result of a sign-in or refresh. RefreshToken is the new
@@ -96,6 +111,8 @@ type Service struct {
 	mailer Mailer
 	rl     RateLimiter
 	base   string
+	// spawn runs the detached mail send of a reset request; a goroutine in production.
+	spawn func(func())
 }
 
 // NewService builds the service over an authlayer store (memory in tests,
@@ -117,11 +134,20 @@ func NewService(store alauth.Store, mailer Mailer, rl RateLimiter, cfg Config, o
 	if cfg.RefreshTTL > 0 {
 		base = append(base, alauth.WithRefreshTTL(cfg.RefreshTTL))
 	}
+	// Account deletion runs the caller's cleanup (workspaces, memberships) inside authlayer's
+	// ordered cascade: after the password re-check, before any row is removed.
+	base = append(base, alauth.WithAccountDeletionHook(func(ctx context.Context, userID string) error {
+		if cleanup, ok := ctx.Value(cleanupKey{}).(func(context.Context, string) error); ok {
+			return cleanup(ctx, userID)
+		}
+		return nil
+	}))
 	return &Service{
 		al:     alauth.New(store, append(base, opts...)...),
 		mailer: mailer,
 		rl:     rl,
 		base:   strings.TrimRight(cfg.BaseURL, "/"),
+		spawn:  func(f func()) { go f() },
 	}, nil
 }
 
@@ -150,6 +176,79 @@ func (s *Service) SignUp(ctx context.Context, email, password, clientIP string) 
 // VerifyEmail redeems the token from a verification email.
 func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 	_, err := s.al.VerifyEmail(ctx, token)
+	return mapError(err)
+}
+
+// RequestPasswordReset mails a single-use reset link when email has an account. It returns nil
+// whether or not the address exists, and whether or not the per-address budget is spent, so the
+// answer reveals nothing; only the per-IP budget is reported (ErrRateLimited). The send is
+// detached from the request so its latency does not depend on the address either, and a send
+// failure is logged, never returned.
+func (s *Service) RequestPasswordReset(ctx context.Context, email, clientIP string) error {
+	ip := orUnknown(clientIP)
+	if !s.allow(ctx, "reset:ip:"+ip, resetIPRateMax, resetIPRateWindow) {
+		return ErrRateLimited
+	}
+	email = alauth.NormalizeEmail(email)
+	if !s.allow(ctx, "reset:email:"+email, resetEmailRateMax, resetEmailRateWindow) {
+		return nil
+	}
+	tok, ok, err := s.al.RequestPasswordReset(ctx, email, ip)
+	if err != nil {
+		return mapError(err)
+	}
+	if !ok {
+		return nil
+	}
+	link := s.link("/reset-password", tok)
+	detached := context.WithoutCancel(ctx)
+	s.spawn(func() {
+		ctx, cancel := context.WithTimeout(detached, resetSendTimeout)
+		defer cancel()
+		if err := s.mailer.SendPasswordReset(ctx, email, link); err != nil {
+			slog.WarnContext(ctx, "password reset email not sent", "error", err)
+		}
+	})
+	return nil
+}
+
+// ResetPassword sets a new password from the emailed token (single use) and revokes every
+// session of the account. A weak password is refused before the token is spent, so the user can
+// retry with the same link.
+func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) error {
+	err := s.al.ResetPassword(ctx, token, newPassword)
+	if errors.Is(err, alauth.ErrUserNotFound) {
+		return ErrTokenInvalid
+	}
+	return mapError(err)
+}
+
+// User returns the account, or ErrAccountNotFound.
+func (s *Service) User(ctx context.Context, userID string) (User, error) {
+	u, err := s.al.User(ctx, userID)
+	if errors.Is(err, alauth.ErrUserNotFound) {
+		return User{}, ErrAccountNotFound
+	}
+	if err != nil {
+		return User{}, err
+	}
+	return User{ID: u.ID, Email: u.Email, VerifiedAt: u.EmailVerifiedAt, CreatedAt: u.CreatedAt}, nil
+}
+
+type cleanupKey struct{}
+
+// DeleteAccount erases the account after re-checking password (ErrInvalidCredentials otherwise).
+// cleanup runs once the password is verified and before any authentication row is removed; an
+// error from it aborts the deletion with the account untouched, so it must be safe to run again.
+// Sessions, verification tokens and the user row then go, in that order.
+func (s *Service) DeleteAccount(ctx context.Context, userID, password string, cleanup func(ctx context.Context, userID string) error) error {
+	if cleanup != nil {
+		ctx = context.WithValue(ctx, cleanupKey{}, cleanup)
+	}
+	err := s.al.DeleteAccount(ctx, userID, "", password)
+	if errors.Is(err, alauth.ErrUserNotFound) {
+		return ErrAccountNotFound
+	}
 	return mapError(err)
 }
 
@@ -230,7 +329,7 @@ func orUnknown(ip string) string {
 
 func tokensOf(res alauth.LoginResult) Tokens {
 	return Tokens{
-		User:         User{ID: res.User.ID, Email: res.User.Email, VerifiedAt: res.User.EmailVerifiedAt},
+		User:         User{ID: res.User.ID, Email: res.User.Email, VerifiedAt: res.User.EmailVerifiedAt, CreatedAt: res.User.CreatedAt},
 		AccessToken:  res.AccessToken,
 		RefreshToken: res.RefreshToken,
 	}

@@ -56,6 +56,30 @@ func TestSendVerification_FillsLinkInHTMLAndText(t *testing.T) {
 	}
 }
 
+func TestSendPasswordReset_FillsLinkInHTMLAndText(t *testing.T) {
+	m, rec := newMailer(t)
+	link := "https://app.example.com/reset-password?token=abc&x=1"
+
+	if err := m.SendPasswordReset(context.Background(), "ada@example.com", link); err != nil {
+		t.Fatal(err)
+	}
+
+	msgs := rec.Messages()
+	if len(msgs) != 1 {
+		t.Fatalf("got %d messages, want 1", len(msgs))
+	}
+	got := msgs[0]
+	if got.Subject != "Reset your password" || got.To[0] != "ada@example.com" {
+		t.Errorf("subject/to = %q / %v", got.Subject, got.To)
+	}
+	if !strings.Contains(got.HTML, `href="https://app.example.com/reset-password?token=abc&amp;x=1"`) {
+		t.Errorf("html does not carry the escaped link")
+	}
+	if !strings.Contains(got.Text, link) {
+		t.Errorf("text does not carry the raw link")
+	}
+}
+
 func TestSendInvitation_EscapesWorkspaceNameInHTML(t *testing.T) {
 	m, rec := newMailer(t)
 

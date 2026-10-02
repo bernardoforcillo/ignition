@@ -9,10 +9,12 @@
 package workspace
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/bernardoforcillo/authlayer/access"
@@ -55,6 +57,7 @@ type Mailer interface {
 
 // Service is the workspace domain.
 type Service struct {
+	store  Store
 	sc     *org.Service
 	inv    *invite.Service[org.Organization, org.Member, *org.Organization, *org.Member]
 	mailer Mailer
@@ -67,6 +70,7 @@ type Service struct {
 func NewService(ac *access.Access, store Store, inviteStore InviteStore, mailer Mailer, baseURL string, inviteOpts ...invite.Option) *Service {
 	sc := org.New(ac, store)
 	return &Service{
+		store:  store,
 		sc:     sc,
 		inv:    invite.New(sc.Service, inviteStore, inviteOpts...),
 		mailer: mailer,
@@ -94,6 +98,37 @@ func (s *Service) Create(ctx context.Context, userID, name, slug string) (Worksp
 	}
 	ws, err := s.sc.CreateOrganization(scope.WithSubject(ctx, userID), name, slug)
 	return ws, mapError(err)
+}
+
+// Membership is one workspace the user belongs to and the role held there.
+type Membership struct {
+	Workspace Workspace
+	RoleKey   string
+}
+
+// ListFor returns every workspace userID belongs to, with their role in each, oldest first. It
+// is the user's own view: callers pass the authenticated subject, never a client-supplied id.
+func (s *Service) ListFor(ctx context.Context, userID string) ([]Membership, error) {
+	wss, err := s.store.ListUserContainers(ctx, userID)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	standings, err := s.store.ListUserStandings(ctx, userID)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	role := make(map[string]string, len(standings))
+	for _, st := range standings {
+		role[st.ContainerID] = st.RoleKey
+	}
+	slices.SortFunc(wss, func(a, b Workspace) int {
+		return cmp.Or(a.CreatedAt.Compare(b.CreatedAt), cmp.Compare(a.ID, b.ID))
+	})
+	out := make([]Membership, len(wss))
+	for i, ws := range wss {
+		out[i] = Membership{Workspace: ws, RoleKey: role[ws.ID]}
+	}
+	return out, nil
 }
 
 // Get returns the workspace to a member.
@@ -159,7 +194,7 @@ func (s *Service) Invite(ctx context.Context, userID, workspaceID, email, roleKe
 	if err != nil {
 		return Invitation{}, mapError(err)
 	}
-	link := s.base + "/accept-invite?token=" + url.QueryEscape(token)
+	link := s.base + "/invite/accept?token=" + url.QueryEscape(token)
 	if err := s.mailer.SendInvitation(ctx, inv.Email, ws.Name, link); err != nil {
 		return Invitation{}, fmt.Errorf("send invitation: %w", err)
 	}

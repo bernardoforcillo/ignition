@@ -26,6 +26,7 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/database"
 	"github.com/bernardoforcillo/ignition/go-packages/features"
 	"github.com/bernardoforcillo/ignition/go-packages/features/pgstore"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/account"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/permissions"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
@@ -33,6 +34,7 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/mailer/resend"
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
 )
 
 // Services is everything the transport layer needs, as concrete library
@@ -40,6 +42,7 @@ import (
 type Services struct {
 	Auth       *auth.Service
 	Workspaces *Workspaces
+	Account    *account.Service
 	Features   *features.Engine
 
 	// Billing and BillingWebhook are nil unless billing is configured.
@@ -92,9 +95,11 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 		mail, cfg.AppURL,
 	)
 
+	dir := &directory{db: db.DB}
 	s := &Services{
 		Auth:       authSvc,
-		Workspaces: &Workspaces{Service: wsSvc, subs: subs, freePlan: freePlan},
+		Workspaces: &Workspaces{Service: wsSvc, subs: subs, freePlan: freePlan, users: dir},
+		Account:    account.NewService(authSvc, wsSvc, dir),
 		Features:   engine,
 		db:         db,
 	}
@@ -109,7 +114,7 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 func newMailer(cfg config.SaaS, logger *slog.Logger) (*mailer.Mailer, error) {
 	var sender mailer.Sender = mailer.NewLogSender(logger)
 	if cfg.ResendAPIKey != "" {
-		client, err := resend.New(resend.Config{APIKey: cfg.ResendAPIKey})
+		client, err := resend.New(resend.Config{APIKey: cfg.ResendAPIKey, BaseURL: cfg.ResendBaseURL})
 		if err != nil {
 			return nil, fmt.Errorf("saas: resend: %w", err)
 		}
@@ -136,16 +141,25 @@ func (s *Services) wireBilling(db *database.DB, cfg config.Billing, subs subscri
 		return err
 	}
 	customers := &customerStore{db: db.DB}
+	states := &stateStore{db: db.DB}
 	provider, err := stripe.New(stripe.Config{
 		APIKey:        cfg.StripeAPIKey,
 		WebhookSecret: cfg.StripeWebhookSecret,
 		Customers:     customers.customer,
+		BaseURL:       cfg.StripeAPIBaseURL,
 	})
 	if err != nil {
 		return fmt.Errorf("saas: stripe: %w", err)
 	}
-	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs, customers: customers}, &eventStore{db: db.DB}, logger)
-	s.Billing = &Checkout{Service: svc, catalog: catalog}
+	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs, customers: customers, states: states}, &eventStore{db: db.DB}, logger)
+	prices := make([]core.PriceInfo, len(cfg.Prices))
+	for i, p := range cfg.Prices {
+		prices[i] = core.PriceInfo{PriceID: p.ProviderPriceID, Kind: p.Kind, ID: p.ID}
+	}
+	s.Billing = &Checkout{
+		Service: svc, catalog: catalog, prices: prices, subs: subs, freePlan: freePlan,
+		state: billingReader{states, customers},
+	}
 	s.BillingWebhook = httpwebhook.New(provider, svc, 0, logger)
 	return nil
 }
@@ -179,4 +193,11 @@ func newCatalog(cfg config.Billing, freePlan entitlement.PlanID) (*billing.Catal
 		return nil, fmt.Errorf("saas: billing catalog: %w", err)
 	}
 	return catalog, nil
+}
+
+// billingReader is the read side of the billing tables: the provider's status and period end,
+// and whether the workspace has a customer to open the portal for.
+type billingReader struct {
+	*stateStore
+	*customerStore
 }

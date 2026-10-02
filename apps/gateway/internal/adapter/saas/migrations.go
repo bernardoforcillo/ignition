@@ -18,6 +18,7 @@ const (
 	identitySchemaID = "identity_0001_schema"
 	billingEventsID  = "billing_0001_events"
 	billingCustomers = "billing_0002_customers"
+	billingStates    = "billing_0003_subscription_states"
 )
 
 const createBillingEvents = `
@@ -35,6 +36,17 @@ CREATE TABLE IF NOT EXISTS billing_customers (
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 )`
 
+// billing_subscriptions keeps what the provider last said about a workspace's subscription
+// (lifecycle status and period end), which the entitlement store does not model. It is fed by
+// the same verified events as the entitlement and read by BillingService.GetSubscription.
+const createBillingStates = `
+CREATE TABLE IF NOT EXISTS billing_subscriptions (
+    workspace_id       TEXT        PRIMARY KEY,
+    status             TEXT        NOT NULL,
+    current_period_end TIMESTAMPTZ,
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+)`
+
 // Migrations returns every schema step the SaaS surface needs, across the
 // identity, features and billing modules. Applying them is idempotent.
 func Migrations() []database.Migration {
@@ -42,6 +54,7 @@ func Migrations() []database.Migration {
 		{ID: identitySchemaID, Up: createIdentitySchema},
 		database.SQL(billingEventsID, createBillingEvents),
 		database.SQL(billingCustomers, createBillingCustomers),
+		database.SQL(billingStates, createBillingStates),
 	}
 	for _, m := range pgstore.Migrations() {
 		migs = append(migs, database.SQL(m.ID, m.SQL))

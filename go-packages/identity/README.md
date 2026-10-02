@@ -9,14 +9,16 @@ status codes. It holds no transport, no SMTP and no database driver.
 
 | Package | What it gives you |
 |---|---|
-| `identity/auth` | `SignUp`, `VerifyEmail`, `Login`, `Refresh` (rotation, reuse detection), `Logout`, `LogoutAll`, `VerifyAccessToken` |
-| `identity/workspace` | `Create`, `Get`, `Can`/`Authorize`, members, ownership transfer, `Invite`/`AcceptInvite`/`RevokeInvitation` |
+| `identity/auth` | `SignUp`, `VerifyEmail`, `Login`, `Refresh` (rotation, reuse detection), `Logout`, `LogoutAll`, `VerifyAccessToken`, `RequestPasswordReset`/`ResetPassword`, `User`, `DeleteAccount` |
+| `identity/workspace` | `Create`, `Get`, `ListFor` (the user's memberships), `Can`/`Authorize`, members, ownership transfer, `Invite`/`AcceptInvite`/`RevokeInvitation` |
+| `identity/account` | `Me`, `Export` (JSON of what is held about the user), `Delete` (GDPR erasure, see below) |
 | `identity/permissions` | The permission statement set and `NewAccess()` (owner / admin / member default roles) |
 
 Ports defined here, implemented by the product: `auth.Mailer`
-(`SendVerification`, `SendAccountExists`), `auth.RateLimiter`
-(`Allow(ctx, key, limit, window)`, nil = unlimited, fails open on error) and
-`workspace.Mailer` (`SendInvitation`). Storage is authlayer's store
+(`SendVerification`, `SendAccountExists`, `SendPasswordReset`), `auth.RateLimiter`
+(`Allow(ctx, key, limit, window)`, nil = unlimited, fails open on error),
+`workspace.Mailer` (`SendInvitation`) and `account.Store` (`EraseWorkspace`,
+`PendingInvitations`, `DeleteInvitations`: what authlayer's ports do not offer). Storage is authlayer's store
 interfaces, injected.
 
 ## Wiring
@@ -66,6 +68,37 @@ _ = authStore.CreateSchema(ctx)
 Then pass those three stores to the constructors above unchanged. The memory
 stores do not enforce unique slugs or emails across racing writers; Postgres
 does, surfacing `workspace.ErrSlugTaken`.
+
+## Email links
+
+Links in the emails point at the web app's routes: `{BaseURL}/verify-email?token=`,
+`{BaseURL}/reset-password?token=`, `{BaseURL}/invite/accept?token=`; the
+account-exists mail links to `{AppURL}/login`.
+
+## Password reset
+
+`RequestPasswordReset(ctx, email, clientIP)` answers `nil` whether or not the
+address exists, and the send runs detached from the request (so neither the
+answer nor its latency depends on the address; a send failure is only logged).
+Budgets: per client IP (10/hour, reported as `ErrRateLimited`) and per address
+(3/hour, silent: no mail, same answer). `ResetPassword(ctx, token, new)` is
+single use, refuses a weak password (`ErrWeakPassword`) without spending the
+token, and revokes every session of the account. A second request invalidates
+the earlier link.
+
+## Account export and deletion
+
+`account.Service.Delete(ctx, userID, password)` re-checks the password
+(`auth.ErrInvalidCredentials`), then, before removing anything: refuses with
+`account.ErrOwnsSharedWorkspace` if the user owns a workspace that still has
+other members; otherwise leaves the workspaces they merely belong to, erases the
+ones they own alone (`account.Store.EraseWorkspace`), drops invitations
+addressed to their address, and finally has authlayer remove sessions,
+verification tokens and the user row (hard delete). A failure part-way leaves the
+account in place and the call can simply be retried. An access token already
+issued stays valid until it expires, but `Me`/`Delete` then report
+`auth.ErrAccountNotFound`. `Export` returns a JSON document and file name; it
+never contains the password hash, tokens or sessions.
 
 ## Using it from a handler (Connect / HTTP, conceptual)
 
@@ -134,6 +167,6 @@ them yet.
 ## Not included
 
 SMTP or any mail implementation, a rate limiter implementation (Redis etc.),
-password reset, MFA, magic links, OAuth and account deletion (reachable via
-`auth.Service.Authlayer()` for the first ones), workspace rename/delete and
+MFA, magic links, OAuth, email change (reachable via
+`auth.Service.Authlayer()`), workspace rename/delete and
 custom-role management, a database driver.

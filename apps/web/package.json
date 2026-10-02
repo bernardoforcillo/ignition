@@ -9,7 +9,8 @@
 		"preview": "vite preview",
 		"lint": "biome check .",
 		"format": "biome check --write .",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@bufbuild/protobuf": "^2.15.0",
@@ -33,6 +34,7 @@
 		"@vitejs/plugin-react": "^6.1.1",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
-		"vite": "^8.3.1"
+		"vite": "^8.3.1",
+		"vitest": "^5.0.2"
 	}
 }

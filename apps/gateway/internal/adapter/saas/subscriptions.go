@@ -23,10 +23,12 @@ type subscriptionStore interface {
 // subscription into featurelayer's and writes it. Per-workspace grants
 // (manual overrides) are preserved; the billing anchor is kept by the
 // store on update. It also remembers the provider's customer for the workspace (billing puts it on
-// every subscription it pushes, lapsed ones included), which is what lets OpenPortal work.
+// every subscription it pushes, lapsed ones included), which is what lets OpenPortal work, and the
+// provider's status and period end, which BillingService.GetSubscription reports.
 type subscriptionSink struct {
 	store     subscriptionStore
 	customers customerSetter
+	states    stateSetter
 }
 
 var _ billing.SubscriptionSink = (*subscriptionSink)(nil)
@@ -38,6 +40,9 @@ func (s *subscriptionSink) SetSubscription(ctx context.Context, workspaceID stri
 		if err := s.customers.set(ctx, workspaceID, sub.CustomerID); err != nil {
 			return err
 		}
+	}
+	if err := s.states.set(ctx, workspaceID, sub.Status, sub.PeriodEnd); err != nil {
+		return err
 	}
 	out := toEntitlement(workspaceID, sub)
 	existing, err := s.store.Subscription(ctx, workspaceID)
@@ -73,6 +78,17 @@ type Workspaces struct {
 	*workspace.Service
 	subs     subscriptionStore
 	freePlan entitlement.PlanID
+	users    emailResolver
+}
+
+// emailResolver looks up the addresses of user ids (the users table).
+type emailResolver interface {
+	Emails(ctx context.Context, userIDs []string) (map[string]string, error)
+}
+
+// Emails resolves member addresses; ids it cannot resolve are absent from the result.
+func (w *Workspaces) Emails(ctx context.Context, userIDs []string) (map[string]string, error) {
+	return w.users.Emails(ctx, userIDs)
 }
 
 // Create makes the workspace and gives it the free plan. If the
