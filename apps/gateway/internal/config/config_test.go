@@ -12,7 +12,7 @@ import (
 var saasEnvKeys = []string{
 	"DATABASE_URL", "AUTH_SECRET", "APP_URL", "COMPANY_NAME", "MAIL_FROM", "MAIL_REPLY_TO",
 	"ASSET_BASE_URL", "RESEND_API_KEY", "ACCESS_TTL", "REFRESH_TTL",
-	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN",
+	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN", "TRUSTED_PROXIES",
 }
 
 // legacyEnv sets the minimum the proxy needs and clears every SaaS variable.
@@ -196,5 +196,45 @@ func TestLoad_LegacyProxyConfigStillRequiresRoutes(t *testing.T) {
 	t.Setenv("GATEWAY_UPSTREAM_URL", "")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load succeeded with no routes")
+	}
+}
+
+func TestLoad_TrustedProxies(t *testing.T) {
+	tests := []struct {
+		name    string
+		raw     string
+		want    []string
+		wantErr string
+	}{
+		{"unset trusts nothing", "", nil, ""},
+		{"cidrs and bare addresses", "10.0.0.0/8, 192.168.1.5 ,fd00::/8", []string{"10.0.0.0/8", "192.168.1.5/32", "fd00::/8"}, ""},
+		{"host bits are masked", "10.1.2.3/8", []string{"10.0.0.0/8"}, ""},
+		{"empty entries are skipped", "10.0.0.0/8,,", []string{"10.0.0.0/8"}, ""},
+		{"garbage is a startup error", "10.0.0.0/8,proxy.internal", nil, "proxy.internal"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			legacyEnv(t)
+			t.Setenv("TRUSTED_PROXIES", tc.raw)
+
+			cfg, err := Load()
+
+			if tc.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.wantErr) {
+					t.Fatalf("err = %v, want one mentioning %q", err, tc.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got []string
+			for _, p := range cfg.TrustedProxies {
+				got = append(got, p.String())
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("trusted proxies = %v, want %v", got, tc.want)
+			}
+		})
 	}
 }

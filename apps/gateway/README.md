@@ -77,6 +77,7 @@ Factor III ("Config").
 | `RATE_LIMIT_RPS`            | disabled | Requests/second per client IP, token-bucket. Unset or `<=0` disables the limiter. |
 | `RATE_LIMIT_BURST`          | `20`    | Token bucket burst size (only relevant once `RATE_LIMIT_RPS` is set).   |
 | `GATEWAY_SHUTDOWN_TIMEOUT`  | `10s`   | Grace period for in-flight requests during shutdown.                    |
+| `TRUSTED_PROXIES`           | —       | Comma-separated CIDRs/IPs of the reverse proxies whose `X-Forwarded-For` is trusted (per-IP auth rate limits key on the client it names). Unset: the TCP peer is the client. |
 
 #### SaaS variables
 
@@ -167,14 +168,19 @@ Things worth knowing:
   with `internal error`. Non-members get `not_found`, not `permission_denied`.
 - **Rate limiting of the public auth RPCs** uses the identity service's own
   per-IP budgets (20 logins / 15 min, 10 sign-ups / hour), backed by an
-  in-memory fixed-window limiter (`adapter/saas/ratelimit.go`). Gaps: it is per
-  replica, and behind a proxy or ingress the peer address is the proxy's, so
-  all clients share one budget until a trusted `X-Forwarded-For` is resolved.
-  Amaro's route limiter cannot be used here because it does not apply to
+  in-memory fixed-window limiter (`adapter/saas/ratelimit.go`). It is per
+  replica. The key is the real client: set `TRUSTED_PROXIES` to the networks of
+  the reverse proxies in front of the gateway (the ingress controller) and
+  `X-Forwarded-For` is read from the right, skipping trusted hops
+  (`httpapi/clientip.go`). The header is ignored unless the TCP peer itself is a
+  trusted proxy, so a client cannot spoof its budget; with `TRUSTED_PROXIES`
+  unset the peer address is used. Amaro's route limiter cannot be used here because it does not apply to
   mounted Connect handlers.
-- **Billing** keeps a workspace-to-Stripe-customer mapping learned from verified
-  webhooks (`billing_customers`); `OpenPortal` answers `failed_precondition`
-  until a workspace has completed a checkout.
+- **Billing** keeps a workspace-to-Stripe-customer mapping (`billing_customers`).
+  The subscription sink writes it from the customer id that `billing` puts on
+  every subscription it pushes, lapsed ones included, so a canceled workspace can
+  still open the portal. `OpenPortal` answers `failed_precondition` only for a
+  workspace the provider has never reported.
 - **Access tokens are stateless**: `Logout` revokes the refresh token, but an
   issued access token lives until `ACCESS_TTL` expires.
 

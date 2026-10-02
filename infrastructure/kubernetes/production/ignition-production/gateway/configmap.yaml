@@ -14,3 +14,7 @@ data:
   APP_URL: "https://example.com"
   COMPANY_NAME: "Ignition"
   MAIL_FROM: "Ignition <hello@example.com>"
+  # Reverse proxies whose X-Forwarded-For is believed (the per-IP sign-up/login limits key on the
+  # client it names). Pods are only reachable through the ingress controller (see
+  # networkpolicy.yaml), so the private ranges are safe; narrow this to the controller's CIDR.
+  TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"

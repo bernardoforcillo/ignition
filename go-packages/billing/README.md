@@ -30,8 +30,10 @@ this module imports neither it nor the sibling packages.
  entitlement SubscriptionStore  -->  feature checks
 ```
 
-`billing.Subscription` carries plan ID, add-on IDs, status, trial end and
-current period. The features module implements (or adapts) `SubscriptionSink`,
+`billing.Subscription` carries the provider's customer ID, plan ID, add-on IDs,
+status, trial end and current period. The customer ID is also set for a lapsed
+workspace (it is back on the free plan), so the sink should persist it: the
+customer portal needs it and only provider events ever reveal it. The features module implements (or adapts) `SubscriptionSink`,
 mapping those fields onto its own subscription type.
 
 ## Wiring

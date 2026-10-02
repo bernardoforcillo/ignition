@@ -91,7 +91,8 @@ func (s *Service) subscriptionFor(ev Event) (Subscription, error) {
 		return Subscription{}, fmt.Errorf("%w: unknown status %q", ErrMalformedEvent, status)
 	}
 	free := Subscription{
-		PlanID: s.catalog.FreePlanID(), Status: status,
+		CustomerID: ev.CustomerID,
+		PlanID:     s.catalog.FreePlanID(), Status: status,
 		PeriodStart: ev.PeriodStart, PeriodEnd: ev.PeriodEnd,
 	}
 	if status == StatusCanceled || status == StatusIncomplete {
@@ -99,7 +100,8 @@ func (s *Service) subscriptionFor(ev Event) (Subscription, error) {
 	}
 
 	sub := Subscription{
-		Status: status, TrialEnd: ev.TrialEnd,
+		CustomerID: ev.CustomerID,
+		Status:     status, TrialEnd: ev.TrialEnd,
 		PeriodStart: ev.PeriodStart, PeriodEnd: ev.PeriodEnd,
 	}
 	for _, priceID := range ev.PriceIDs {

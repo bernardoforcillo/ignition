@@ -3,7 +3,6 @@ package saas
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/bernardoforcillo/drops/pg"
 
@@ -38,8 +37,14 @@ func (s *eventStore) Record(ctx context.Context, eventID string) error {
 	return nil
 }
 
-// customerStore keeps the workspace -> payment-provider customer mapping.
+// customerStore keeps the workspace -> payment-provider customer mapping. The subscription sink
+// fills it from verified provider events, so the customer portal can find the customer later.
 type customerStore struct{ db *pg.DB }
+
+// customerSetter is the write side the subscription sink needs.
+type customerSetter interface {
+	set(ctx context.Context, workspaceID, customerID string) error
+}
 
 func (s *customerStore) set(ctx context.Context, workspaceID, customerID string) error {
 	if _, err := s.db.Exec(ctx, `
@@ -70,34 +75,4 @@ func (s *customerStore) customer(ctx context.Context, workspaceID string) (strin
 		return "", fmt.Errorf("scanning billing customer: %w", err)
 	}
 	return id, nil
-}
-
-// webhookParser is what the webhook handler needs from a provider.
-type webhookParser interface {
-	ParseWebhook(ctx context.Context, payload []byte, headers http.Header) (billing.Event, error)
-}
-
-// customerRecorder wraps a provider's webhook parser and, once the
-// signature has verified, remembers the event's workspace -> customer
-// pair. A failed write fails the webhook so the provider retries it.
-type customerRecorder struct {
-	inner     webhookParser
-	customers customerSetter
-}
-
-type customerSetter interface {
-	set(ctx context.Context, workspaceID, customerID string) error
-}
-
-func (r customerRecorder) ParseWebhook(ctx context.Context, payload []byte, headers http.Header) (billing.Event, error) {
-	ev, err := r.inner.ParseWebhook(ctx, payload, headers)
-	if err != nil {
-		return ev, err
-	}
-	if ev.WorkspaceID != "" && ev.CustomerID != "" {
-		if err := r.customers.set(ctx, ev.WorkspaceID, ev.CustomerID); err != nil {
-			return billing.Event{}, err
-		}
-	}
-	return ev, nil
 }

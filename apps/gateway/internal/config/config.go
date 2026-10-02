@@ -12,6 +12,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -34,6 +35,10 @@ type Config struct {
 	RateLimitRPS    float64
 	RateLimitBurst  int
 	ShutdownTimeout time.Duration
+
+	// TrustedProxies are the reverse-proxy networks whose X-Forwarded-For is believed. Empty
+	// means the TCP peer is always the client.
+	TrustedProxies []netip.Prefix
 
 	// SaaS is nil unless DATABASE_URL is set; nil means the gateway is a
 	// pure proxy (plus the Ping RPC).
@@ -100,6 +105,8 @@ const (
 // The SaaS surface is optional and enabled only when DATABASE_URL is set;
 // with it unset none of the variables below are read.
 //
+//	TRUSTED_PROXIES           optional; comma-separated CIDRs/IPs of reverse proxies whose
+//	                          X-Forwarded-For is trusted (the per-IP auth rate limits key on it)
 //	DATABASE_URL              Postgres DSN; enables the SaaS surface
 //	AUTH_SECRET               required with SaaS: access-token signing key, >= 32 bytes
 //	APP_URL                   required with SaaS: public web app URL (mail links, checkout return URLs)
@@ -153,6 +160,12 @@ func Load() (Config, error) {
 		cfg.ShutdownTimeout = d
 	}
 
+	proxies, err := parseTrustedProxies(os.Getenv("TRUSTED_PROXIES"))
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.TrustedProxies = proxies
+
 	saas, err := loadSaaS()
 	if err != nil {
 		return Config{}, err
@@ -160,6 +173,28 @@ func Load() (Config, error) {
 	cfg.SaaS = saas
 
 	return cfg, nil
+}
+
+// parseTrustedProxies reads "10.0.0.0/8, 192.168.1.5, fd00::/8". A bare address is a single-host
+// prefix. An empty value is valid and trusts no proxy.
+func parseTrustedProxies(raw string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if p, err := netip.ParsePrefix(part); err == nil {
+			out = append(out, p.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(part)
+		if err != nil {
+			return nil, fmt.Errorf("config: invalid TRUSTED_PROXIES entry %q: want a CIDR or an IP", part)
+		}
+		out = append(out, netip.PrefixFrom(a.Unmap(), a.Unmap().BitLen()))
+	}
+	return out, nil
 }
 
 // loadSaaS returns nil when DATABASE_URL is unset (SaaS disabled).

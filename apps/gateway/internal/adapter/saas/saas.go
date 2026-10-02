@@ -144,9 +144,9 @@ func (s *Services) wireBilling(db *database.DB, cfg config.Billing, subs subscri
 	if err != nil {
 		return fmt.Errorf("saas: stripe: %w", err)
 	}
-	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs}, &eventStore{db: db.DB}, logger)
+	svc := billing.NewService(catalog, provider, &subscriptionSink{store: subs, customers: customers}, &eventStore{db: db.DB}, logger)
 	s.Billing = &Checkout{Service: svc, catalog: catalog}
-	s.BillingWebhook = httpwebhook.New(customerRecorder{inner: provider, customers: customers}, svc, 0, logger)
+	s.BillingWebhook = httpwebhook.New(provider, svc, 0, logger)
 	return nil
 }
 

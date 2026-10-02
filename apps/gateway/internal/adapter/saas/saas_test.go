@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log/slog"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -91,7 +90,7 @@ func TestSubscriptionSink_KeepsExistingGrants(t *testing.T) {
 	subs := newFakeSubs()
 	grant := entitlement.Override("data.export", nil, "support override")
 	subs.byTenant["ws-1"] = entitlement.Subscription{TenantID: "ws-1", Plan: "free", Grants: []entitlement.Grant{grant}}
-	sink := &subscriptionSink{store: subs}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
 
 	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro", Status: billing.StatusActive}); err != nil {
 		t.Fatal(err)
@@ -104,7 +103,7 @@ func TestSubscriptionSink_KeepsExistingGrants(t *testing.T) {
 
 func TestSubscriptionSink_FirstSubscriptionForAWorkspace(t *testing.T) {
 	subs := newFakeSubs()
-	sink := &subscriptionSink{store: subs}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
 	if err := sink.SetSubscription(t.Context(), "ws-new", billing.Subscription{PlanID: "pro"}); err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +115,7 @@ func TestSubscriptionSink_FirstSubscriptionForAWorkspace(t *testing.T) {
 func TestSubscriptionSink_StoreFailureIsReturnedSoTheProviderRetries(t *testing.T) {
 	subs := newFakeSubs()
 	subs.setErr = errors.New("db down")
-	sink := &subscriptionSink{store: subs}
+	sink := &subscriptionSink{store: subs, customers: newFakeCustomers()}
 	if err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{PlanID: "pro"}); err == nil {
 		t.Fatal("a failed write must surface")
 	}
@@ -258,15 +257,6 @@ func TestNewCatalog_ValidatesAgainstTheFeatureCatalog(t *testing.T) {
 	}
 }
 
-type fakeParser struct {
-	ev  billing.Event
-	err error
-}
-
-func (p fakeParser) ParseWebhook(context.Context, []byte, http.Header) (billing.Event, error) {
-	return p.ev, p.err
-}
-
 type fakeCustomers struct {
 	got    map[string]string
 	setErr error
@@ -280,30 +270,47 @@ func (f *fakeCustomers) set(_ context.Context, ws, cust string) error {
 	return nil
 }
 
-func TestCustomerRecorder(t *testing.T) {
+func newFakeCustomers() *fakeCustomers { return &fakeCustomers{got: map[string]string{}} }
+
+func TestSubscriptionSink_RemembersTheCustomerForThePortal(t *testing.T) {
 	tests := []struct {
-		name     string
-		parser   fakeParser
-		setErr   error
-		wantErr  bool
-		wantSeen map[string]string
+		name         string
+		in           billing.Subscription
+		wantCustomer string
 	}{
-		{"verified event records the customer", fakeParser{ev: billing.Event{ID: "e1", WorkspaceID: "ws-1", CustomerID: "cus_1"}}, nil, false, map[string]string{"ws-1": "cus_1"}},
-		{"event without a customer records nothing", fakeParser{ev: billing.Event{ID: "e1", WorkspaceID: "ws-1"}}, nil, false, map[string]string{}},
-		{"unverified event records nothing", fakeParser{err: billing.ErrInvalidSignature}, nil, true, map[string]string{}},
-		{"write failure fails the webhook so it is retried", fakeParser{ev: billing.Event{WorkspaceID: "ws-1", CustomerID: "cus_1"}}, errors.New("db"), true, map[string]string{}},
+		{"paying workspace", billing.Subscription{CustomerID: "cus_1", PlanID: "pro", Status: billing.StatusActive}, "cus_1"},
+		{"lapsed workspace keeps its customer", billing.Subscription{CustomerID: "cus_1", PlanID: "free", Status: billing.StatusCanceled}, "cus_1"},
+		{"event without a customer records nothing", billing.Subscription{PlanID: "pro", Status: billing.StatusActive}, ""},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			store := &fakeCustomers{got: map[string]string{}, setErr: tc.setErr}
-			_, err := customerRecorder{inner: tc.parser, customers: store}.ParseWebhook(t.Context(), nil, nil)
-			if (err != nil) != tc.wantErr {
-				t.Fatalf("err = %v, wantErr %v", err, tc.wantErr)
+			customers := newFakeCustomers()
+			sink := &subscriptionSink{store: newFakeSubs(), customers: customers}
+
+			if err := sink.SetSubscription(t.Context(), "ws-1", tc.in); err != nil {
+				t.Fatal(err)
 			}
-			if len(store.got) != len(tc.wantSeen) || store.got["ws-1"] != tc.wantSeen["ws-1"] {
-				t.Fatalf("recorded %v, want %v", store.got, tc.wantSeen)
+
+			if customers.got["ws-1"] != tc.wantCustomer {
+				t.Fatalf("customer = %q, want %q", customers.got["ws-1"], tc.wantCustomer)
 			}
 		})
+	}
+}
+
+func TestSubscriptionSink_CustomerWriteFailureSurfacesAndSkipsTheSubscription(t *testing.T) {
+	subs := newFakeSubs()
+	customers := newFakeCustomers()
+	customers.setErr = errors.New("db down")
+	sink := &subscriptionSink{store: subs, customers: customers}
+
+	err := sink.SetSubscription(t.Context(), "ws-1", billing.Subscription{CustomerID: "cus_1", PlanID: "pro"})
+
+	if err == nil {
+		t.Fatal("a failed customer write must surface so the provider retries")
+	}
+	if _, ok := subs.byTenant["ws-1"]; ok {
+		t.Error("the subscription must not be written when the customer could not be recorded")
 	}
 }
 

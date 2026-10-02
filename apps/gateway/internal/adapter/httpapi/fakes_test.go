@@ -185,6 +185,12 @@ func (h *recordingHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 
 func newHarness(t *testing.T, withBilling bool) *harness {
 	t.Helper()
+	return newHarnessWith(t, withBilling, nil)
+}
+
+// newHarnessWith is newHarness with a client-IP resolver, for tests of the proxy-aware path.
+func newHarnessWith(t *testing.T, withBilling bool, clients *ClientIPResolver) *harness {
+	t.Helper()
 	h := &harness{
 		auth: &fakeAuth{}, workspace: &fakeWorkspaces{}, features: &fakeFeatures{},
 		checkout: &fakeCheckout{}, proxy: &fakeForwarder{}, webhook: &recordingHandler{},
@@ -192,8 +198,9 @@ func newHarness(t *testing.T, withBilling bool) *harness {
 	upstream, _ := url.Parse("http://upstream.invalid")
 	saas := &SaaS{
 		Auth: h.auth, Tokens: fakeVerifier{}, Workspaces: h.workspace, Features: h.features,
-		AppURL: "https://app.example.com/",
-		Ready:  func(context.Context) error { return h.readyErr },
+		AppURL:  "https://app.example.com/",
+		Clients: clients,
+		Ready:   func(context.Context) error { return h.readyErr },
 	}
 	if withBilling {
 		saas.Billing = h.checkout

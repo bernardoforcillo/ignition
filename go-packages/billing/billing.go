@@ -82,6 +82,11 @@ type Event struct {
 
 // Subscription is what a workspace is entitled to, in billing's own terms.
 type Subscription struct {
+	// CustomerID is the provider's customer for the workspace, when the event
+	// carried one. It is kept for lapsed plans too, so a canceled workspace can
+	// still open the customer portal to resubscribe. The sink persists it: the
+	// portal needs it, and only the provider's events ever reveal it.
+	CustomerID  string
 	PlanID      string
 	AddOnIDs    []string
 	Status      Status

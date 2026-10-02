@@ -22,12 +22,23 @@ type subscriptionStore interface {
 // subscription store: it translates billing's view of a workspace's
 // subscription into featurelayer's and writes it. Per-workspace grants
 // (manual overrides) are preserved; the billing anchor is kept by the
-// store on update.
-type subscriptionSink struct{ store subscriptionStore }
+// store on update. It also remembers the provider's customer for the workspace (billing puts it on
+// every subscription it pushes, lapsed ones included), which is what lets OpenPortal work.
+type subscriptionSink struct {
+	store     subscriptionStore
+	customers customerSetter
+}
 
 var _ billing.SubscriptionSink = (*subscriptionSink)(nil)
 
 func (s *subscriptionSink) SetSubscription(ctx context.Context, workspaceID string, sub billing.Subscription) error {
+	// The customer first: both writes are idempotent, and a failure of either makes the webhook
+	// fail so the provider retries it (billing records the event only after the sink succeeds).
+	if sub.CustomerID != "" {
+		if err := s.customers.set(ctx, workspaceID, sub.CustomerID); err != nil {
+			return err
+		}
+	}
 	out := toEntitlement(workspaceID, sub)
 	existing, err := s.store.Subscription(ctx, workspaceID)
 	switch {

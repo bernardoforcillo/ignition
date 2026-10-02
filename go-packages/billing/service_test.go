@@ -82,6 +82,35 @@ func TestHandleEvent_StatusToSubscriptionMapping(t *testing.T) {
 	}
 }
 
+// The portal needs the provider's customer, and only events ever reveal it, so the sink must get it
+// for a paying workspace and for one that lapsed back to the free plan.
+func TestHandleEvent_ForwardsTheCustomerToTheSink(t *testing.T) {
+	tests := []struct {
+		name   string
+		status billing.Status
+		plan   string
+	}{
+		{"paying workspace", billing.StatusActive, "pro"},
+		{"lapsed workspace keeps its customer", billing.StatusCanceled, "free"},
+		{"incomplete checkout", billing.StatusIncomplete, "free"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newFixture(t)
+			ev := billing.Event{ID: "evt_1", WorkspaceID: "ws_1", CustomerID: "cus_42", Status: tt.status, PriceIDs: []string{"price_pro"}}
+
+			if err := f.svc.HandleEvent(context.Background(), ev); err != nil {
+				t.Fatal(err)
+			}
+
+			got := f.sink.Subs["ws_1"]
+			if got.CustomerID != "cus_42" || got.PlanID != tt.plan {
+				t.Errorf("got %+v, want customer cus_42 on plan %s", got, tt.plan)
+			}
+		})
+	}
+}
+
 func TestHandleEvent_RejectsUnusableEvents(t *testing.T) {
 	tests := []struct {
 		name string

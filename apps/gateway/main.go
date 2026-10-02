@@ -10,6 +10,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"syscall"
@@ -62,7 +63,7 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 		defer func() { _ = services.Close() }()
-		saasAPI = newSaaSAPI(services, cfg.SaaS.AppURL)
+		saasAPI = newSaaSAPI(services, cfg.SaaS.AppURL, cfg.TrustedProxies)
 	}
 
 	handler := httpapi.NewServer(httpapi.ServerConfig{
@@ -142,12 +143,13 @@ func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger) (*saas
 // newSaaSAPI hands the built services to the transport as the interfaces
 // it declares. Billing is left nil (not a typed-nil interface) when it is
 // not configured, which is how the transport knows to skip its routes.
-func newSaaSAPI(s *saas.Services, appURL string) *httpapi.SaaS {
+func newSaaSAPI(s *saas.Services, appURL string, trustedProxies []netip.Prefix) *httpapi.SaaS {
 	api := &httpapi.SaaS{
 		Auth:       s.Auth,
 		Tokens:     s.Auth,
 		Workspaces: s.Workspaces,
 		Features:   s.Features,
+		Clients:    httpapi.NewClientIPResolver(trustedProxies),
 		AppURL:     appURL,
 		Ready:      s.Ready,
 	}

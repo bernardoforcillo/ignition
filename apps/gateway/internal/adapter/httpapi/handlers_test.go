@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"net/netip"
 	"strings"
 	"testing"
 
@@ -53,6 +54,38 @@ func TestAuthService_LoginReturnsTokensAndPassesClientContext(t *testing.T) {
 	}
 	if h.auth.clientIP == "" || strings.Contains(h.auth.clientIP, ":") && !strings.Contains(h.auth.clientIP, "::") {
 		t.Errorf("client ip %q should be a bare host", h.auth.clientIP)
+	}
+}
+
+func TestAuthService_RateLimitKeyIsTheClientBehindATrustedProxy(t *testing.T) {
+	tests := []struct {
+		name    string
+		trusted []netip.Prefix
+		want    string
+	}{
+		// The test server is reached from loopback, standing in for the ingress controller.
+		{"loopback is a trusted proxy: the forwarded client", []netip.Prefix{netip.MustParsePrefix("127.0.0.0/8"), netip.MustParsePrefix("::1/128")}, "198.51.100.7"},
+		{"no trusted proxies: a spoofed header is ignored", nil, "127.0.0.1"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarnessWith(t, false, NewClientIPResolver(tc.trusted))
+			c := saasv1connect.NewAuthServiceClient(h.srv.Client(), h.srv.URL)
+			req := connect.NewRequest(&saasv1.LoginRequest{Email: "a@b.c", Password: "pw"})
+			req.Header().Set("X-Forwarded-For", "198.51.100.7")
+
+			if _, err := c.Login(t.Context(), req); err != nil {
+				t.Fatal(err)
+			}
+
+			got := h.auth.clientIP
+			if tc.want == "127.0.0.1" && got == "::1" {
+				got = "127.0.0.1" // the listener may be IPv6 loopback on some hosts
+			}
+			if got != tc.want {
+				t.Errorf("client ip = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 

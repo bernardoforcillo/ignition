@@ -74,6 +74,10 @@ type SaaS struct {
 	Billing        checkoutStarter
 	BillingWebhook http.Handler
 
+	// Clients resolves the real client address behind trusted reverse proxies (the per-IP
+	// rate-limit budgets of sign-up and login key on it). Nil trusts no proxy: the TCP peer is used.
+	Clients *ClientIPResolver
+
 	// AppURL is the public web app origin; checkout and portal return
 	// URLs are built from it, never taken from the client.
 	AppURL string
@@ -93,7 +97,7 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 	opts := connect.WithInterceptors(authInterceptor(s.Tokens))
 
 	mustMount(app, func() (string, http.Handler) {
-		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth}, opts)
+		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth, clients: s.Clients}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
 		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces}, opts)

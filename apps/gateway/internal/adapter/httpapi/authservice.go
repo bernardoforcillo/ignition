@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"net"
 
 	"connectrpc.com/connect"
 
@@ -14,7 +13,10 @@ import (
 // authHandler implements saasv1connect.AuthServiceHandler: validate,
 // delegate to the identity service, map errors. SignUp returns the same
 // empty success whether or not the address was already registered.
-type authHandler struct{ auth authService }
+type authHandler struct {
+	auth    authService
+	clients *ClientIPResolver
+}
 
 func (h *authHandler) SignUp(ctx context.Context, req *connect.Request[saasv1.SignUpRequest]) (*connect.Response[saasv1.SignUpResponse], error) {
 	if req.Msg.GetEmail() == "" {
@@ -23,7 +25,7 @@ func (h *authHandler) SignUp(ctx context.Context, req *connect.Request[saasv1.Si
 	if req.Msg.GetPassword() == "" {
 		return nil, requiredField("password")
 	}
-	if err := h.auth.SignUp(ctx, req.Msg.GetEmail(), req.Msg.GetPassword(), clientIP(req.Peer().Addr)); err != nil {
+	if err := h.auth.SignUp(ctx, req.Msg.GetEmail(), req.Msg.GetPassword(), h.clients.Resolve(req.Peer().Addr, req.Header())); err != nil {
 		return nil, toConnectError(ctx, err)
 	}
 	return connect.NewResponse(&saasv1.SignUpResponse{}), nil
@@ -46,7 +48,7 @@ func (h *authHandler) Login(ctx context.Context, req *connect.Request[saasv1.Log
 	if req.Msg.GetPassword() == "" {
 		return nil, requiredField("password")
 	}
-	t, err := h.auth.Login(ctx, req.Msg.GetEmail(), req.Msg.GetPassword(), clientIP(req.Peer().Addr), req.Header().Get("User-Agent"))
+	t, err := h.auth.Login(ctx, req.Msg.GetEmail(), req.Msg.GetPassword(), h.clients.Resolve(req.Peer().Addr, req.Header()), req.Header().Get("User-Agent"))
 	if err != nil {
 		return nil, toConnectError(ctx, err)
 	}
@@ -79,15 +81,3 @@ func (h *authHandler) Logout(ctx context.Context, req *connect.Request[saasv1.Lo
 }
 
 func userMessage(u auth.User) *saasv1.User { return &saasv1.User{Id: u.ID, Email: u.Email} }
-
-// clientIP is the host part of the peer address. Behind a proxy or load
-// balancer this is the proxy's address, so the per-IP rate-limit budgets
-// of the identity service then apply to all clients together; resolving
-// a trusted X-Forwarded-For is deliberately not done here.
-func clientIP(peerAddr string) string {
-	host, _, err := net.SplitHostPort(peerAddr)
-	if err != nil {
-		return peerAddr
-	}
-	return host
-}
