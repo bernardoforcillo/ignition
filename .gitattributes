@@ -1,4 +1,3 @@
 # Generated from /proto by `pnpm gen:proto`; committed on purpose, collapsed in diffs.
 go-packages/proto/gen/** linguist-generated=true -diff
 packages/proto/src/gen/** linguist-generated=true -diff
-go-packages/mailer/templates/** linguist-generated=true

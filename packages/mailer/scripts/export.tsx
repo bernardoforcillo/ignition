@@ -2,8 +2,7 @@
  * Renders every template to static HTML + plain text with Go template placeholders
  * (`{{.Link}}`) in place of the props, and writes them where `go-packages/mailer` embeds them.
  *
- *   pnpm --filter @ignition/mailer export          write the files
- *   pnpm --filter @ignition/mailer check:export    fail if the committed files are stale
+ *   pnpm gen:email    write the files (generated, never committed: see go-packages/mailer)
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -22,7 +21,6 @@ const outDir = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../../../go-packages/mailer/templates",
 );
-const check = process.argv.includes("--check");
 
 const pascal = (value: string) => value[0].toUpperCase() + value.slice(1);
 
@@ -46,23 +44,11 @@ for (const [name, definition] of Object.entries(templates)) {
 }
 files.set("manifest.json", `${JSON.stringify(manifest, null, "\t")}\n`);
 
-let stale = 0;
 for (const [file, contents] of files) {
 	const target = path.join(outDir, file);
 	const current = existsSync(target) ? readFileSync(target, "utf8") : null;
 	if (current === contents) continue;
-	if (check) {
-		console.error(`stale: ${path.relative(process.cwd(), target)}`);
-		stale++;
-		continue;
-	}
 	mkdirSync(outDir, { recursive: true });
 	writeFileSync(target, contents);
 	console.log(`wrote ${path.relative(process.cwd(), target)}`);
-}
-if (check && stale > 0) {
-	console.error(
-		"Run `pnpm --filter @ignition/mailer export` and commit the result.",
-	);
-	process.exit(1);
 }

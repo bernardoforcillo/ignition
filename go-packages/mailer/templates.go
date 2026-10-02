@@ -14,14 +14,18 @@ import (
 )
 
 // templateFS holds the static HTML and plain-text bodies exported from the react.email templates
-// in packages/mailer (`pnpm --filter @ignition/mailer export`). They are committed so a Go build
-// needs no Node toolchain.
+// in packages/mailer by `pnpm gen:email`. They are generated at build time and NOT committed:
+// the Dockerfile runs the export in a Node stage, and a fresh clone runs `pnpm gen:email` once
+// before `go build` or `go test`. `all:` keeps the tracked .gitkeep so the package always compiles
+// and fails with a clear error at load time instead.
 //
-//go:embed templates
+//go:embed all:templates
 var templateFS embed.FS
 
 // Sentinel errors a caller can match with errors.Is.
 var (
+	// ErrTemplatesNotGenerated is returned when the embedded templates were never exported.
+	ErrTemplatesNotGenerated = errors.New("mailer: email templates not generated")
 	// ErrUnknownTemplate is returned for a template name the manifest does not list.
 	ErrUnknownTemplate = errors.New("mailer: unknown template")
 	// ErrMissingVariable is returned when the data lacks a variable the template declares.
@@ -62,7 +66,7 @@ type Templates struct {
 func LoadTemplates() (*Templates, error) {
 	raw, err := templateFS.ReadFile("templates/manifest.json")
 	if err != nil {
-		return nil, fmt.Errorf("mailer: read manifest: %w", err)
+		return nil, fmt.Errorf("%w: run `pnpm gen:email` (%v)", ErrTemplatesNotGenerated, err)
 	}
 	var manifest map[string]manifestEntry
 	if err := json.Unmarshal(raw, &manifest); err != nil {

@@ -7,10 +7,16 @@ runtime. Delivery goes through a `Sender`; [Resend](https://resend.com) is the
 shipped one.
 
 ```
-packages/mailer (react.email)  --pnpm export-->  go-packages/mailer/templates/*.html|txt|json
+packages/mailer (react.email)  --pnpm gen:email-->  go-packages/mailer/templates/*.html|txt|json (generated)
                                                         |  go:embed
                                          mailer.Mailer  --Sender-->  resend.Client  -->  Resend API
 ```
+
+## Generated templates
+
+The embedded HTML/text is not in git. After a fresh clone run `pnpm gen:email`
+once before `go build` or `go test`; without it `LoadTemplates` fails with
+`ErrTemplatesNotGenerated`. Re-run it after editing a template.
 
 ## Use
 
@@ -57,8 +63,9 @@ CDN). Footer copy (tagline, address, social links) is in
 1. Write the component in `packages/mailer/src/emails/<name>.tsx` and register it
    in `src/templates.ts` with its subject and variables.
 2. Preview it: `pnpm --filter @ignition/mailer dev` (http://localhost:3030).
-3. Export: `pnpm --filter @ignition/mailer export`, and commit the files under
-   `go-packages/mailer/templates/`. `check:export` fails if they are stale.
+3. Export: `pnpm gen:email`. The files under `go-packages/mailer/templates/` are
+   **generated and not committed**; the gateway Dockerfile exports them in a Node
+   stage.
 4. Add a typed method on `Mailer` if a service sends it, or call
    `SendTemplate(ctx, name, to, map[string]string{...})`.
 

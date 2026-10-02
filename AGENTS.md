@@ -76,8 +76,8 @@ Reuse these instead of writing a second version (details and extension points in
   `go-packages/mailer`); never add an email SDK to a JS package.
 
 They are wired in `apps/gateway` (`internal/adapter/saas`) and enabled by
-`DATABASE_URL`. After editing an email template run
-`pnpm --filter @ignition/mailer export` and commit the output.
+`DATABASE_URL`. The exported email HTML is generated and never committed: run `pnpm gen:email`
+after a fresh clone and after editing a template.
 
 ## Memory wiki
 

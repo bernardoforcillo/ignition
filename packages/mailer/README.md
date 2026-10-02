@@ -1,13 +1,12 @@
 # @ignition/mailer
 
 react.email templates for the product's transactional email. **This package
-never sends anything**: it is a design-time tool whose output is committed HTML,
+never sends anything**: it is a design-time tool whose output is generated HTML (never committed),
 and email is sent only from Go (`go-packages/mailer`).
 
 ```sh
-pnpm --filter @ignition/mailer dev           # preview at http://localhost:3030
-pnpm --filter @ignition/mailer export        # write go-packages/mailer/templates
-pnpm --filter @ignition/mailer check:export  # fail if the committed export is stale
+pnpm --filter @ignition/mailer dev   # preview at http://localhost:3030
+pnpm gen:email                       # write go-packages/mailer/templates (generated, not committed)
 ```
 
 - `src/emails/` — the templates: the react.email Barebone collection

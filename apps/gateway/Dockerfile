@@ -12,6 +12,17 @@
 #
 # The generated protobuf code (go-packages/proto/gen) is checked into the repo,
 # so this stage only needs the Go toolchain — no buf/protoc to produce an image.
+# Email templates: the React/react.email sources are exported to the static HTML the Go mailer
+# embeds. The output is generated here and never committed.
+FROM node:26-alpine AS emails
+WORKDIR /src
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/web/package.json apps/web/
+COPY packages packages
+RUN pnpm install --frozen-lockfile --filter @ignition/mailer... \
+	&& pnpm --filter @ignition/mailer export
+
 FROM golang:1.27-alpine AS build
 WORKDIR /src
 ENV GOWORK=off CGO_ENABLED=0 GOOS=linux
@@ -29,6 +40,7 @@ COPY apps/gateway/go.mod apps/gateway/go.sum apps/gateway/
 RUN go -C apps/gateway mod download
 
 COPY go-packages go-packages
+COPY --from=emails /src/go-packages/mailer/templates go-packages/mailer/templates
 COPY apps/gateway apps/gateway
 RUN go -C apps/gateway build -trimpath -ldflags="-s -w" -o /out/gateway .
 

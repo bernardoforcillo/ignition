@@ -11,7 +11,8 @@
 		"prepare": "husky",
 		"gen": "turbo gen",
 		"gen:proto": "go tool buf generate",
-		"lint:proto": "go tool buf lint"
+		"lint:proto": "go tool buf lint",
+		"gen:email": "pnpm --filter @ignition/mailer export"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",

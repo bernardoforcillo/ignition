@@ -22,8 +22,9 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
    webhooks, escaped template data).
 2. **Leaking a boundary.** A module that reads env, imports a sibling, or sends
    `err.Error()` to a client cannot be reused or tested.
-3. **Stale generated email.** The Go mailer embeds HTML exported from React; an
-   edited template that was never re-exported ships the old one.
+3. **Missing generated email.** The Go mailer embeds HTML exported from React
+   (`pnpm gen:email`); the output is generated, never committed. A fresh clone or
+   an edited template needs the export before `go build`/`go test`.
 
 ## What each package owns
 
@@ -50,8 +51,9 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
   by name, so adding a statement never corrupts saved roles.
 - **Schema changes are migrations**, appended to the ordered list and run through
   `database.Migrate`; never edit an applied migration.
-- **Emails**: write the component, register it, run
-  `pnpm --filter @ignition/mailer export`, commit `go-packages/mailer/templates/`.
+- **Emails**: write the component, register it, run `pnpm gen:email`. The files
+  in `go-packages/mailer/templates/` are generated and gitignored: never commit
+  them (the gateway Dockerfile exports them in a Node stage).
   Pass URLs as `*Url`/`*Link` variables (validated as absolute http(s)); the
   mailer fills `CompanyName` and `AssetBaseUrl` itself. Images live in
   `packages/mailer/src/emails/static` and must be served at
@@ -70,7 +72,7 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
   `go-packages/mailer`. A TS app that needs one calls a Go RPC.
 - Don't read env in a library module, or import one `go-packages` module from
   another to share a type (use a port).
-- Don't hand-edit `go-packages/mailer/templates/`; it is generated.
+- Don't hand-edit or commit `go-packages/mailer/templates/`; it is generated.
 - Don't add a second auth, session or email path "just for this endpoint".
 - Don't relax fail-closed behavior (unknown feature, no subscription, store error
   → denied) to make a test pass.
@@ -78,8 +80,8 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
 ## Verify
 
 ```bash
-# generated email output is current (should print nothing)
-pnpm --filter @ignition/mailer check:export 2>&1 | grep -i stale
+# the export runs and no generated email file is tracked (second command prints nothing)
+pnpm gen:email && git ls-files go-packages/mailer/templates | grep -v -e .gitkeep -e .gitignore
 # no email SDK or sender in the JS workspaces (should print nothing)
 grep -rEn '"(resend|nodemailer|@sendgrid/mail|postmark)"' --include=package.json apps packages | grep -v node_modules
 # every library module vets and passes its short tests
