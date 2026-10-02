@@ -4,7 +4,7 @@ kind: Kustomization
 resources:
   - ../../base
 
-namespace: ignition-prod
+namespace: ignition-production
 
 # Pin immutable tags (or digests) here, ideally set by CI:
 #   kustomize edit set image ignition/gateway=ghcr.io/OWNER/ignition-gateway:<sha>

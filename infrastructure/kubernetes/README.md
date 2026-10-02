@@ -4,9 +4,9 @@
 
 ```
 base/                shared manifests (deployments, services, ingress, HPA, PDB, network policies)
-overlays/developmentelopment 1 replica, dev host, namespace ignition-development
+overlays/development 1 replica, dev host, namespace ignition-development
 overlays/staging     production-like replicas, staging host, namespace ignition-staging
-overlays/production  pinned images, more replicas, namespace ignition-prod
+overlays/production  pinned images, more replicas, namespace ignition-production
 ```
 
 ## Usage
