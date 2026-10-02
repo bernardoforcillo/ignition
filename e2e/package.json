@@ -1,0 +1,20 @@
+{
+	"name": "@ignition/e2e",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"description": "End-to-end tests (Playwright) that drive the real gateway, Postgres and web build with fake Resend and Stripe servers.",
+	"scripts": {
+		"test": "playwright test",
+		"test:headed": "playwright test --headed",
+		"test:debug": "PWDEBUG=1 playwright test --workers=1",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.63.0",
+		"@types/node": "26.6.3",
+		"typescript": "^6.0.3"
+	}
+}
