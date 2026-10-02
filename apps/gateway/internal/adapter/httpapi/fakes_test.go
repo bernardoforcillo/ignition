@@ -38,6 +38,8 @@ func (fakeVerifier) VerifyAccessToken(raw string) (auth.Claims, error) {
 type fakeAuth struct {
 	err                              error
 	signUps                          []string
+	resetRequests                    []string
+	resetWith                        string
 	clientIP, userAgent, loggedOutBy string
 }
 
@@ -60,6 +62,15 @@ func (f *fakeAuth) Refresh(_ context.Context, rt string) (auth.Tokens, error) {
 	}
 	return auth.Tokens{User: auth.User{ID: "u1", Email: "a@b.c"}, AccessToken: "acc2", RefreshToken: rt + "-rotated"}, nil
 }
+func (f *fakeAuth) RequestPasswordReset(_ context.Context, email, ip string) error {
+	f.resetRequests = append(f.resetRequests, email)
+	f.clientIP = ip
+	return f.err
+}
+func (f *fakeAuth) ResetPassword(_ context.Context, token, newPassword string) error {
+	f.resetWith = token + "/" + newPassword
+	return f.err
+}
 func (f *fakeAuth) Logout(_ context.Context, rt string) error {
 	f.loggedOutBy = rt
 	return f.err
@@ -75,6 +86,16 @@ type fakeWorkspaces struct {
 	inviteEmail string
 }
 
+func (f *fakeWorkspaces) ListFor(_ context.Context, user string) ([]workspace.Membership, error) {
+	f.gotUser = user
+	if f.err != nil {
+		return nil, f.err
+	}
+	return []workspace.Membership{
+		{Workspace: wsOf("ws-1", "Acme", "acme"), RoleKey: "owner"},
+		{Workspace: wsOf("ws-2", "Zed", "zed"), RoleKey: "member"},
+	}, nil
+}
 func (f *fakeWorkspaces) Create(_ context.Context, user, name, slug string) (workspace.Workspace, error) {
 	f.gotUser = user
 	if f.err != nil {
@@ -140,11 +161,39 @@ func (f *fakeFeatures) Usage(context.Context, catalog.Key, string, string) (feat
 	return f.usage, f.usageErr
 }
 
+// fakeAccount returns canned results and records the password it was given.
+type fakeAccount struct {
+	err         error
+	user        string
+	deletedWith string
+}
+
+func (f *fakeAccount) Me(_ context.Context, user string) (auth.User, error) {
+	f.user = user
+	return auth.User{ID: user, Email: "ada@example.com"}, f.err
+}
+func (f *fakeAccount) Export(_ context.Context, user string) ([]byte, string, error) {
+	f.user = user
+	return []byte(`{"account":{}}`), "ignition-export-2026-10-02.json", f.err
+}
+func (f *fakeAccount) Delete(_ context.Context, user, password string) error {
+	f.user, f.deletedWith = user, password
+	return f.err
+}
+
 // fakeCheckout records the requests it gets.
 type fakeCheckout struct {
 	err       error
 	req       billing.CheckoutRequest
 	returnURL string
+	info      core.SubscriptionInfo
+}
+
+func (f *fakeCheckout) Subscription(context.Context, string) (core.SubscriptionInfo, error) {
+	return f.info, f.err
+}
+func (f *fakeCheckout) Prices() []core.PriceInfo {
+	return []core.PriceInfo{{PriceID: "price_pro", Kind: "plan", ID: "pro"}, {PriceID: "price_x", Kind: "addon", ID: "extra"}}
 }
 
 func (f *fakeCheckout) StartCheckout(_ context.Context, req billing.CheckoutRequest) (string, error) {
@@ -168,6 +217,7 @@ func (f *fakeForwarder) Forward(w http.ResponseWriter, _ *http.Request, _ *url.U
 type harness struct {
 	srv       *httptest.Server
 	auth      *fakeAuth
+	account   *fakeAccount
 	workspace *fakeWorkspaces
 	features  *fakeFeatures
 	checkout  *fakeCheckout
@@ -192,12 +242,12 @@ func newHarness(t *testing.T, withBilling bool) *harness {
 func newHarnessWith(t *testing.T, withBilling bool, clients *ClientIPResolver) *harness {
 	t.Helper()
 	h := &harness{
-		auth: &fakeAuth{}, workspace: &fakeWorkspaces{}, features: &fakeFeatures{},
+		auth: &fakeAuth{}, account: &fakeAccount{}, workspace: &fakeWorkspaces{}, features: &fakeFeatures{},
 		checkout: &fakeCheckout{}, proxy: &fakeForwarder{}, webhook: &recordingHandler{},
 	}
 	upstream, _ := url.Parse("http://upstream.invalid")
 	saas := &SaaS{
-		Auth: h.auth, Tokens: fakeVerifier{}, Workspaces: h.workspace, Features: h.features,
+		Auth: h.auth, Tokens: fakeVerifier{}, Account: h.account, Workspaces: h.workspace, Features: h.features,
 		AppURL:  "https://app.example.com/",
 		Clients: clients,
 		Ready:   func(context.Context) error { return h.readyErr },

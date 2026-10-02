@@ -94,11 +94,13 @@ ignored otherwise. Secrets belong in a `secretKeyRef`, never in a ConfigMap.
 | `MAIL_REPLY_TO`          | —       | Reply-to address. |
 | `ASSET_BASE_URL`         | `APP_URL` | Origin serving the email images (`<origin>/static/...`). |
 | `RESEND_API_KEY`         | —       | Resend key. Unset logs each email (recipient and subject only) instead of sending it: fine for local dev, not for production. |
+| `RESEND_BASE_URL`        | Resend's API | **Test only.** Resend API origin, so an end-to-end test can point the gateway at a fake that captures the emails (their text carries the verify/reset/invite links). Never set it in a deployment. |
 | `ACCESS_TTL`             | `15m`   | Access-token lifetime. |
 | `REFRESH_TTL`            | `720h`  | Refresh-token lifetime. |
 | `STRIPE_WEBHOOK_SECRET`  | —       | `whsec_...`. **Setting it enables billing** (`BillingService` and `POST /webhooks/stripe`). |
 | `STRIPE_API_KEY`         | —       | Stripe key for checkout/portal calls; without it those RPCs fail (webhooks still work). |
 | `BILLING_PRICES`         | —       | Price catalog `price_id=plan:<plan>,price_id=addon:<add-on>,...`, e.g. `price_123=plan:pro,price_456=addon:extra-api-calls`. Plan and add-on ids must exist in the feature catalog (`go-packages/features/catalog.go`) or startup fails. Only these prices can be checked out. |
+| `STRIPE_API_BASE_URL`    | Stripe's API | **Test only.** Stripe API origin for an end-to-end fake of checkout/portal. Never set it in a deployment. |
 | `BILLING_FREE_PLAN`      | the features catalog's free plan (`free`) | Plan a new or lapsed workspace holds. |
 
 Optional pool settings of `go-packages/database` (`DATABASE_MAX_OPEN_CONNS`,
@@ -148,10 +150,13 @@ with plain `curl` as for `Ping`):
 | Service | Procedure | Auth | Notes |
 | ------- | --------- | ---- | ----- |
 | `AuthService` | `SignUp`, `VerifyEmail`, `Login`, `Refresh` | public | `SignUp` answers identically whether or not the email exists. |
+| `AuthService` | `RequestPasswordReset`, `ResetPassword` | public | `RequestPasswordReset` answers identically for any address (budgets: 10/hour per client IP, reported as `resource_exhausted`; 3/hour per address, silent). The link is `{APP_URL}/reset-password?token=`. `ResetPassword` applies the password policy (`invalid_argument`), is single use (`unauthenticated` when spent or expired) and revokes every session. |
 | `AuthService` | `Logout` | bearer | Revokes the session behind a refresh token. |
-| `WorkspaceService` | `CreateWorkspace`, `GetWorkspace`, `ListMembers`, `InviteMember`, `AcceptInvite` | bearer | Membership and role permissions are enforced by the workspace service. A new workspace starts on the free plan. |
+| `WorkspaceService` | `ListWorkspaces`, `CreateWorkspace`, `GetWorkspace`, `ListMembers`, `InviteMember`, `AcceptInvite` | bearer | Membership and role permissions are enforced by the workspace service. A new workspace starts on the free plan. |
 | `FeatureService` | `CheckFeature` | bearer + member | Returns `enabled`, `reason` and, for a finite meter, `limit` and `remaining`. Consumes nothing. |
 | `BillingService` | `StartCheckout`, `OpenPortal` | bearer + `organization:update` (owner/admin) | Served only when billing is enabled. Return URLs are built from `APP_URL`, never taken from the client. |
+| `BillingService` | `GetSubscription`, `ListPrices` | bearer (+ member for `GetSubscription`) | Same availability. `GetSubscription` returns plan and add-ons from the entitlement store (the free plan before any), status and period end as the provider last reported them (`billing_subscriptions`, written by the subscription sink; empty until then) and `can_manage` (provider customer exists and the caller may update the workspace). `ListPrices` is `BILLING_PRICES`. |
+| `AccountService` | `GetMe`, `ExportData`, `DeleteAccount` | bearer | The caller's own account. `ExportData` returns a JSON document (account, memberships, pending invitations for the address; no hash or tokens). `DeleteAccount` re-checks the password (`permission_denied` if wrong, not `unauthenticated`), refuses with `failed_precondition` while the caller owns a workspace that still has other members or a workspace the provider still bills, otherwise erases the workspaces owned alone, leaves the others, deletes the account and its sessions. |
 
 Plain HTTP: `POST /webhooks/stripe` (billing enabled only; verified by Stripe
 signature, not a bearer token; 400/405/413/422/500 per `go-packages/billing`'s
@@ -166,8 +171,10 @@ Things worth knowing:
 - **Errors** are mapped once (`httpapi/errors.go`): a domain sentinel becomes a
   Connect code with a constant message; any other failure is logged and answered
   with `internal error`. Non-members get `not_found`, not `permission_denied`.
+- **Email links** point at the web app: `{APP_URL}/verify-email`, `/reset-password`,
+  `/invite/accept` (each with `?token=`) and `/login`.
 - **Rate limiting of the public auth RPCs** uses the identity service's own
-  per-IP budgets (20 logins / 15 min, 10 sign-ups / hour), backed by an
+  per-IP budgets (20 logins / 15 min, 10 sign-ups / hour, 10 reset requests / hour), backed by an
   in-memory fixed-window limiter (`adapter/saas/ratelimit.go`). It is per
   replica. The key is the real client: set `TRUSTED_PROXIES` to the networks of
   the reverse proxies in front of the gateway (the ingress controller) and
@@ -181,6 +188,12 @@ Things worth knowing:
   every subscription it pushes, lapsed ones included, so a canceled workspace can
   still open the portal. `OpenPortal` answers `failed_precondition` only for a
   workspace the provider has never reported.
+- **Account erasure** is a hard delete (`adapter/saas/directory.go` removes a
+  workspace and its members, roles, invitations, entitlements and billing rows in
+  one transaction). It does not cancel anything at Stripe, which is why a
+  workspace the provider still bills (`active`, `trialing`, `past_due`) blocks it:
+  cancel through the portal first. Invitations addressed to the deleted address
+  are removed; invitations the user sent elsewhere keep the (now dangling) id.
 - **Access tokens are stateless**: `Logout` revokes the refresh token, but an
   issued access token lives until `ACCESS_TTL` expires.
 
@@ -202,6 +215,8 @@ apps/gateway/
                                     imports a concrete adapter directly
   internal/
     core/                          domain layer — routing decision + ports
+                                    (also SubscriptionInfo/PriceInfo, the
+                                    billing read models)
       route.go                     Route, Router: given a path, which
                                     upstream owns it (the one real business
                                     decision a gateway makes)
@@ -239,8 +254,8 @@ apps/gateway/
                                     featureChecker, checkoutStarter) and the
                                     mounting of the SaaS routes
         authservice.go, workspaceservice.go,
-        featureservice.go, billingservice.go
-                                   one Connect handler per service
+        featureservice.go, billingservice.go,
+        accountservice.go          one Connect handler per service
         interceptor.go             bearer-token authentication; the public
                                     procedure allow-list
         errors.go                  the one domain-error -> Connect mapper

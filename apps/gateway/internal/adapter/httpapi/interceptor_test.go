@@ -33,6 +33,12 @@ func TestAuthInterceptor_PublicProceduresNeedNoToken(t *testing.T) {
 	if _, err := c.Refresh(ctx, connect.NewRequest(&saasv1.RefreshRequest{RefreshToken: "r"})); err != nil {
 		t.Errorf("Refresh: %v", err)
 	}
+	if _, err := c.RequestPasswordReset(ctx, connect.NewRequest(&saasv1.RequestPasswordResetRequest{Email: "a@b.c"})); err != nil {
+		t.Errorf("RequestPasswordReset: %v", err)
+	}
+	if _, err := c.ResetPassword(ctx, connect.NewRequest(&saasv1.ResetPasswordRequest{Token: "t", NewPassword: "pw"})); err != nil {
+		t.Errorf("ResetPassword: %v", err)
+	}
 }
 
 func TestAuthInterceptor_ProtectedProceduresRejectMissingAndBadTokens(t *testing.T) {
@@ -47,6 +53,12 @@ func TestAuthInterceptor_ProtectedProceduresRejectMissingAndBadTokens(t *testing
 		saasv1connect.FeatureServiceCheckFeatureProcedure,
 		saasv1connect.BillingServiceStartCheckoutProcedure,
 		saasv1connect.BillingServiceOpenPortalProcedure,
+		saasv1connect.BillingServiceGetSubscriptionProcedure,
+		saasv1connect.BillingServiceListPricesProcedure,
+		saasv1connect.WorkspaceServiceListWorkspacesProcedure,
+		saasv1connect.AccountServiceGetMeProcedure,
+		saasv1connect.AccountServiceExportDataProcedure,
+		saasv1connect.AccountServiceDeleteAccountProcedure,
 	}
 	headers := map[string]string{
 		"no header":      "",
@@ -73,7 +85,7 @@ func TestAuthInterceptor_ProtectedProceduresRejectMissingAndBadTokens(t *testing
 			})
 		}
 	}
-	if h.workspace.gotUser != "" || h.auth.loggedOutBy != "" {
+	if h.workspace.gotUser != "" || h.auth.loggedOutBy != "" || h.account.user != "" || h.account.deletedWith != "" {
 		t.Fatal("a rejected request reached a handler")
 	}
 }

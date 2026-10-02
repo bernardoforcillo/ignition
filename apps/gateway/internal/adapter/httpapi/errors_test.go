@@ -11,6 +11,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/go-packages/billing"
 	"github.com/bernardoforcillo/ignition/go-packages/features"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/account"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
@@ -28,6 +29,9 @@ func TestToConnectError_MapsSentinelsToCodes(t *testing.T) {
 		{"bad token", auth.ErrTokenInvalid, connect.CodeUnauthenticated},
 		{"weak password", auth.ErrWeakPassword, connect.CodeInvalidArgument},
 		{"rate limited", auth.ErrRateLimited, connect.CodeResourceExhausted},
+		{"deleted account behind a valid token", auth.ErrAccountNotFound, connect.CodeUnauthenticated},
+		{"owns a shared workspace", account.ErrOwnsSharedWorkspace, connect.CodeFailedPrecondition},
+		{"workspace still billed", account.ErrActiveSubscription, connect.CodeFailedPrecondition},
 		{"workspace missing", workspace.ErrNotFound, connect.CodeNotFound},
 		{"not a member hides existence", workspace.ErrNotMember, connect.CodeNotFound},
 		{"forbidden", workspace.ErrForbidden, connect.CodePermissionDenied},
