@@ -41,7 +41,6 @@ var (
 	ErrRoleNotFound        = errors.New("role not found")
 	ErrLastOwner           = errors.New("cannot remove or demote the owner")
 	ErrOwnerOnly           = errors.New("only the owner may do this")
-	ErrAlreadyMember       = errors.New("already a member")
 	ErrSlugTaken           = errors.New("workspace slug already taken")
 	ErrInviteInvalid       = errors.New("invitation invalid")
 	ErrInviteExpired       = errors.New("invitation expired")
@@ -63,12 +62,13 @@ type Service struct {
 }
 
 // NewService wires the engines over the injected stores. ac comes from
-// permissions.NewAccess; baseURL prefixes invitation links.
-func NewService(ac *access.Access, store Store, inviteStore InviteStore, mailer Mailer, baseURL string, opts ...org.Option) *Service {
-	sc := org.New(ac, store, opts...)
+// permissions.NewAccess; baseURL prefixes invitation links; inviteOpts tune
+// the invitation engine (invite.WithInviteExpiry, default seven days).
+func NewService(ac *access.Access, store Store, inviteStore InviteStore, mailer Mailer, baseURL string, inviteOpts ...invite.Option) *Service {
+	sc := org.New(ac, store)
 	return &Service{
 		sc:     sc,
-		inv:    invite.New(sc.Service, inviteStore),
+		inv:    invite.New(sc.Service, inviteStore, inviteOpts...),
 		mailer: mailer,
 		base:   strings.TrimRight(baseURL, "/"),
 	}
@@ -213,7 +213,6 @@ func mapError(err error) error {
 		{scope.ErrRoleNotFound, ErrRoleNotFound},
 		{scope.ErrLastOwner, ErrLastOwner},
 		{scope.ErrOwnerOnly, ErrOwnerOnly},
-		{scope.ErrAlreadyMember, ErrAlreadyMember},
 		{scope.ErrConflict, ErrSlugTaken},
 		{invite.ErrInviteNotFound, ErrInviteInvalid},
 		{invite.ErrInviteExpired, ErrInviteExpired},

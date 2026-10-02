@@ -2,7 +2,5 @@ github.com/bernardoforcillo/authlayer v0.1.0 h1:rfEC3zt1sRVxscmMB120b4oOr9DbK+tz
 github.com/bernardoforcillo/authlayer v0.1.0/go.mod h1:TKe7cocU8ngCBmyTQAJ83kr1VKbUw+QCNeV5AgfmbM8=
 github.com/bernardoforcillo/drops v0.6.0 h1:BdO6kk9MLlUQtRWFf9kpS6pZtumdnOtw5MHNqeGdRKU=
 github.com/bernardoforcillo/drops v0.6.0/go.mod h1:9r+/t5MUZa+V0w5uwvrojHO6CCrSMfeFUuIn+18L9V4=
-golang.org/x/crypto v0.55.0 h1:+KWHjbgOaAQ66dh/YlkZKHlz9ZUlq61AFirAR9ntP8M=
-golang.org/x/crypto v0.55.0/go.mod h1:uq0V9dE/fzQuJtbnL+2EhWOE63vo164FY8xqEnV9xis=
 golang.org/x/crypto v0.57.0 h1:3ZVCjf8Ggz7zneR/EHRVx68Ctf+2pmIMP2UFhh9cC6M=
 golang.org/x/crypto v0.57.0/go.mod h1:Fdz0i5U6CoizGwLda9DttjSk6qlZo25zYNtR+ycvuZA=
