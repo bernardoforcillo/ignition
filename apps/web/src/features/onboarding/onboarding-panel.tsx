@@ -1,5 +1,5 @@
 import { Alert, Button, TextField } from "@ignition/components";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { type FormEvent, useRef, useState } from "react";
 
@@ -15,7 +15,6 @@ type Errors = { name?: string; slug?: string };
 
 export function OnboardingPanel() {
 	const router = useRouter();
-	const queryClient = useQueryClient();
 	const setWorkspaceId = useAuthStore((state) => state.setWorkspaceId);
 	const formRef = useRef<HTMLFormElement>(null);
 	const [name, setName] = useState("");
@@ -66,7 +65,6 @@ export function OnboardingPanel() {
 					type="button"
 					onClick={async () => {
 						await signOut();
-						queryClient.clear();
 						router.history.push("/login");
 					}}
 					className="font-medium text-brand-600 underline"

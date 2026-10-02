@@ -44,11 +44,6 @@ type workspaceService interface {
 	AcceptInvite(ctx context.Context, userID, token string) (workspace.Workspace, error)
 }
 
-// memberEmails resolves member addresses for ListMembers.
-type memberEmails interface {
-	Emails(ctx context.Context, userIDs []string) (map[string]string, error)
-}
-
 type accountService interface {
 	Me(ctx context.Context, userID string) (auth.User, error)
 	Export(ctx context.Context, userID string) (data []byte, filename string, err error)
@@ -85,7 +80,6 @@ type SaaS struct {
 	Workspaces interface {
 		workspaceService
 		workspaceAuthorizer
-		memberEmails
 	}
 	Features featureChecker
 
@@ -120,7 +114,7 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth, clients: s.Clients}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
-		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces, emails: s.Workspaces}, opts)
+		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
 		return saasv1connect.NewAccountServiceHandler(&accountHandler{account: s.Account}, opts)
@@ -132,7 +126,7 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 	if s.Billing != nil {
 		mustMount(app, func() (string, http.Handler) {
 			return saasv1connect.NewBillingServiceHandler(
-				&billingHandler{billing: s.Billing, authz: s.Workspaces, appURL: s.AppURL}, opts)
+				&billingHandler{billing: s.Billing, authz: s.Workspaces, members: s.Workspaces, appURL: s.AppURL}, opts)
 		})
 	}
 	if s.BillingWebhook != nil {

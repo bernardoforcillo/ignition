@@ -17,7 +17,12 @@ export async function requireAuth(href: string): Promise<void> {
 export async function redirectIfAuthenticated(target: unknown): Promise<void> {
 	await useAuthStore.getState().restore();
 	if (useAuthStore.getState().status === "authenticated") {
-		throw redirect({ href: safeRedirect(target) });
+		// safeRedirect guarantees a same-origin relative path; split it back into router terms.
+		const url = new URL(safeRedirect(target), "http://ignition.invalid");
+		throw redirect({
+			to: url.pathname as "/app",
+			search: Object.fromEntries(url.searchParams) as never,
+		});
 	}
 }
 

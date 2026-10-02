@@ -1,5 +1,4 @@
 import { Button } from "@ignition/components";
-import { useQueryClient } from "@tanstack/react-query";
 import {
 	Link,
 	Outlet,
@@ -21,7 +20,6 @@ const NAV = [
 
 export function AppShell() {
 	const router = useRouter();
-	const queryClient = useQueryClient();
 	const status = useAuthStore((state) => state.status);
 	const email = useAuthStore((state) => state.user?.email);
 	const href = useRouterState({ select: (s) => s.location.href });
@@ -37,7 +35,6 @@ export function AppShell() {
 	const onSignOut = async () => {
 		signingOut.current = true;
 		await signOut();
-		queryClient.clear();
 		router.navigate({ to: "/login", search: {} });
 	};
 

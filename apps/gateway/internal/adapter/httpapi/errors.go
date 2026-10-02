@@ -9,6 +9,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/go-packages/billing"
 	"github.com/bernardoforcillo/ignition/go-packages/features"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/account"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
@@ -35,8 +36,13 @@ var errorMappings = []errorMapping{
 	{auth.ErrInvalidCredentials, connect.CodeUnauthenticated, "invalid credentials"},
 	{auth.ErrEmailNotVerified, connect.CodeUnauthenticated, "email not verified"},
 	{auth.ErrTokenInvalid, connect.CodeUnauthenticated, "token expired or invalid"},
+	// A valid access token whose account was deleted since.
+	{auth.ErrAccountNotFound, connect.CodeUnauthenticated, "missing or invalid access token"},
 	{auth.ErrWeakPassword, connect.CodeInvalidArgument, "password does not meet requirements"},
 	{auth.ErrRateLimited, connect.CodeResourceExhausted, "too many attempts; try again later"},
+
+	{account.ErrOwnsSharedWorkspace, connect.CodeFailedPrecondition, "transfer ownership of your shared workspaces first"},
+	{account.ErrActiveSubscription, connect.CodeFailedPrecondition, "cancel your workspace subscriptions first"},
 
 	{workspace.ErrNotFound, connect.CodeNotFound, "workspace not found"},
 	{workspace.ErrNotMember, connect.CodeNotFound, "workspace not found"},

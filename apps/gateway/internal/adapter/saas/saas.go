@@ -98,7 +98,7 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 	dir := &directory{db: db.DB}
 	s := &Services{
 		Auth:       authSvc,
-		Workspaces: &Workspaces{Service: wsSvc, subs: subs, freePlan: freePlan, users: dir},
+		Workspaces: &Workspaces{Service: wsSvc, subs: subs, freePlan: freePlan},
 		Account:    account.NewService(authSvc, wsSvc, dir),
 		Features:   engine,
 		db:         db,

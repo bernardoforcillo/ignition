@@ -78,17 +78,6 @@ type Workspaces struct {
 	*workspace.Service
 	subs     subscriptionStore
 	freePlan entitlement.PlanID
-	users    emailResolver
-}
-
-// emailResolver looks up the addresses of user ids (the users table).
-type emailResolver interface {
-	Emails(ctx context.Context, userIDs []string) (map[string]string, error)
-}
-
-// Emails resolves member addresses; ids it cannot resolve are absent from the result.
-func (w *Workspaces) Emails(ctx context.Context, userIDs []string) (map[string]string, error) {
-	return w.users.Emails(ctx, userIDs)
 }
 
 // Create makes the workspace and gives it the free plan. If the

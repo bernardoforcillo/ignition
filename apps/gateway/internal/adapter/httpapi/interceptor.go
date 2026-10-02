@@ -20,6 +20,9 @@ var publicProcedures = map[string]bool{
 	saasv1connect.AuthServiceVerifyEmailProcedure: true,
 	saasv1connect.AuthServiceLoginProcedure:       true,
 	saasv1connect.AuthServiceRefreshProcedure:     true,
+
+	saasv1connect.AuthServiceRequestPasswordResetProcedure: true,
+	saasv1connect.AuthServiceResetPasswordProcedure:        true,
 }
 
 // tokenVerifier checks a bearer access token; *auth.Service satisfies it.

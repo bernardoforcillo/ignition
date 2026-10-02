@@ -3,7 +3,6 @@ package saas
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	alauth "github.com/bernardoforcillo/authlayer/auth"
 	"github.com/bernardoforcillo/drops/pg"
@@ -11,39 +10,12 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/identity/account"
 )
 
-// directory is the SQL the identity engines do not offer: member emails, workspace erasure and
+// directory is the SQL the identity engines do not offer: workspace erasure and
 // invitations by address. The table names are authlayer's defaults (see createIdentitySchema)
 // and the features/billing tables of this package.
 type directory struct{ db *pg.DB }
 
 var _ account.Store = (*directory)(nil)
-
-// Emails returns the address of each user id it can resolve; unknown ids are simply absent.
-func (d *directory) Emails(ctx context.Context, userIDs []string) (map[string]string, error) {
-	out := make(map[string]string, len(userIDs))
-	if len(userIDs) == 0 {
-		return out, nil
-	}
-	holders := make([]string, len(userIDs))
-	args := make([]any, len(userIDs))
-	for i, id := range userIDs {
-		holders[i] = fmt.Sprintf("$%d::uuid", i+1)
-		args[i] = id
-	}
-	rows, err := d.db.Query(ctx, `SELECT id::text, email FROM users WHERE id IN (`+strings.Join(holders, ",")+`)`, args...)
-	if err != nil {
-		return nil, fmt.Errorf("reading member emails: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var id, email string
-		if err := rows.Scan(&id, &email); err != nil {
-			return nil, fmt.Errorf("scanning member email: %w", err)
-		}
-		out[id] = email
-	}
-	return out, rows.Err()
-}
 
 // blockingStatuses are the provider states in which the workspace is still being billed.
 var blockingStatuses = []string{"active", "trialing", "past_due"}

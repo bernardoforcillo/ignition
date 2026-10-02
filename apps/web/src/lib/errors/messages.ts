@@ -1,7 +1,12 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 
 /** Where an error happened; a few codes read differently depending on it. */
-export type ErrorContext = "login" | "workspace" | "token" | "default";
+export type ErrorContext =
+	| "login"
+	| "workspace"
+	| "token"
+	| "password"
+	| "default";
 
 const GENERIC = "Something went wrong. Please try again.";
 
@@ -30,6 +35,7 @@ export function errorMessage(
 	}
 	switch (error.code) {
 		case Code.Unauthenticated:
+			if (context === "password") return "Incorrect password.";
 			return context === "login"
 				? "Invalid email or password"
 				: "Your session expired. Please sign in again.";
