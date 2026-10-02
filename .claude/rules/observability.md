@@ -41,8 +41,9 @@ alwaysApply: false
   `analytics.track("object_verb", { location: "…", … })`. Past tense, snake_case, always a
   `location`. Properties are ids, categories, lengths or booleans: **never** an email,
   name, token or free text.
-- **Consent is automatic:** PostHog starts opted out (`opt_out_capturing_by_default`);
-  the banner calls `applyConsent`. Call `track` unconditionally; never wrap it in a
+- **Consent is automatic:** the SDK is not even initialised until the visitor accepts
+  (initialising fetches vendor scripts and posts an anonymous id, which is tracking), and
+  starts opted out (`opt_out_capturing_by_default`); the banner calls `applyConsent`. Call `track` unconditionally; never wrap it in a
   consent check, and never initialise a second PostHog client.
 - **Scrub URLs.** `before_send` runs `scrubProperties` on every event. Any new sensitive
   query parameter goes in `SENSITIVE_PARAMS` (`scrub.ts`) with a test.

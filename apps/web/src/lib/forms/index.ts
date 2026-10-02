@@ -3,4 +3,5 @@ export {
 	emailError,
 	MIN_PASSWORD_LENGTH,
 	newPasswordError,
+	PASSWORD_HINT,
 } from "./validation";

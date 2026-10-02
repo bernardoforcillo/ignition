@@ -16,6 +16,9 @@ export function useAnalyticsBridge(): void {
 
 	useEffect(() => {
 		analytics.applyConsent(decision);
+		// The SDK starts only now, so a sign-in that happened before consent was not identified.
+		const current = useAuthStore.getState().user?.id ?? "";
+		if (decision === "granted" && current) analytics.identify(current);
 	}, [decision]);
 
 	useEffect(

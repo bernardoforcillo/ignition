@@ -77,6 +77,10 @@ once, in `go-packages/*` (Go modules in `go.work`) and `packages/mailer`
 - Don't relax fail-closed behavior (unknown feature, no subscription, store error
   → denied) to make a test pass.
 
+- **Browser-visible behavior is covered by `e2e/`.** Changing the password policy, the
+  public/bearer RPC allow-list, sign-out or the billing webhook flow means updating the
+  matching e2e test in the same commit (`pnpm test:e2e`).
+
 ## Verify
 
 ```bash

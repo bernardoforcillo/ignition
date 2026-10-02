@@ -7,8 +7,11 @@ export interface Session {
 	refresh(): Promise<boolean>;
 }
 
-/** AuthService carries its own credentials (password, refresh token): never decorate or retry it. */
+/** AuthService carries its own credentials (password, refresh token): never retry it. */
 const AUTH_SERVICE = "saas.v1.AuthService";
+
+/** The one AuthService call the gateway also wants a bearer token on (everything else there is public). */
+const BEARER_AUTH_METHOD = "Logout";
 
 /**
  * Attaches `Authorization: Bearer <access token>` and, when the server answers
@@ -18,9 +21,16 @@ const AUTH_SERVICE = "saas.v1.AuthService";
  */
 export function createAuthInterceptor(session: Session): Interceptor {
 	return (next) => async (req) => {
-		if (req.service.typeName === AUTH_SERVICE) return next(req);
-
 		const token = session.getAccessToken();
+		if (req.service.typeName === AUTH_SERVICE) {
+			// Without the bearer, Logout is answered 401 and the refresh token is never revoked. It is
+			// not replayed: the auth store retries it itself with the rotated refresh token.
+			if (token && req.method.name === BEARER_AUTH_METHOD) {
+				req.header.set("Authorization", `Bearer ${token}`);
+			}
+			return next(req);
+		}
+
 		if (token) req.header.set("Authorization", `Bearer ${token}`);
 
 		try {

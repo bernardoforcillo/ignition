@@ -100,7 +100,7 @@ importers:
         specifier: ^1.63.0
         version: 1.63.0
       '@types/node':
-        specifier: 26.6.3
+        specifier: ^26.6.3
         version: 26.6.3
       typescript:
         specifier: ^6.0.3

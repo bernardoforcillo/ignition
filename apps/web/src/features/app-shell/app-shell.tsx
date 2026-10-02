@@ -26,8 +26,14 @@ export function AppShell() {
 	const signingOut = useRef(false);
 
 	// The session can end under us (refresh token revoked): go to sign-in and come back here after.
+	// Not once we are already there: the shell can outlive the navigation to /login by a render, and
+	// redirecting from /login would nest `redirect=` inside itself forever (e.g. after deleting the account).
 	useEffect(() => {
-		if (status === "anonymous" && !signingOut.current) {
+		if (
+			status === "anonymous" &&
+			!signingOut.current &&
+			!href.startsWith("/login")
+		) {
 			router.navigate({ to: "/login", search: { redirect: href } });
 		}
 	}, [status, href, router]);

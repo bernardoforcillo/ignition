@@ -26,9 +26,12 @@ export function readAnalyticsConfig(env: {
 }
 
 /**
- * Initialises posthog-js for an EU product:
- *  - opted out until the visitor accepts (`opt_out_capturing_by_default`), so nothing is stored or
- *    sent before consent;
+ * Wraps posthog-js for an EU product:
+ *  - the SDK is not even initialised until the visitor accepts: `init` fetches the vendor's config
+ *    and scripts and posts to its feature-flag endpoint (with an anonymous id and the visitor's IP),
+ *    which is data leaving the browser before any consent. Until then every call is a no-op;
+ *  - once started it is still opted out by default (`opt_out_capturing_by_default`) until
+ *    `optIn` runs, which is the same call that starts it;
  *  - person profiles only for identified (signed-in) users;
  *  - pageviews are sent by the router bridge, not automatically, so the URL can be scrubbed;
  *  - every event passes through `before_send`, which strips tokens and redirect targets from URLs
@@ -37,6 +40,41 @@ export function readAnalyticsConfig(env: {
  *    text.
  */
 export function createPostHogClient(config: AnalyticsConfig): AnalyticsClient {
+	let started = false;
+	const start = () => {
+		if (started) return;
+		started = true;
+		initPostHog(config);
+	};
+
+	return {
+		capture: (event, properties) => {
+			if (started) posthog.capture(event, properties);
+		},
+		captureException: (error, properties) => {
+			if (started) posthog.captureException(error, properties);
+		},
+		identify: (distinctId) => {
+			if (started) posthog.identify(distinctId);
+		},
+		reset: () => {
+			if (started) posthog.reset();
+		},
+		optIn: () => {
+			start();
+			posthog.opt_in_capturing();
+		},
+		optOut: () => {
+			if (started) posthog.opt_out_capturing();
+		},
+		isFeatureEnabled: (key) =>
+			started ? posthog.isFeatureEnabled(key) : undefined,
+		onFeatureFlags: (callback) =>
+			started ? posthog.onFeatureFlags(callback) : () => {},
+	};
+}
+
+function initPostHog(config: AnalyticsConfig): void {
 	posthog.init(config.apiKey, {
 		api_host: config.host,
 		opt_out_capturing_by_default: true,
@@ -55,16 +93,4 @@ export function createPostHogClient(config: AnalyticsConfig): AnalyticsClient {
 			return event;
 		},
 	});
-
-	return {
-		capture: (event, properties) => posthog.capture(event, properties),
-		captureException: (error, properties) =>
-			posthog.captureException(error, properties),
-		identify: (distinctId) => posthog.identify(distinctId),
-		reset: () => posthog.reset(),
-		optIn: () => posthog.opt_in_capturing(),
-		optOut: () => posthog.opt_out_capturing(),
-		isFeatureEnabled: (key) => posthog.isFeatureEnabled(key),
-		onFeatureFlags: (callback) => posthog.onFeatureFlags(callback),
-	};
 }

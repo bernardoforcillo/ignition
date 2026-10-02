@@ -49,7 +49,11 @@ export function errorMessage(
 		case Code.FailedPrecondition:
 			return error.rawMessage.trim() || GENERIC;
 		case Code.PermissionDenied:
-			return "You don't have permission to do that.";
+			// DeleteAccount answers a wrong password with permission_denied (not unauthenticated, which
+			// would make the client try to refresh a session that is fine).
+			return context === "password"
+				? "Incorrect password."
+				: "You don't have permission to do that.";
 		case Code.NotFound:
 			return "We couldn't find that. It may have expired or been removed.";
 		case Code.Unavailable:

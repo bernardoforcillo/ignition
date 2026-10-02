@@ -8,6 +8,7 @@ const setup = (
 	token: string | null,
 	responses: Array<"ok" | Code>,
 	service = "saas.v1.WorkspaceService",
+	methodName = "Any",
 ) => {
 	let current = token;
 	const session: Session = {
@@ -29,7 +30,7 @@ const setup = (
 		// biome-ignore lint/suspicious/noExplicitAny: minimal fake of Connect's request/handler types
 		createAuthInterceptor(session)(next as any)({
 			service: { typeName: service },
-			method: { name: "Any" },
+			method: { name: methodName },
 			header: new Headers(),
 			stream,
 			// biome-ignore lint/suspicious/noExplicitAny: see above
@@ -94,6 +95,18 @@ describe("auth interceptor", () => {
 		);
 		await expect(call()).rejects.toBeInstanceOf(ConnectError);
 		expect(seen).toEqual([null]);
+		expect(session.refresh).not.toHaveBeenCalled();
+	});
+
+	it("sends the bearer on Logout (the gateway requires it) but never replays it", async () => {
+		const { call, seen, session } = setup(
+			"abc",
+			[Code.Unauthenticated],
+			"saas.v1.AuthService",
+			"Logout",
+		);
+		await expect(call()).rejects.toBeInstanceOf(ConnectError);
+		expect(seen).toEqual(["Bearer abc"]);
 		expect(session.refresh).not.toHaveBeenCalled();
 	});
 });

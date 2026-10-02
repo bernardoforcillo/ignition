@@ -12,7 +12,8 @@
 		"gen": "turbo gen",
 		"gen:proto": "go tool buf generate",
 		"lint:proto": "go tool buf lint",
-		"gen:email": "pnpm --filter @ignition/mailer export"
+		"gen:email": "pnpm --filter @ignition/mailer export",
+		"test:e2e": "pnpm --filter @ignition/e2e test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",

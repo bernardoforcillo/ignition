@@ -5,7 +5,11 @@ import { type FormEvent, useRef, useState } from "react";
 import { analytics } from "~/lib/analytics";
 import { resetPassword } from "~/lib/api";
 import { errorMessage } from "~/lib/errors";
-import { newPasswordError, useFocusFirstInvalid } from "~/lib/forms";
+import {
+	newPasswordError,
+	PASSWORD_HINT,
+	useFocusFirstInvalid,
+} from "~/lib/forms";
 
 import { AuthLayout } from "./auth-layout";
 
@@ -95,7 +99,7 @@ export function ResetPasswordPanel({ token }: Props) {
 					type="password"
 					revealable
 					autoComplete="new-password"
-					hint="At least 8 characters."
+					hint={PASSWORD_HINT}
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
 					error={errors.password}

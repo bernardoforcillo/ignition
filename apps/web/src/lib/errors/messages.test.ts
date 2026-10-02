@@ -16,6 +16,13 @@ describe("errorMessage", () => {
 		expect(errorMessage(err(Code.Unauthenticated))).toMatch(/session expired/i);
 	});
 
+	it("calls a permission_denied on the password confirmation an incorrect password", () => {
+		expect(errorMessage(err(Code.PermissionDenied), "password")).toBe(
+			"Incorrect password.",
+		);
+		expect(errorMessage(err(Code.PermissionDenied))).toMatch(/permission/i);
+	});
+
 	it("asks the user to wait when rate limited", () => {
 		expect(errorMessage(err(Code.ResourceExhausted))).toBe(
 			"Too many attempts, try again later",

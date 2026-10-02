@@ -41,6 +41,9 @@ agents read them by path. Open the matching rule **before** the work it covers.
 - Touching the memory wiki → `.claude/rules/memory-wiki.md`
 - Logs, error tracking, analytics events, consent, PostHog (what goes to stdout vs
   PostHog, privacy, URL scrubbing) → `.claude/rules/observability.md`
+- Browser flows (auth, billing, GDPR, analytics consent) → `e2e/README.md`. Run
+  `pnpm test:e2e` after touching `apps/web`, the gateway's auth/billing handlers or the
+  analytics code; it needs Go, Postgres 16 (`E2E_DATABASE_URL`) and Chromium.
 - Adding, moving or removing an agent rule, skill, MCP config or instruction
   file → `.claude/rules/agent-resources-via-symlinks.md`
 
@@ -103,5 +106,8 @@ may already have recorded lessons. PRDs, specs and plans live in
   molecule), `deployment` (the same manifests in every environment) and `service`
   (a Go service in `apps/<name>` with its `go.work` entry and, optionally, manifests). Prefer a
   generator to copying a sibling; improve the template when a convention changes.
+- E2E tests use accessible selectors only, create their own users with `uniqueEmail()`
+  and never sleep. A change to the password policy, the public/bearer RPC list or the web
+  auth interceptor needs a matching e2e check.
 - Declare per-package tasks (`build`, `dev`, `lint`, `typecheck`) as scripts so
   Turbo can orchestrate them.

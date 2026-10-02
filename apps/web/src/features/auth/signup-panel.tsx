@@ -8,6 +8,7 @@ import { errorMessage } from "~/lib/errors";
 import {
 	emailError,
 	newPasswordError,
+	PASSWORD_HINT,
 	useFocusFirstInvalid,
 } from "~/lib/forms";
 
@@ -94,7 +95,7 @@ export function SignupPanel() {
 					type="password"
 					revealable
 					autoComplete="new-password"
-					hint="At least 8 characters."
+					hint={PASSWORD_HINT}
 					value={password}
 					onChange={(e) => setPassword(e.target.value)}
 					error={errors.password}
