@@ -1,0 +1,14 @@
+Ignition
+
+
+Join {{.WorkspaceName}}
+
+You have been invited to collaborate in the {{.WorkspaceName}} workspace.
+
+Accept invitation {{.Link}}
+
+Button not working? Paste this link into your browser: {{.Link}}
+
+----------------------------------------
+
+You are receiving this email because of activity on your Ignition account. If this wasn't you, you can safely ignore it.

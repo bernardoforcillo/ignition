@@ -1,0 +1,14 @@
+Ignition
+
+
+Confirm your email
+
+Thanks for signing up. Confirm your address to activate your account.
+
+Confirm email {{.Link}}
+
+Button not working? Paste this link into your browser: {{.Link}}
+
+----------------------------------------
+
+You are receiving this email because of activity on your Ignition account. If this wasn't you, you can safely ignore it.

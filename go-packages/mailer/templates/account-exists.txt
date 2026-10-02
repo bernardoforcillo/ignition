@@ -1,0 +1,10 @@
+Ignition
+
+
+You already have an account
+
+Someone tried to create an account with this address, but one already exists. If it was you, sign in at {{.LoginUrl}}. If it wasn't, no action is needed.
+
+----------------------------------------
+
+You are receiving this email because of activity on your Ignition account. If this wasn't you, you can safely ignore it.

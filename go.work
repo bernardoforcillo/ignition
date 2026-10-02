@@ -6,4 +6,5 @@ use (
 	./go-packages/database
 	./go-packages/features
 	./go-packages/identity
+	./go-packages/mailer
 )
