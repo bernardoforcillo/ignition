@@ -49,8 +49,8 @@ export type CheckFeatureResponse = Message<"saas.v1.CheckFeatureResponse"> & {
   enabled: boolean;
 
   /**
-   * reason says why the decision came out as it did, e.g. "entitled",
-   * "not_entitled", "limit_reached", "flag_off".
+   * reason says why the decision came out as it did, e.g. "flag_default",
+   * "no_flag", "not_entitled", "limit_reached", "flag_off".
    *
    * @generated from field: string reason = 2;
    */

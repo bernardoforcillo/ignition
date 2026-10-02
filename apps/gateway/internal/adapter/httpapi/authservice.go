@@ -8,7 +8,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
 )
 
 // authHandler implements saasv1connect.AuthServiceHandler: validate,

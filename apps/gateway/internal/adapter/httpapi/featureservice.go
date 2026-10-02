@@ -8,7 +8,7 @@ import (
 	featurelayer "github.com/bernardoforcillo/featurelayer"
 	"github.com/bernardoforcillo/featurelayer/catalog"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
 )
 
 // featureHandler implements saasv1connect.FeatureServiceHandler.

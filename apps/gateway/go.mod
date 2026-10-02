@@ -12,8 +12,8 @@ require (
 	github.com/bernardoforcillo/ignition/go-packages/features v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/identity v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/mailer v0.0.0
+	github.com/bernardoforcillo/ignition/go-packages/proto v0.0.0
 	github.com/buildwithgo/amaro v0.4.1-0.20260131070744-089fe184ddeb
-	google.golang.org/protobuf v1.36.12
 )
 
 require (
@@ -25,6 +25,7 @@ require (
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 )
 
 replace github.com/bernardoforcillo/ignition/go-packages/billing => ../../go-packages/billing
@@ -36,3 +37,5 @@ replace github.com/bernardoforcillo/ignition/go-packages/features => ../../go-pa
 replace github.com/bernardoforcillo/ignition/go-packages/identity => ../../go-packages/identity
 
 replace github.com/bernardoforcillo/ignition/go-packages/mailer => ../../go-packages/mailer
+
+replace github.com/bernardoforcillo/ignition/go-packages/proto => ../../go-packages/proto

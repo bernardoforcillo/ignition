@@ -12,8 +12,8 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
-	"github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1/saasv1connect"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
+	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
 )
 
 func TestAuthService_SignUpAnswersTheSameForNewAndExistingAddress(t *testing.T) {

@@ -31,8 +31,6 @@ apps/<svc>/
   internal/config/        # env → Config, validated at startup
   internal/core/          # business logic; imports stdlib only, declares the ports it needs
   internal/adapter/<x>/   # inbound (httpapi) and outbound (proxy, db, …) adapters
-  internal/gen/           # generated code, committed (protobuf-codegen.md)
-  proto/<pkg>/v1/*.proto
 ```
 
 - **Only the folders you need.** No `port/` package until a second adapter
@@ -62,7 +60,8 @@ module:
 ## Do
 
 - **Transport by caller.** Browser or typed client → a **native Connect**
-  handler generated from `proto/`. Plain HTTP only for probes (`/healthz`,
+  handler whose service is generated from the shared `/proto` into
+  `go-packages/proto` (`protobuf-codegen.md`). Plain HTTP only for probes (`/healthz`,
   `/readyz`) and proxying.
 - **Map errors once, at the inbound adapter.** `core` returns sentinel errors
   (`var ErrNotFound = errors.New("…")`); the inbound adapter has one mapper:

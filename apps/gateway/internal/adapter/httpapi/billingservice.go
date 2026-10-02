@@ -9,7 +9,7 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/billing"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/permissions"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
 )
 
 // Paths on the web app the payment provider returns the user to.

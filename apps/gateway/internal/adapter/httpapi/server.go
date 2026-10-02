@@ -42,7 +42,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi/middleware"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
-	"github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/gateway/v1/gatewayv1connect"
+	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/gateway/v1/gatewayv1connect"
 )
 
 // ServerConfig holds everything NewServer needs to build the
@@ -71,8 +71,8 @@ type ServerConfig struct {
 //     an auth check or count against a rate limit meant for real
 //     traffic.
 //   - the generated Connect handler for the gateway's own minimal
-//     control-plane RPC (see internal/gen and
-//     proto/gateway/v1/gateway.proto), mounted via amaro.App.Mount.
+//     control-plane RPC (generated into
+//     go-packages/proto from /proto/gateway/v1/gateway.proto), mounted via amaro.App.Mount.
 //   - when cfg.SaaS is set: the SaaS Connect services (auth, workspace,
 //     feature, billing) and POST /webhooks/stripe, registered before the
 //     catch-all so they always win over it.

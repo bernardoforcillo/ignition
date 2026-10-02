@@ -1,0 +1,22 @@
+import { createClient } from "@connectrpc/connect";
+import { createConnectTransport } from "@connectrpc/connect-web";
+import { GatewayService } from "@ignition/proto/gateway/v1/gateway_pb";
+import { AuthService } from "@ignition/proto/saas/v1/auth_pb";
+import { BillingService } from "@ignition/proto/saas/v1/billing_pb";
+import { FeatureService } from "@ignition/proto/saas/v1/feature_pb";
+import { WorkspaceService } from "@ignition/proto/saas/v1/workspace_pb";
+
+/**
+ * Typed Connect clients for the gateway, built from the shared `@ignition/proto` package
+ * (generated from /proto, the same contract the Go services implement). `VITE_API_URL` is the
+ * gateway origin; unset, requests go to the page's own origin (the dev proxy or the Ingress).
+ */
+const transport = createConnectTransport({
+	baseUrl: import.meta.env.VITE_API_URL ?? window.location.origin,
+});
+
+export const gatewayClient = createClient(GatewayService, transport);
+export const authClient = createClient(AuthService, transport);
+export const workspaceClient = createClient(WorkspaceService, transport);
+export const featureClient = createClient(FeatureService, transport);
+export const billingClient = createClient(BillingService, transport);

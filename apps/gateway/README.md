@@ -4,7 +4,7 @@ The API gateway for this workspace. It is the single public entry point that:
 
 - reverse-proxies HTTP traffic to internal upstream services based on a
   configured path-prefix routing table (`internal/core` + `internal/adapter/proxy`),
-- serves a small Connect RPC control-plane API of its own (`proto/gateway/v1`,
+- serves a small Connect RPC control-plane API of its own (`proto/gateway/v1` at the repo root,
   currently just a `Ping` RPC to prove the transport is wired end-to-end),
 - exposes `/healthz` and `/readyz` as plain HTTP endpoints for liveness/readiness
   probes, and
@@ -141,7 +141,7 @@ schema, features stores, billing tables) through `go-packages/database`, then
 wires `go-packages/{identity,features,billing,mailer}`. Any replica can start
 first: migrations are advisory-locked and idempotent.
 
-Connect procedures (`proto/saas/v1`, package `saas.v1`; JSON over HTTP works
+Connect procedures (`/proto/saas/v1` at the repo root, package `saas.v1`; JSON over HTTP works
 with plain `curl` as for `Ping`):
 
 | Service | Procedure | Auth | Notes |
@@ -194,12 +194,7 @@ applied via that file's own "Applying this to Go" section:
 apps/gateway/
   main.go                          composition root — the only file that
                                     imports a concrete adapter directly
-  proto/gateway/v1/gateway.proto   Connect RPC schema (source of truth)
-  proto/saas/v1/*.proto            auth, workspace, feature, billing schemas
   internal/
-    gen/                           generated from proto/ via `buf generate`;
-                                    checked in so `go build` never requires
-                                    the buf/protoc toolchain
     core/                          domain layer — routing decision + ports
       route.go                     Route, Router: given a path, which
                                     upstream owns it (the one real business
@@ -294,21 +289,10 @@ directly and wires it in behind the interface (`core.Forwarder`,
   guidance — nothing here assumes in-process state survives a restart or a
   request landing on a different replica.
 
-## Regenerating the Connect/protobuf code
+## Protobuf contract
 
-The generated code under `internal/gen/` is checked in, so a plain `go build`
-never needs the buf toolchain. Regenerate it after changing
-`proto/gateway/v1/gateway.proto` or anything under `proto/saas/v1/`:
-
-```sh
-# one-time setup
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-# buf itself: https://buf.build/docs/installation
-
-cd apps/gateway
-buf lint
-buf generate
-```
-
-Commit the resulting diff under `internal/gen/` along with the `.proto` change.
+The `.proto` files are not owned by the gateway: they live once in `/proto` at
+the repo root and are generated into the shared `go-packages/proto` module (this
+service imports it) and `@ignition/proto` (the web). Change a contract with
+`pnpm gen:proto` and commit both outputs; see
+`.claude/rules/protobuf-codegen.md`.

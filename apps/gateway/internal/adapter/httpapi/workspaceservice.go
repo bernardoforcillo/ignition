@@ -7,7 +7,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
 )
 
 // workspaceHandler implements saasv1connect.WorkspaceServiceHandler. The

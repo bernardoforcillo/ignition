@@ -15,7 +15,7 @@ import (
 	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
 	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
 
-	"github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1/saasv1connect"
+	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
 )
 
 // The interfaces below are declared here, by their consumer, and

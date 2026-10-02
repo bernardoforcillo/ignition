@@ -7,8 +7,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	saasv1 "github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1"
-	"github.com/bernardoforcillo/ignition/apps/gateway/internal/gen/saas/v1/saasv1connect"
+	saasv1 "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1"
+	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
 )
 
 func bearer[T any](req *connect.Request[T], token string) *connect.Request[T] {
