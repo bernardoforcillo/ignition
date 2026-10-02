@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -241,5 +243,60 @@ func TestBillingService_ListPricesReturnsTheCatalog(t *testing.T) {
 	got := resp.Msg.GetPrices()
 	if len(got) != 2 || got[0].GetPriceId() != "price_pro" || got[0].GetKind() != "plan" || got[1].GetKind() != "addon" || got[1].GetId() != "extra" {
 		t.Fatalf("prices = %v", got)
+	}
+}
+
+type fakeDirectory struct {
+	emails map[string]string
+	err    error
+	asked  []string
+}
+
+func (f *fakeDirectory) MemberEmails(_ context.Context, ids []string) (map[string]string, error) {
+	f.asked = ids
+	return f.emails, f.err
+}
+
+func TestListMembers_FillsEmailsFromTheDirectory(t *testing.T) {
+	dir := &fakeDirectory{emails: map[string]string{"u1": "ada@example.com"}}
+	h := &workspaceHandler{workspaces: &fakeWorkspaces{}, directory: dir}
+	ctx := context.WithValue(t.Context(), subjectKey{}, "u1")
+
+	res, err := h.ListMembers(ctx, connect.NewRequest(&saasv1.ListMembersRequest{WorkspaceId: "w1"}))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := res.Msg.GetMembers()[0].GetEmail(); got != "ada@example.com" {
+		t.Errorf("email = %q", got)
+	}
+	if len(dir.asked) != 1 || dir.asked[0] != "u1" {
+		t.Errorf("directory asked for %v", dir.asked)
+	}
+}
+
+func TestListMembers_StillListsMembersWhenTheDirectoryFailsOrIsAbsent(t *testing.T) {
+	tests := []struct {
+		name string
+		dir  memberDirectory
+	}{
+		{"directory error", &fakeDirectory{err: errors.New("db down")}},
+		{"no directory", nil},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h := &workspaceHandler{workspaces: &fakeWorkspaces{}, directory: tc.dir}
+			ctx := context.WithValue(t.Context(), subjectKey{}, "u1")
+
+			res, err := h.ListMembers(ctx, connect.NewRequest(&saasv1.ListMembersRequest{WorkspaceId: "w1"}))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			m := res.Msg.GetMembers()
+			if len(m) != 1 || m[0].GetUserId() != "u1" || m[0].GetEmail() != "" {
+				t.Errorf("members = %v", m)
+			}
+		})
 	}
 }

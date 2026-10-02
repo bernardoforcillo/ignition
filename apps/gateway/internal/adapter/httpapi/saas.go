@@ -44,6 +44,12 @@ type workspaceService interface {
 	AcceptInvite(ctx context.Context, userID, token string) (workspace.Workspace, error)
 }
 
+// memberDirectory resolves account ids to email addresses for member lists. It is optional: a
+// nil directory just means members are listed without emails.
+type memberDirectory interface {
+	MemberEmails(ctx context.Context, ids []string) (map[string]string, error)
+}
+
 type accountService interface {
 	Me(ctx context.Context, userID string) (auth.User, error)
 	Export(ctx context.Context, userID string) (data []byte, filename string, err error)
@@ -82,6 +88,8 @@ type SaaS struct {
 		workspaceAuthorizer
 	}
 	Features featureChecker
+	// Directory fills Member.email; nil leaves it empty.
+	Directory memberDirectory
 
 	// Billing and BillingWebhook are nil when billing is not configured;
 	// BillingService and POST /webhooks/stripe are then not served.
@@ -114,7 +122,7 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth, clients: s.Clients}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
-		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces}, opts)
+		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces, directory: s.Directory}, opts)
 	})
 	mustMount(app, func() (string, http.Handler) {
 		return saasv1connect.NewAccountServiceHandler(&accountHandler{account: s.Account}, opts)

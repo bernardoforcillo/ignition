@@ -3,6 +3,8 @@ package saas
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 
 	alauth "github.com/bernardoforcillo/authlayer/auth"
 	"github.com/bernardoforcillo/drops/pg"
@@ -96,3 +98,41 @@ func (d *directory) DeleteInvitations(ctx context.Context, email string) error {
 	}
 	return nil
 }
+
+// Emails resolves account ids to their email addresses for a member list. Ids that are not uuids
+// are skipped (authlayer keys users by uuid) and an id with no account is simply absent from the
+// result, so the caller shows what it can.
+func (d *directory) Emails(ctx context.Context, ids []string) (map[string]string, error) {
+	args := make([]any, 0, len(ids))
+	placeholders := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if !uuidPattern.MatchString(id) {
+			continue
+		}
+		args = append(args, id)
+		placeholders = append(placeholders, fmt.Sprintf("$%d::uuid", len(args)))
+	}
+	out := make(map[string]string, len(args))
+	if len(args) == 0 {
+		return out, nil
+	}
+	rows, err := d.db.Query(ctx,
+		`SELECT id::text, email FROM users WHERE id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("reading member emails: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id, email string
+		if err := rows.Scan(&id, &email); err != nil {
+			return nil, fmt.Errorf("scanning member email: %w", err)
+		}
+		out[id] = email
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("reading member emails: %w", err)
+	}
+	return out, nil
+}
+
+var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)

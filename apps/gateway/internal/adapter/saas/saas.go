@@ -40,6 +40,9 @@ import (
 // Services is everything the transport layer needs, as concrete library
 // values; main.go assigns them to httpapi's consumer-side interfaces.
 type Services struct {
+	// directory holds the SQL the identity engines lack; Emails exposes the part transport needs.
+	directory *directory
+
 	Auth       *auth.Service
 	Workspaces *Workspaces
 	Account    *account.Service
@@ -102,6 +105,7 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 		Account:    account.NewService(authSvc, wsSvc, dir),
 		Features:   engine,
 		db:         db,
+		directory:  dir,
 	}
 	if cfg.Billing != nil {
 		if err := s.wireBilling(db, *cfg.Billing, subs, freePlan, logger); err != nil {
@@ -200,4 +204,9 @@ func newCatalog(cfg config.Billing, freePlan entitlement.PlanID) (*billing.Catal
 type billingReader struct {
 	*stateStore
 	*customerStore
+}
+
+// MemberEmails resolves account ids to email addresses for member lists.
+func (s *Services) MemberEmails(ctx context.Context, ids []string) (map[string]string, error) {
+	return s.directory.Emails(ctx, ids)
 }

@@ -337,6 +337,14 @@ func TestAccountLifecycle_AgainstPostgres(t *testing.T) {
 	if err := svc.Workspaces.TransferOwnership(ctx, ada, shared.ID, bob); err != nil {
 		t.Fatal(err)
 	}
+	emails, err := (&directory{db: db.DB}).Emails(ctx, []string{ada, bob, "not-a-uuid"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(emails) != 2 || emails[ada] != "ada@example.com" || emails[bob] == "" {
+		t.Errorf("Emails = %v, want Ada's and Bob's addresses and nothing for a non-uuid", emails)
+	}
+
 	states := &stateStore{db: db.DB}
 	if err := states.set(ctx, alone.ID, billing.StatusActive, time.Now().Add(time.Hour)); err != nil {
 		t.Fatal(err)

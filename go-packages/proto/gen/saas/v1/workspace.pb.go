@@ -89,7 +89,9 @@ type Member struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	UserId string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	// role_key is "owner", "admin", "member" or a custom role key.
-	RoleKey       string `protobuf:"bytes,2,opt,name=role_key,json=roleKey,proto3" json:"role_key,omitempty"`
+	RoleKey string `protobuf:"bytes,2,opt,name=role_key,json=roleKey,proto3" json:"role_key,omitempty"`
+	// email of the member's account, empty when it cannot be resolved.
+	Email         string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -134,6 +136,13 @@ func (x *Member) GetUserId() string {
 func (x *Member) GetRoleKey() string {
 	if x != nil {
 		return x.RoleKey
+	}
+	return ""
+}
+
+func (x *Member) GetEmail() string {
+	if x != nil {
+		return x.Email
 	}
 	return ""
 }
@@ -803,10 +812,11 @@ const file_saas_v1_workspace_proto_rawDesc = "" +
 	"\tWorkspace\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04slug\x18\x03 \x01(\tR\x04slug\"<\n" +
+	"\x04slug\x18\x03 \x01(\tR\x04slug\"R\n" +
 	"\x06Member\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x19\n" +
-	"\brole_key\x18\x02 \x01(\tR\aroleKey\"M\n" +
+	"\brole_key\x18\x02 \x01(\tR\aroleKey\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\"M\n" +
 	"\n" +
 	"Invitation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +

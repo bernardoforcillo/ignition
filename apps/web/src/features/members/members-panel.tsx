@@ -91,7 +91,8 @@ export function MembersPanel() {
 								>
 									<div className="min-w-0">
 										<p className="truncate font-medium text-fg">
-											{isMe && me?.email ? me.email : member.userId}
+											{member.email ||
+												(isMe && me?.email ? me.email : member.userId)}
 										</p>
 										{isMe ? <p className="text-xs">You</p> : null}
 									</div>

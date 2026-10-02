@@ -150,6 +150,7 @@ func newSaaSAPI(s *saas.Services, appURL string, trustedProxies []netip.Prefix) 
 		Account:    s.Account,
 		Workspaces: s.Workspaces,
 		Features:   s.Features,
+		Directory:  s,
 		Clients:    httpapi.NewClientIPResolver(trustedProxies),
 		AppURL:     appURL,
 		Ready:      s.Ready,

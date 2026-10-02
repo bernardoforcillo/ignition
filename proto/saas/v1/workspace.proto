@@ -35,6 +35,8 @@ message Member {
   string user_id = 1;
   // role_key is "owner", "admin", "member" or a custom role key.
   string role_key = 2;
+  // email of the member's account, empty when it cannot be resolved.
+  string email = 3;
 }
 
 message Invitation {

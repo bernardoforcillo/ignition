@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"log/slog"
 
 	"connectrpc.com/connect"
 
@@ -14,7 +15,10 @@ import (
 // workspace service itself enforces membership and the role permissions
 // (invite needs the invite permission); this handler authenticates via
 // the interceptor's subject and delegates.
-type workspaceHandler struct{ workspaces workspaceService }
+type workspaceHandler struct {
+	workspaces workspaceService
+	directory  memberDirectory
+}
 
 func (h *workspaceHandler) ListWorkspaces(ctx context.Context, _ *connect.Request[saasv1.ListWorkspacesRequest]) (*connect.Response[saasv1.ListWorkspacesResponse], error) {
 	user, err := subjectOrErr(ctx)
@@ -74,9 +78,10 @@ func (h *workspaceHandler) ListMembers(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, toConnectError(ctx, err)
 	}
+	emails := h.memberEmails(ctx, members)
 	out := make([]*saasv1.Member, len(members))
 	for i, m := range members {
-		out[i] = &saasv1.Member{UserId: m.UserID, RoleKey: m.RoleKey}
+		out[i] = &saasv1.Member{UserId: m.UserID, RoleKey: m.RoleKey, Email: emails[m.UserID]}
 	}
 	return connect.NewResponse(&saasv1.ListMembersResponse{Members: out}), nil
 }
@@ -130,4 +135,22 @@ func subjectOrErr(ctx context.Context) (string, error) {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnauthenticated)
 	}
 	return id, nil
+}
+
+// memberEmails looks the members' addresses up. Emails are a nicety for the list, so a failure is
+// logged and the members are returned without them instead of failing the whole request.
+func (h *workspaceHandler) memberEmails(ctx context.Context, members []workspace.Member) map[string]string {
+	if h.directory == nil || len(members) == 0 {
+		return nil
+	}
+	ids := make([]string, len(members))
+	for i, m := range members {
+		ids[i] = m.UserID
+	}
+	emails, err := h.directory.MemberEmails(ctx, ids)
+	if err != nil {
+		slog.WarnContext(ctx, "resolving member emails failed", "error", err)
+		return nil
+	}
+	return emails
 }
