@@ -1,0 +1,22 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { fetch{{pascalCase name}} } from "~/lib/api";
+
+/** Entry component of the `{{name}}` feature. Routes render this and nothing else. */
+export function {{pascalCase name}}Panel() {
+	const { data, isLoading, isError } = useQuery({
+		queryKey: ["{{name}}"],
+		queryFn: fetch{{pascalCase name}},
+	});
+
+	return (
+		<section className="space-y-3 rounded-card border border-brand-100 bg-brand-50 p-5">
+			<h2 className="text-lg font-semibold text-brand-900">{{titleCase name}}</h2>
+			{isLoading ? <p className="text-sm text-brand-700">Loading…</p> : null}
+			{isError ? (
+				<p className="text-sm text-red-600">Could not load {{name}}.</p>
+			) : null}
+			{data ? <p className="text-sm text-brand-900">{data.message}</p> : null}
+		</section>
+	);
+}

@@ -22,6 +22,9 @@ folder named after it with an `index.ts` as its public entry.
 3. **Hidden coupling.** Features importing each other's private files turn a
    refactor into a hunt.
 
+Scaffold a feature with `pnpm gen feature` and a shared component with
+`pnpm gen component`; both follow this rule.
+
 ## Layout
 
 ```text

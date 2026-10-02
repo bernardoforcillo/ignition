@@ -1,0 +1,10 @@
+import { createRoute } from "@tanstack/react-router";
+
+import { {{pascalCase name}}Panel } from "~/features/{{name}}";
+import { rootRoute } from "~/routes/root";
+
+export const {{camelCase name}}Route = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/{{name}}",
+	component: {{pascalCase name}}Panel,
+});

@@ -8,12 +8,14 @@
 		"lint": "turbo run lint",
 		"format": "turbo run format",
 		"typecheck": "turbo run typecheck",
-		"prepare": "husky"
+		"prepare": "husky",
+		"gen": "turbo gen"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",
 		"@commitlint/cli": "^21.2.3",
 		"@commitlint/config-conventional": "^21.2.3",
+		"@turbo/gen": "^2.11.5",
 		"husky": "^9.1.7",
 		"turbo": "^2.11.5"
 	},

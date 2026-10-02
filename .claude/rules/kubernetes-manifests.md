@@ -22,6 +22,9 @@ Manifests are plain YAML under
 3. **Unsafe defaults.** A root container with a writable filesystem and no
    probes turns a small bug into an outage or a breach.
 
+Scaffold a deployable with `pnpm gen deployment`: it writes the same files in
+every environment and registers them in the namespace `kustomization.yaml`.
+
 ## Do
 
 - **Same files, every environment.** Adding, renaming or removing a deployable
