@@ -1,13 +1,21 @@
 # telemetry
 
-Service-side observability on [PostHog](https://posthog.com): structured logs,
-error tracking and product events.
+Service-side observability, split on purpose:
+
+- **Everything goes to stdout as JSON**, which the platform collects: Cloud Logging
+  on GCP, or Loki or anything else. `FormatGCP` writes `severity`, `message` and
+  `timestamp` so Cloud Logging's severity filters and alerts work with no parsing
+  rule.
+- **Only the critical things go to [PostHog](https://posthog.com)**: `slog` records
+  at **Error** and above become `$exception` events with a stack trace (Info and
+  Warn never leave the process), plus the few events the server alone can vouch
+  for. Product analytics lives in the browser (`apps/web`), not here.
 
 | You get | How |
 |---|---|
-| JSON logs | always, to the writer you pass to `New` |
-| Error tracking | with an API key, `slog` records at **Error** level also reach PostHog as `$exception` events with a stack trace; `CaptureException` sends a handled error |
-| Product events | `Capture(ctx, accountID, "workspace_created", props)` |
+| JSON logs | always, to the writer you pass to `New`; `LogFormat: telemetry.FormatGCP` for Cloud Logging |
+| Error tracking | with an API key, Error+ records reach PostHog as `$exception`; `CaptureException` sends a handled error; `CaptureLevel` can only be raised |
+| Server events | `Capture(ctx, accountID, "subscription_changed", props)`: keep these to business facts the browser cannot know (a webhook-driven plan change, an account erasure) |
 | Local development | no key: everything is a safe no-op and logs still print |
 
 ```go

@@ -1,10 +1,14 @@
 // Package telemetry is the service side of observability: structured logs, error tracking and
 // product events, shipped to PostHog.
 //
-//   - Logs always go to the writer you give New, as JSON.
-//   - With an API key, slog records at Error level are also sent to PostHog error tracking as
-//     exceptions (with a stack trace), so a failing request shows up in the Error tracking inbox.
-//   - Capture and CaptureException send explicit product events and handled errors.
+//   - Logs always go to the writer you give New, as JSON on stdout. That is the channel for
+//     everything else (Cloud Logging on GCP, Loki, ...): FormatGCP shapes the records the way
+//     Cloud Logging expects. PostHog is deliberately NOT a log store.
+//   - With an API key, only the critical records, slog Error and above by default, are also sent to
+//     PostHog error tracking as exceptions (with a stack trace). Info and Warn never leave the
+//     process.
+//   - Capture and CaptureException send explicit events and handled errors. The browser owns
+//     product analytics (see apps/web); the server sends just the few events only it can vouch for.
 //
 // Without an API key every method is a safe no-op and logging still works, so local development
 // and tests need no PostHog project.
@@ -25,6 +29,17 @@ import (
 	"github.com/posthog/posthog-go"
 )
 
+// Format is the JSON shape of the log records.
+type Format int
+
+const (
+	// FormatJSON is slog's default JSON (time, level, msg).
+	FormatJSON Format = iota
+	// FormatGCP uses Cloud Logging's special fields: severity, message and timestamp, so the
+	// severity filters and alerting work without a parsing rule. Other attributes pass through.
+	FormatGCP
+)
+
 // DefaultHost is PostHog's EU ingestion endpoint, the safe default for a product with EU users.
 const DefaultHost = "https://eu.i.posthog.com"
 
@@ -37,6 +52,11 @@ type Config struct {
 	Environment string
 	// LogLevel is the minimum level written to the log writer; the zero value is Info.
 	LogLevel slog.Level
+	// LogFormat shapes the JSON records; the zero value is FormatJSON.
+	LogFormat Format
+	// CaptureLevel is the minimum slog level mirrored to PostHog error tracking; the zero value is
+	// slog.LevelError. Raise it, never lower it: Info and Warn belong in the log pipeline.
+	CaptureLevel slog.Level
 	// BatchSize overrides the SDK batch size (tests use 1 to flush immediately).
 	BatchSize int
 }
@@ -73,7 +93,11 @@ func New(cfg Config, out io.Writer) (*Telemetry, error) {
 		cfg.Host = DefaultHost
 	}
 
-	base := slog.NewJSONHandler(out, &slog.HandlerOptions{Level: cfg.LogLevel})
+	base := slog.NewJSONHandler(out, &slog.HandlerOptions{Level: cfg.LogLevel, ReplaceAttr: replacer(cfg.LogFormat)})
+	captureLevel := cfg.CaptureLevel
+	if captureLevel == 0 {
+		captureLevel = slog.LevelError
+	}
 	t := &Telemetry{cfg: cfg}
 
 	if cfg.APIKey == "" {
@@ -91,7 +115,7 @@ func New(cfg Config, out io.Writer) (*Telemetry, error) {
 	}
 	t.client = client
 	t.logger = slog.New(posthog.NewSlogCaptureHandler(base, client,
-		posthog.WithMinCaptureLevel(slog.LevelError),
+		posthog.WithMinCaptureLevel(captureLevel),
 		posthog.WithDistinctIDFn(func(ctx context.Context, _ slog.Record) string { return t.distinctID(ctx) }),
 		posthog.WithPropertiesFn(func(ctx context.Context, _ slog.Record) posthog.Properties {
 			return t.baseProperties(distinctIDFrom(ctx) == "")
@@ -174,4 +198,44 @@ func (t *Telemetry) baseProperties(anonymous bool) posthog.Properties {
 		p.Set("$process_person_profile", false)
 	}
 	return p
+}
+
+// replacer renames the built-in attributes for the chosen format.
+func replacer(f Format) func(groups []string, a slog.Attr) slog.Attr {
+	if f != FormatGCP {
+		return nil
+	}
+	return func(groups []string, a slog.Attr) slog.Attr {
+		if len(groups) > 0 {
+			return a
+		}
+		switch a.Key {
+		case slog.TimeKey:
+			a.Key = "timestamp"
+		case slog.MessageKey:
+			a.Key = "message"
+		case slog.LevelKey:
+			a.Key = "severity"
+			if lvl, ok := a.Value.Any().(slog.Level); ok {
+				a.Value = slog.StringValue(gcpSeverity(lvl))
+			}
+		}
+		return a
+	}
+}
+
+// gcpSeverity maps slog levels onto Cloud Logging's LogSeverity names.
+func gcpSeverity(l slog.Level) string {
+	switch {
+	case l >= slog.LevelError+4:
+		return "CRITICAL"
+	case l >= slog.LevelError:
+		return "ERROR"
+	case l >= slog.LevelWarn:
+		return "WARNING"
+	case l >= slog.LevelInfo:
+		return "INFO"
+	default:
+		return "DEBUG"
+	}
 }

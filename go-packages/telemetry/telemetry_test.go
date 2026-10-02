@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -206,5 +207,77 @@ func TestNew_ValidatesConfig(t *testing.T) {
 	}
 	if _, err := telemetry.New(telemetry.Config{ServiceName: "x"}, nil); err == nil {
 		t.Error("nil writer must be rejected")
+	}
+}
+
+func TestFormatGCP_UsesCloudLoggingFieldNames(t *testing.T) {
+	var logs bytes.Buffer
+	tel, err := telemetry.New(telemetry.Config{ServiceName: "gateway", LogFormat: telemetry.FormatGCP, LogLevel: slog.LevelDebug}, &logs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tel.Logger().Debug("d")
+	tel.Logger().Info("i")
+	tel.Logger().Warn("w")
+	tel.Logger().Error("e", "request_id", "r1")
+	tel.Logger().Log(context.Background(), slog.LevelError+4, "c")
+
+	want := []string{"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+	lines := strings.Split(strings.TrimSpace(logs.String()), "\n")
+	if len(lines) != len(want) {
+		t.Fatalf("got %d lines: %s", len(lines), logs.String())
+	}
+	for i, line := range lines {
+		var rec map[string]any
+		if err := json.Unmarshal([]byte(line), &rec); err != nil {
+			t.Fatal(err)
+		}
+		if rec["severity"] != want[i] || rec["message"] == nil || rec["timestamp"] == nil {
+			t.Errorf("line %d = %v, want severity %s with message and timestamp", i, rec, want[i])
+		}
+		if _, ok := rec["level"]; ok {
+			t.Errorf("line %d still has a level key: %v", i, rec)
+		}
+	}
+}
+
+func TestOnlyCriticalRecordsReachPostHog(t *testing.T) {
+	ph := newFakePostHog(t)
+	var logs bytes.Buffer
+	tel, err := telemetry.New(telemetry.Config{APIKey: "phc_test", Host: ph.srv.URL, ServiceName: "gateway", BatchSize: 1}, &logs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tel.Logger().Debug("d")
+	tel.Logger().Info("i")
+	tel.Logger().Warn("w")
+	tel.Logger().Error("e")
+	_ = tel.Close()
+
+	for _, m := range []string{`"msg":"i"`, `"msg":"w"`, `"msg":"e"`} {
+		if !strings.Contains(logs.String(), m) {
+			t.Errorf("log writer is missing %s", m)
+		}
+	}
+	if n := len(ph.events()); n != 1 {
+		t.Fatalf("PostHog received %d events, want only the Error record: %v", n, ph.events())
+	}
+}
+
+func TestCaptureLevelCanBeRaisedToKeepEvenErrorsLocal(t *testing.T) {
+	ph := newFakePostHog(t)
+	tel, err := telemetry.New(telemetry.Config{APIKey: "phc_test", Host: ph.srv.URL, ServiceName: "g", BatchSize: 1, CaptureLevel: slog.LevelError + 4}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tel.Logger().Error("ordinary error")
+	tel.Logger().Log(context.Background(), slog.LevelError+4, "fatal")
+	_ = tel.Close()
+
+	if n := len(ph.events()); n != 1 {
+		t.Fatalf("got %d events, want only the critical one", n)
 	}
 }
