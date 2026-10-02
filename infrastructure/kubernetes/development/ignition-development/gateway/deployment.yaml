@@ -2,10 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gateway
+  namespace: ignition-development
   labels:
     app.kubernetes.io/name: gateway
+    app.kubernetes.io/part-of: ignition
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: gateway
@@ -18,6 +20,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: gateway
+        app.kubernetes.io/part-of: ignition
     spec:
       automountServiceAccountToken: false
       securityContext:
@@ -27,15 +30,14 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: gateway
-          image: ignition/gateway
+          image: ghcr.io/OWNER/ignition-gateway:latest
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - configMapRef:
                 name: gateway-config
-            # Provide GATEWAY_AUTH_TOKEN via a Secret named gateway-secrets
-            # (see README). Optional so the template starts without one.
+            # Optional Secret with GATEWAY_AUTH_TOKEN (see README).
             - secretRef:
                 name: gateway-secrets
                 optional: true
@@ -60,46 +62,3 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: gateway
-  labels:
-    app.kubernetes.io/name: gateway
-spec:
-  selector:
-    app.kubernetes.io/name: gateway
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: gateway
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: gateway
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
----
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: gateway
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: gateway

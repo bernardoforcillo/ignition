@@ -1,30 +1,38 @@
 # Kubernetes
 
-[Kustomize](https://kustomize.io) manifests for the `gateway` and `web` apps.
+Plain manifests, applied by hand (no automation yet). Layout:
 
 ```
-base/                shared manifests (deployments, services, ingress, HPA, PDB, network policies)
-overlays/development 1 replica, dev host, namespace ignition-development
-overlays/staging     production-like replicas, staging host, namespace ignition-staging
-overlays/production  pinned images, more replicas, namespace ignition-production
+<environment>/<namespace>/<deployment>/<manifest>.yaml
+```
+
+```
+development/ignition-development/
+staging/ignition-staging/
+production/ignition-production/
+  namespace.yaml  networkpolicy.yaml
+  gateway/   deployment.yaml service.yaml configmap.yaml hpa.yaml pdb.yaml
+  web/       deployment.yaml service.yaml pdb.yaml
+  ingress/   ingress.yaml
 ```
 
 ## Usage
 
 ```sh
-kubectl kustomize infrastructure/kubernetes/overlays/development   # render
-kubectl apply -k infrastructure/kubernetes/overlays/development    # deploy
+kubectl apply -f development/ignition-development/namespace.yaml
+kubectl apply -R -f development/ignition-development
 ```
 
 ## Before first deploy
 
-- Replace `ghcr.io/OWNER/...` image names and the `example.com` host.
-- Set `GATEWAY_ROUTES` in `base/kustomization.yaml` to your real upstreams
+- Replace `ghcr.io/OWNER/...` image names (and pin real tags in staging and
+  production) and the `example.com` hosts.
+- Set `GATEWAY_ROUTES` in each `gateway/configmap.yaml` to your real upstreams
   (the gateway refuses to start without a route).
-- Create the optional auth secret:
+- Optional auth secret:
   `kubectl -n ignition-development create secret generic gateway-secrets --from-literal=GATEWAY_AUTH_TOKEN=...`
-- Requires an `nginx` ingress controller in the `ingress-nginx` namespace;
-  adjust `ingressClassName` and `networkpolicy.yaml` otherwise. The HPA needs
-  metrics-server.
+- Requires an `nginx` ingress controller in the `ingress-nginx` namespace
+  (adjust `ingressClassName` and `networkpolicy.yaml` otherwise) and
+  metrics-server for the HPA.
 - Images: `apps/gateway/Dockerfile` and `apps/web/Dockerfile` (build the web
   image from the repo root: `docker build -f apps/web/Dockerfile .`).

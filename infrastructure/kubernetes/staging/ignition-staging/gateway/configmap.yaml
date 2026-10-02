@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: ignition-staging
+data:
+  GATEWAY_LISTEN_ADDR: ":8080"
+  GATEWAY_ROUTES: "/api=http://api.ignition-staging.svc.cluster.local:8080"
+  RATE_LIMIT_RPS: "50"
+  RATE_LIMIT_BURST: "100"
+  GATEWAY_SHUTDOWN_TIMEOUT: "10s"
