@@ -28,6 +28,13 @@ agents read them by path. Open the matching rule **before** the work it covers.
   `.claude/rules/protobuf-codegen.md`
 - Adding or changing a deployable, its Dockerfile or any manifest under
   `infrastructure/kubernetes/` → `.claude/rules/kubernetes-manifests.md`
+- Layering and dependency direction (UI → transport → domain → capabilities),
+  build order, supply-chain hygiene → `.claude/rules/code-organization.md`
+- Scaling and service-boundary decisions (new service, broker, cache, rate
+  limiting, uploads) → `.claude/rules/system-design.md`
+- Branches, commit hygiene, worktrees, agent worktrees →
+  `.claude/rules/git-flow.md`
+- Touching the memory wiki → `.claude/rules/memory-wiki.md`
 - Adding, moving or removing an agent rule, skill, MCP config or instruction
   file → `.claude/rules/agent-resources-via-symlinks.md`
 
@@ -44,4 +51,27 @@ it through **relative symlinks** (map and checks in the rule above).
 | Antigravity | `AGENTS.md` | `.agents/rules/` | `.agents/skills/` | `.agents/mcp_config.json` |
 
 Skills (`.claude/skills/<name>/SKILL.md`): `commit` — a Conventional-Commits
-message that passes commitlint.
+message that passes commitlint; `capture-learnings` — distil a finished plan's
+lessons into the memory wiki.
+
+Subagents (`.claude/agents/`, Claude Code only): `software-architect` reviews a
+design against `system-design.md` and `code-organization.md`; `librarian` runs
+the memory-wiki ingest.
+
+## Memory wiki
+
+Project knowledge accumulates in `.claude/memory/`, a committed markdown wiki
+maintained by `capture-learnings` (conventions in
+`.claude/rules/memory-wiki.md`). Read `.claude/memory/index.md` before work that
+may already have recorded lessons. PRDs, specs and plans live in
+`docs/superpowers/` and are local-only (gitignored).
+
+## Conventions
+
+- **pnpm only**, never npm or yarn. Root dev deps: `pnpm add -Dw <pkg>`; a
+  workspace: `pnpm add <pkg> --filter <workspace>`. Internal packages use
+  `workspace:*`.
+- **Biome only** for lint and format; the `pre-commit` hook runs
+  `biome check --write --staged`, `commit-msg` runs commitlint.
+- Declare per-package tasks (`build`, `dev`, `lint`, `typecheck`) as scripts so
+  Turbo can orchestrate them.
