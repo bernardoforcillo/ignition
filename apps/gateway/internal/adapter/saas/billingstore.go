@@ -82,7 +82,11 @@ type webhookParser interface {
 // pair. A failed write fails the webhook so the provider retries it.
 type customerRecorder struct {
 	inner     webhookParser
-	customers *customerStore
+	customers customerSetter
+}
+
+type customerSetter interface {
+	set(ctx context.Context, workspaceID, customerID string) error
 }
 
 func (r customerRecorder) ParseWebhook(ctx context.Context, payload []byte, headers http.Header) (billing.Event, error) {

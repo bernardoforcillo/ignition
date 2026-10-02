@@ -14,12 +14,13 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/bernardoforcillo/ignition/go-packages/database"
+
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/proxy"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/saas"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
-	"github.com/bernardoforcillo/ignition/go-packages/database"
 )
 
 func main() {

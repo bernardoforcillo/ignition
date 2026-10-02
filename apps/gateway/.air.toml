@@ -1,3 +1,5 @@
+# Air watches only this directory: after editing a sibling module under
+# go-packages/ (identity, features, billing, ...), restart air to rebuild.
 root = "."
 tmp_dir = "tmp"
 
