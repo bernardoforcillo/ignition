@@ -1,14 +1,15 @@
-Ignition
+{{.CompanyName}}
 
 
 Join {{.WorkspaceName}}
 
-You have been invited to collaborate in the {{.WorkspaceName}} workspace.
+You have been invited to collaborate in the {{.WorkspaceName}} workspace on {{.CompanyName}}.
 
-Accept invitation {{.Link}}
+Accept invitation {{.Url}}
 
-Button not working? Paste this link into your browser: {{.Link}}
+The slogan that captures what your product stands for.
 
-----------------------------------------
+123 Market Street, Floor 1
+Tech City, CA, 94102
 
-You are receiving this email because of activity on your Ignition account. If this wasn't you, you can safely ignore it.
+Manage notifications https://example.com/unsubscribe

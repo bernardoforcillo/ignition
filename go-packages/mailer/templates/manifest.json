@@ -1,21 +1,93 @@
 {
-	"verify-email": {
+	"activation": {
 		"subject": "Confirm your email address",
 		"variables": [
-			"Link"
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
+		]
+	},
+	"welcome": {
+		"subject": "Welcome to {{.CompanyName}}",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
+		]
+	},
+	"password-reset": {
+		"subject": "Reset your password",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
+		]
+	},
+	"subscription-confirmation": {
+		"subject": "Your {{.PlanName}} subscription is confirmed",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"UserName",
+			"PlanName",
+			"PlanPrice",
+			"CycleLabel",
+			"NextBillingDate",
+			"AssetBaseUrl"
+		]
+	},
+	"subscription-update": {
+		"subject": "Your {{.PlanName}} subscription was updated",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"UserName",
+			"PlanName",
+			"PlanPrice",
+			"CycleLabel",
+			"NextBillingDate",
+			"AssetBaseUrl"
+		]
+	},
+	"feature-announcement": {
+		"subject": "Release notes from {{.CompanyName}}",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
+		]
+	},
+	"product-update": {
+		"subject": "What's new at {{.CompanyName}}",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
+		]
+	},
+	"text-only": {
+		"subject": "A note from {{.CompanyName}}",
+		"variables": [
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
 		]
 	},
 	"account-exists": {
 		"subject": "You already have an account",
 		"variables": [
-			"LoginUrl"
+			"CompanyName",
+			"Url",
+			"AssetBaseUrl"
 		]
 	},
 	"workspace-invitation": {
-		"subject": "Join {{.WorkspaceName}} on Ignition",
+		"subject": "Join {{.WorkspaceName}}",
 		"variables": [
+			"CompanyName",
 			"WorkspaceName",
-			"Link"
+			"Url",
+			"AssetBaseUrl"
 		]
 	}
 }

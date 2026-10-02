@@ -17,11 +17,14 @@ packages/mailer (react.email)  --pnpm export-->  go-packages/mailer/templates/*.
 ```go
 sender, err := resend.New(resend.Config{APIKey: os.Getenv("RESEND_API_KEY")}) // read env in main.go
 m, err := mailer.New(sender, mailer.Config{
-	From:   "Ignition <hello@example.com>",
-	AppURL: "https://app.example.com",
+	From:        "Ignition <hello@example.com>",
+	CompanyName:  "Ignition",
+	AppURL:       "https://app.example.com",
+	AssetBaseURL: "https://app.example.com", // serves <origin>/static/... (defaults to AppURL)
 }, slog.Default())
 
 err = m.SendVerification(ctx, "ada@example.com", "https://app.example.com/verify?token=...")
+err = m.SendTemplate(ctx, "welcome", "ada@example.com", map[string]string{"Url": "https://app.example.com"})
 ```
 
 `*mailer.Mailer` satisfies the `Mailer` ports of `go-packages/identity`
@@ -30,6 +33,24 @@ err = m.SendVerification(ctx, "ada@example.com", "https://app.example.com/verify
 
 Local development without a key: `mailer.NewLogSender(logger)` logs the
 recipient and subject (never the body, which carries single-use links).
+
+## Templates
+
+The ten templates come from the react.email
+[Barebone collection](https://demo.react.email/preview/01-Barebone/welcome)
+(`activation`, `welcome`, `password-reset`, `subscription-confirmation`,
+`subscription-update`, `feature-announcement`, `product-update`, `text-only`)
+plus two in the same style: `account-exists` and `workspace-invitation`.
+`SendVerification` uses `activation`.
+
+`CompanyName` and `AssetBaseUrl` are filled in by the `Mailer` from its `Config`
+and cannot be overridden by a caller. Everything else is passed in the data map
+(`Url`, `UserName`, `PlanName`, ...; `Variables(name)` lists them).
+
+The email images live in `packages/mailer/src/emails/static` and must be served
+at `<AssetBaseURL>/static/...` (for example from the web app's public folder or a
+CDN). Footer copy (tagline, address, social links) is in
+`packages/mailer/src/emails/brand.ts`: replace the placeholders.
 
 ## Add or change a template
 
@@ -41,7 +62,7 @@ recipient and subject (never the body, which carries single-use links).
 4. Add a typed method on `Mailer` if a service sends it, or call
    `SendTemplate(ctx, name, to, map[string]string{...})`.
 
-Variables are PascalCase in Go (`workspaceName` becomes `WorkspaceName`).
+Variables are PascalCase in Go (`workspaceName` becomes `WorkspaceName`, `url` becomes `Url`).
 
 ## Safety
 

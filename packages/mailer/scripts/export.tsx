@@ -13,7 +13,10 @@ import { render } from "@react-email/render";
 import { createElement } from "react";
 
 import { plainTextOptions } from "../src/plain-text";
-import { templates } from "../src/templates";
+
+// Must be set before the templates are imported: `src/emails/assets.ts` reads it at load time.
+process.env.EMAIL_ASSET_BASE_URL = "{{.AssetBaseUrl}}";
+const { templates } = await import("../src/templates");
 
 const outDir = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -37,7 +40,8 @@ for (const [name, definition] of Object.entries(templates)) {
 	manifest[name] = {
 		// biome-ignore lint/suspicious/noExplicitAny: same as above.
 		subject: (definition.subject as any)(placeholders),
-		variables: definition.variables.map(pascal),
+		// `assetBaseUrl` is not a template prop: every body references it through `assets.ts`.
+		variables: [...definition.variables, "assetBaseUrl"].map(pascal),
 	};
 }
 files.set("manifest.json", `${JSON.stringify(manifest, null, "\t")}\n`);

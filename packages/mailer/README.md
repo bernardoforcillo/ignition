@@ -9,8 +9,11 @@ pnpm --filter @ignition/mailer export        # write go-packages/mailer/template
 pnpm --filter @ignition/mailer check:export  # fail if the committed export is stale
 ```
 
-- `src/emails/` — the templates (`layout.tsx` is the shared chrome; brand tokens
-  mirror `@ignition/components/theme.css`).
+- `src/emails/` — the templates: the react.email Barebone collection
+  (https://demo.react.email/preview/01-Barebone/welcome) plus `account-exists` and
+  `workspace-invitation` built on `shell.tsx`. `theme.ts` is the Tailwind config,
+  `brand.ts` the footer copy to replace, `static/` the images (served at
+  `<origin>/static/...`; the preview server serves them itself).
 - `src/templates.ts` — the registry: component, subject and variables per email.
 - `src/send.ts` — `createMailer({ apiKey, from }).send("verify-email", { link }, { to })`.
 - `scripts/export.tsx` — renders each template with `{{.Variable}}` placeholders

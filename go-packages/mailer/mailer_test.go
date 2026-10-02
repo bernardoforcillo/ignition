@@ -15,9 +15,10 @@ func newMailer(t *testing.T) (*mailer.Mailer, *mailertest.Recorder) {
 	t.Helper()
 	rec := &mailertest.Recorder{}
 	m, err := mailer.New(rec, mailer.Config{
-		From:    "Ignition <hello@example.com>",
-		ReplyTo: "support@example.com",
-		AppURL:  "https://app.example.com/",
+		From:        "Ignition <hello@example.com>",
+		ReplyTo:     "support@example.com",
+		CompanyName: "Ignition",
+		AppURL:      "https://app.example.com/",
 	}, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -107,7 +108,9 @@ func TestSendTemplate_Errors(t *testing.T) {
 		want error
 	}{
 		{"unknown template", func() error { return m.SendTemplate(ctx, "nope", "a@b.co", nil) }, mailer.ErrUnknownTemplate},
-		{"missing variable", func() error { return m.SendTemplate(ctx, "verify-email", "a@b.co", map[string]string{}) }, mailer.ErrMissingVariable},
+		{"missing variable", func() error {
+			return m.SendTemplate(ctx, "subscription-update", "a@b.co", map[string]string{"Url": "https://x.co/a"})
+		}, mailer.ErrMissingVariable},
 		{"javascript link", func() error { return m.SendVerification(ctx, "a@b.co", "javascript:alert(1)") }, mailer.ErrInvalidURL},
 		{"relative link", func() error { return m.SendVerification(ctx, "a@b.co", "/verify") }, mailer.ErrInvalidURL},
 		{"provider failure", func() error {
@@ -143,9 +146,11 @@ func TestNew_ValidatesConfig(t *testing.T) {
 		sender mailer.Sender
 		cfg    mailer.Config
 	}{
-		{"nil sender", nil, mailer.Config{From: "a@b.co", AppURL: "https://x.co"}},
-		{"empty from", rec, mailer.Config{AppURL: "https://x.co"}},
-		{"bad app url", rec, mailer.Config{From: "a@b.co", AppURL: "app.example.com"}},
+		{"nil sender", nil, mailer.Config{From: "a@b.co", CompanyName: "X", AppURL: "https://x.co"}},
+		{"empty from", rec, mailer.Config{CompanyName: "X", AppURL: "https://x.co"}},
+		{"empty company", rec, mailer.Config{From: "a@b.co", AppURL: "https://x.co"}},
+		{"bad app url", rec, mailer.Config{From: "a@b.co", CompanyName: "X", AppURL: "app.example.com"}},
+		{"bad asset url", rec, mailer.Config{From: "a@b.co", CompanyName: "X", AppURL: "https://x.co", AssetBaseURL: "cdn"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

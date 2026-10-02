@@ -19,7 +19,6 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@react-email/components": "^1.0.12",
 		"@react-email/render": "^2.1.0",
 		"react": "^19.3.0",
 		"resend": "^6.30.0"
@@ -28,6 +27,7 @@
 		"@types/node": "^26.6.3",
 		"@types/react": "^19.3.0",
 		"react-email": "^6.11.0",
+		"tailwindcss": "^4.3.3",
 		"tsx": "^4.23.15",
 		"typescript": "^6.0.3"
 	}

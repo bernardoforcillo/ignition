@@ -41,9 +41,14 @@ type Config struct {
 	// From is the default sender, e.g. `Ignition <hello@example.com>`.
 	From    string
 	ReplyTo string
+	// CompanyName is shown in every template's header and copy.
+	CompanyName string
 	// AppURL is the public base URL of the web app, used for links the mailer builds itself
 	// (the sign-in link in the account-exists email). No trailing slash required.
 	AppURL string
+	// AssetBaseURL is the origin the email images are served from (`<origin>/static/...`, see
+	// packages/mailer/src/emails/static). Defaults to AppURL.
+	AssetBaseURL string
 }
 
 // Mailer renders templates and sends them through a Sender.
@@ -73,6 +78,16 @@ func New(sender Sender, cfg Config, logger *slog.Logger) (*Mailer, error) {
 		logger = slog.Default()
 	}
 	cfg.AppURL = strings.TrimRight(cfg.AppURL, "/")
+	if cfg.AssetBaseURL == "" {
+		cfg.AssetBaseURL = cfg.AppURL
+	}
+	if err := validateURL(cfg.AssetBaseURL); err != nil {
+		return nil, fmt.Errorf("%w: AssetBaseURL must be an absolute http(s) URL", ErrInvalidConfig)
+	}
+	cfg.AssetBaseURL = strings.TrimRight(cfg.AssetBaseURL, "/")
+	if strings.TrimSpace(cfg.CompanyName) == "" {
+		return nil, fmt.Errorf("%w: empty company name", ErrInvalidConfig)
+	}
 	return &Mailer{sender: sender, templates: templates, cfg: cfg, log: logger}, nil
 }
 
@@ -90,7 +105,14 @@ func (m *Mailer) send(ctx context.Context, name, to string, data map[string]stri
 	if strings.TrimSpace(to) == "" {
 		return errors.New("mailer: empty recipient")
 	}
-	r, err := m.templates.Render(name, data)
+	// The ambient variables are the mailer's, not the caller's: a caller cannot override them.
+	merged := make(map[string]string, len(data)+2)
+	for k, v := range data {
+		merged[k] = v
+	}
+	merged["CompanyName"] = m.cfg.CompanyName
+	merged["AssetBaseUrl"] = m.cfg.AssetBaseURL
+	r, err := m.templates.Render(name, merged)
 	if err != nil {
 		return err
 	}
@@ -112,19 +134,19 @@ func (m *Mailer) send(ctx context.Context, name, to string, data map[string]stri
 
 // SendVerification delivers the link that confirms an address.
 func (m *Mailer) SendVerification(ctx context.Context, to, link string) error {
-	return m.SendTemplate(ctx, "verify-email", to, map[string]string{"Link": link})
+	return m.SendTemplate(ctx, "activation", to, map[string]string{"Url": link})
 }
 
 // SendAccountExists tells the real holder of an address that someone tried to sign up with it.
 func (m *Mailer) SendAccountExists(ctx context.Context, to string) error {
-	return m.SendTemplate(ctx, "account-exists", to, map[string]string{"LoginUrl": m.cfg.AppURL + "/login"})
+	return m.SendTemplate(ctx, "account-exists", to, map[string]string{"Url": m.cfg.AppURL + "/login"})
 }
 
 // SendInvitation delivers the accept link for an invitation to a workspace.
 func (m *Mailer) SendInvitation(ctx context.Context, to, workspaceName, link string) error {
 	return m.SendTemplate(ctx, "workspace-invitation", to, map[string]string{
 		"WorkspaceName": workspaceName,
-		"Link":          link,
+		"Url":           link,
 	})
 }
 
