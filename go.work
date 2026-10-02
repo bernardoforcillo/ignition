@@ -8,5 +8,6 @@ use (
 	./go-packages/identity
 	./go-packages/mailer
 	./go-packages/proto
+	./go-packages/telemetry
 	./tools
 )
