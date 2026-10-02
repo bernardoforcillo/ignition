@@ -7,10 +7,14 @@
 		"build": "turbo run build",
 		"lint": "turbo run lint",
 		"format": "turbo run format",
-		"typecheck": "turbo run typecheck"
+		"typecheck": "turbo run typecheck",
+		"prepare": "husky"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",
+		"@commitlint/cli": "^21.2.3",
+		"@commitlint/config-conventional": "^21.2.3",
+		"husky": "^9.1.7",
 		"turbo": "^2.11.5"
 	}
 }
