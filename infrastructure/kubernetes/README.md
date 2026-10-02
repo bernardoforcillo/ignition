@@ -8,17 +8,14 @@ Plain manifests, applied by hand (no automation yet). Layout:
 
 ```
 development/ignition-development/
-staging/ignition-staging/
 production/ignition-production/
   namespace.yaml  networkpolicy.yaml
   gateway/   deployment.yaml service.yaml configmap.yaml hpa.yaml pdb.yaml
   web/       deployment.yaml service.yaml pdb.yaml
-  ingress/   ingress.yaml   (staging and production only)
+  ingress/   ingress.yaml
 ```
 
-`development` is not exposed publicly (no Ingress): reach it with
-`kubectl port-forward`. `staging` is served at `dev.example.com`, `production`
-at `example.com`.
+`development` is served at `dev.example.com`, `production` at `example.com`.
 
 ## Usage
 
@@ -29,8 +26,7 @@ kubectl apply -R -f development/ignition-development
 
 ## Before first deploy
 
-- Replace `ghcr.io/OWNER/...` image names (and pin real tags in staging and
-  production) and the `example.com` hosts.
+- Replace `ghcr.io/OWNER/...` image names (and pin real tags in production) and the `example.com` hosts.
 - Set `GATEWAY_ROUTES` in each `gateway/configmap.yaml` to your real upstreams
   (the gateway refuses to start without a route).
 - Optional auth secret:
