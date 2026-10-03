@@ -14,6 +14,7 @@ require (
 	github.com/bernardoforcillo/ignition/go-packages/jobs v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/mailer v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/proto v0.0.0
+	github.com/bernardoforcillo/ignition/go-packages/storage v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/telemetry v0.0.0
 	github.com/buildwithgo/amaro v0.4.1-0.20260131070744-089fe184ddeb
 )
@@ -50,5 +51,7 @@ replace github.com/bernardoforcillo/ignition/go-packages/jobs => ../../go-packag
 replace github.com/bernardoforcillo/ignition/go-packages/mailer => ../../go-packages/mailer
 
 replace github.com/bernardoforcillo/ignition/go-packages/proto => ../../go-packages/proto
+
+replace github.com/bernardoforcillo/ignition/go-packages/storage => ../../go-packages/storage
 
 replace github.com/bernardoforcillo/ignition/go-packages/telemetry => ../../go-packages/telemetry

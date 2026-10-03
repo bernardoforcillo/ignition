@@ -56,6 +56,10 @@ type Services struct {
 	// Mail is the product mailer; background jobs send their emails through it.
 	Mail *mailer.Mailer
 
+	// Files is nil unless object storage is configured (WithFiles); FileService is then
+	// Unimplemented. The cleanup job purges abandoned uploads through it.
+	Files *core.Files
+
 	db *database.DB
 }
 
@@ -79,10 +83,19 @@ type EventSink interface {
 // Option customizes Build.
 type Option func(*options)
 
-type options struct{ events EventSink }
+type options struct {
+	events  EventSink
+	objects core.ObjectStore
+	limits  core.FileLimits
+}
 
 // WithEvents sends server-authoritative business events to sink.
 func WithEvents(sink EventSink) Option { return func(o *options) { o.events = sink } }
+
+// WithFiles enables the files feature over an object store, with the upload rules in limits.
+func WithFiles(objects core.ObjectStore, limits core.FileLimits) Option {
+	return func(o *options) { o.objects, o.limits = objects, limits }
+}
 
 // Build applies every migration and wires the services over db.
 func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.Logger, opts ...Option) (*Services, error) {
@@ -133,6 +146,9 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 		Mail:       mail,
 		db:         db,
 		directory:  dir,
+	}
+	if o.objects != nil {
+		s.Files = core.NewFiles(&fileRepo{db: db.DB}, o.objects, storageQuota{engine: engine}, o.limits, nil, nil)
 	}
 	if cfg.Billing != nil {
 		if err := s.wireBilling(db, *cfg.Billing, subs, freePlan, logger, o.events); err != nil {

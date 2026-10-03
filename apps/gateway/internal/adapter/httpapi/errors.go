@@ -62,6 +62,17 @@ var errorMappings = []errorMapping{
 
 	{billing.ErrUnknownPrice, connect.CodeInvalidArgument, "unknown price"},
 	{core.ErrNoBillingCustomer, connect.CodeFailedPrecondition, "no subscription to manage yet"},
+
+	// Files. The messages are shown to the user, so they say what to do, never what the storage
+	// service answered.
+	{core.ErrFileNotFound, connect.CodeNotFound, "file not found"},
+	{core.ErrFileInvalid, connect.CodeInvalidArgument, "the file name, type or size is not valid"},
+	{core.ErrFileTooLarge, connect.CodeInvalidArgument, "the file is larger than the maximum allowed size"},
+	{core.ErrFileTypeNotAllowed, connect.CodeInvalidArgument, "this file type is not allowed"},
+	{core.ErrQuotaExceeded, connect.CodeResourceExhausted, "the workspace's storage quota is used up"},
+	{core.ErrUploadMissing, connect.CodeFailedPrecondition, "the file has not been uploaded yet"},
+	{core.ErrUploadMismatch, connect.CodeFailedPrecondition, "the uploaded file does not match what was announced"},
+	{core.ErrInvalidPageToken, connect.CodeInvalidArgument, "invalid page token"},
 }
 
 // toConnectError is the one place domain errors become Connect errors:

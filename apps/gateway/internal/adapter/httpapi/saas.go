@@ -91,6 +91,9 @@ type SaaS struct {
 	// Directory fills Member.email; nil leaves it empty.
 	Directory memberDirectory
 
+	// Files is nil when object storage is not configured; FileService then answers Unimplemented.
+	Files fileService
+
 	// Billing and BillingWebhook are nil when billing is not configured;
 	// BillingService and POST /webhooks/stripe are then not served.
 	Billing        checkoutStarter
@@ -130,6 +133,17 @@ func mountSaaS(app *amaro.App, s *SaaS) {
 	mustMount(app, func() (string, http.Handler) {
 		return saasv1connect.NewFeatureServiceHandler(&featureHandler{features: s.Features, members: s.Workspaces}, opts)
 	})
+
+	if s.Files != nil {
+		mustMount(app, func() (string, http.Handler) {
+			return saasv1connect.NewFileServiceHandler(&fileHandler{files: s.Files, authz: s.Workspaces}, opts)
+		})
+	} else {
+		// STORAGE_PROVIDER=disabled: still authenticated, then a clean "not available here".
+		mustMount(app, func() (string, http.Handler) {
+			return saasv1connect.NewFileServiceHandler(saasv1connect.UnimplementedFileServiceHandler{}, opts)
+		})
+	}
 
 	if s.Billing != nil {
 		mustMount(app, func() (string, http.Handler) {

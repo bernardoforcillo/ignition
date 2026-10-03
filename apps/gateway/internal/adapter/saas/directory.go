@@ -50,6 +50,8 @@ func (d *directory) CanErase(ctx context.Context, workspaceID string) error {
 // what is already gone is not an error.
 func (d *directory) EraseWorkspace(ctx context.Context, workspaceID string) error {
 	steps := []string{
+		// The objects of an erased workspace are deleted by the cleanup job, which then drops these rows.
+		`UPDATE files SET status = 'abandoned' WHERE workspace_id = $1`,
 		`DELETE FROM organization_invites WHERE container_id = $1::uuid`,
 		`DELETE FROM organization_invite_links WHERE container_id = $1::uuid`,
 		`DELETE FROM organization_roles WHERE container_id = $1::uuid`,
