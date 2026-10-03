@@ -101,7 +101,8 @@ export const templates = {
 	}),
 	"trial-ending": define({
 		component: TrialEnding,
-		subject: ({ workspaceName }) => `Your ${workspaceName} trial is ending soon`,
+		subject: ({ workspaceName }) =>
+			`Your ${workspaceName} trial is ending soon`,
 		variables: ["companyName", "workspaceName", "endsOn", "url"],
 	}),
 } as const;

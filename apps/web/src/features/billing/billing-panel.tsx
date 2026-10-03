@@ -17,9 +17,10 @@ import {
 	subscriptionQuery,
 } from "~/lib/api";
 import { errorMessage, isBillingDisabled } from "~/lib/errors";
+import { displayName } from "~/lib/format";
 import { isHttpUrl } from "~/lib/redirect";
 
-import { displayName, formatDate } from "./format";
+import { formatDate } from "./format";
 
 const goTo = (url: string) => {
 	if (!isHttpUrl(url)) throw new Error("Unexpected redirect URL");

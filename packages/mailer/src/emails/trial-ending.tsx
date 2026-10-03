@@ -22,8 +22,9 @@ export default function TrialEnding({
 			title="Your trial is ending soon"
 		>
 			<Text className="font-16 text-fg-2 mx-auto mt-0 mb-8 max-w-[380px] text-center font-sans">
-				The {companyName} trial of the {workspaceName} workspace ends on {endsOn}.
-				Review your billing details to keep your plan without interruption.
+				The {companyName} trial of the {workspaceName} workspace ends on{" "}
+				{endsOn}. Review your billing details to keep your plan without
+				interruption.
 			</Text>
 			<Section className="text-center">
 				<Button
