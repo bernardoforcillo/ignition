@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: ignition-production
+data:
+  GATEWAY_LISTEN_ADDR: ":8080"
+  GATEWAY_ROUTES: "/api=http://api.ignition-production.svc.cluster.local:8080"
+  RATE_LIMIT_RPS: "50"
+  RATE_LIMIT_BURST: "100"
+  GATEWAY_SHUTDOWN_TIMEOUT: "10s"
+  # SaaS surface (go-packages). It stays off until DATABASE_URL is provided through the
+  # gateway-secrets Secret; these are the non-secret settings it needs once on.
+  APP_URL: "https://example.com"
+  COMPANY_NAME: "Ignition"
+  MAIL_FROM: "Ignition <hello@example.com>"
+  # Reverse proxies whose X-Forwarded-For is believed (the per-IP sign-up/login limits key on the
+  # client it names). Pods are only reachable through the ingress controller (see
+  # networkpolicy.yaml), so the private ranges are safe; narrow this to the controller's CIDR.
+  TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
+  # Workspace files (FileService): the browser uploads straight to this bucket through short-lived
+  # signed URLs, the gateway only signs, verifies and deletes. "disabled" makes FileService answer
+  # Unimplemented; set "gcs" or "s3" (AWS, R2, MinIO) and create the (private) bucket with a CORS
+  # rule for APP_URL (see go-packages/storage/README.md). The credentials are secrets: add
+  # STORAGE_GCS_CREDENTIALS_JSON (gcs) or STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY (s3)
+  # to the gateway-secrets Secret. Unset STORAGE_ALLOWED_TYPES keeps the safe default list.
+  STORAGE_PROVIDER: "disabled"
+  STORAGE_BUCKET: "ignition-production-files"
+  # s3 only: the signing region ("auto" for R2), the service origin (empty means AWS S3) and
+  # whether the bucket goes in the path (MinIO needs true).
+  STORAGE_REGION: "us-east-1"
+  STORAGE_ENDPOINT: ""
+  STORAGE_S3_PATH_STYLE: "false"
+  STORAGE_MAX_FILE_BYTES: "26214400"
+  STORAGE_UPLOAD_URL_TTL: "10m"
+  STORAGE_DOWNLOAD_URL_TTL: "5m"
+  # How long an upload may stay unconfirmed before the files.cleanup job removes it; must exceed
+  # STORAGE_UPLOAD_URL_TTL.
+  STORAGE_PENDING_TTL: "1h"

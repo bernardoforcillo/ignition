@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+#
+# Build from the repo root:
+#   docker build -f apps/{{name}}/Dockerfile -t {{name}} .
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+ENV GOWORK=off CGO_ENABLED=0 GOOS=linux
+
+COPY apps/{{name}}/go.mod apps/{{name}}/go.mod
+RUN go -C apps/{{name}} mod download
+
+COPY apps/{{name}} apps/{{name}}
+RUN go -C apps/{{name}} build -trimpath -ldflags="-s -w" -o /out/{{name}} .
+
+# Static binary on a distroless base, running as the image's built-in non-root user.
+FROM gcr.io/distroless/static-debian12:nonroot
+USER nonroot:nonroot
+COPY --from=build /out/{{name}} /{{name}}
+
+EXPOSE {{port}}
+ENTRYPOINT ["/{{name}}"]

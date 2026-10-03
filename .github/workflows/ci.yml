@@ -1,0 +1,192 @@
+# CI for every push to dev/main and every pull request. See docs/ci-cd.md.
+# Action versions are major tags here; Renovate pins them by digest (renovate.json).
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-js
+      - run: pnpm exec biome check .
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-js
+      - name: Typecheck every workspace (apps/web and packages)
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm --filter @ignition/web test
+      - name: Production build
+        run: pnpm --filter @ignition/web build
+
+  go:
+    name: go (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - apps/gateway
+          - go-packages/billing
+          - go-packages/database
+          - go-packages/features
+          - go-packages/identity
+          - go-packages/mailer
+          - go-packages/proto
+          - go-packages/storage
+          - go-packages/telemetry
+          # `tools` has only tool directives and no packages, so vet and test have nothing to run.
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache-dependency-path: "**/go.sum"
+      # The mailer embeds the exported templates, so modules that import it need them.
+      - uses: ./.github/actions/setup-js
+      - run: pnpm gen:email
+      - name: gofmt
+        working-directory: ${{ matrix.module }}
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then echo "Not gofmt-clean:"; echo "$unformatted"; exit 1; fi
+      - name: go vet
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+      - name: go test
+        working-directory: ${{ matrix.module }}
+        run: go test -short -race ./...
+      - name: Build without go.work (proves the replace directives)
+        if: matrix.module == 'apps/gateway'
+        working-directory: apps/gateway
+        env:
+          GOWORK: "off"
+        run: go build ./...
+
+  proto:
+    name: proto
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache-dependency-path: "**/go.sum"
+      - uses: ./.github/actions/setup-js
+      - run: pnpm lint:proto
+      - run: pnpm gen:proto
+      - name: Generated code is committed and up to date
+        run: |
+          git add -N .
+          git diff --exit-code || { echo "::error::Generated protobuf code is stale: run 'pnpm gen:proto' and commit"; exit 1; }
+
+  email-export:
+    name: email-export
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-js
+      - run: pnpm gen:email
+      - name: Exported templates exist
+        run: test -f go-packages/mailer/templates/manifest.json
+      - name: Exported HTML is never committed
+        run: |
+          out=$(git status --porcelain go-packages/mailer/templates)
+          if [ -n "$out" ]; then echo "::error::Generated templates leaked into git:"; echo "$out"; exit 1; fi
+
+  k8s:
+    name: k8s
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      KUBECONFORM_VERSION: v0.7.0
+      K8S_VERSION: "1.33.0"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install kubeconform
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+      - name: Render and validate every namespace overlay
+        run: |
+          set -euo pipefail
+          for dir in infrastructure/kubernetes/*/*/; do
+            echo "::group::$dir"
+            kubectl kustomize "$dir" \
+              | kubeconform -strict -summary -ignore-missing-schemas \
+                  -kubernetes-version "$K8S_VERSION"
+            echo "::endgroup::"
+          done
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [lint, web, go, email-export]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/ignition_e2e?sslmode=disable
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache-dependency-path: "**/go.sum"
+      - uses: ./.github/actions/setup-js
+      - run: pnpm gen:email
+      - run: pnpm --filter @ignition/e2e exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+            e2e/.run/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Single required check for branch protection: require only `ci-ok`.
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [lint, web, go, proto, email-export, k8s, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All jobs succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          case "$RESULTS" in *failure*|*cancelled*|*skipped*) exit 1;; esac

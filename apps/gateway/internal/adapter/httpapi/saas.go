@@ -1,0 +1,166 @@
+package httpapi
+
+import (
+	"context"
+	"net/http"
+
+	"connectrpc.com/connect"
+	featurelayer "github.com/bernardoforcillo/featurelayer"
+	"github.com/bernardoforcillo/featurelayer/catalog"
+	"github.com/buildwithgo/amaro"
+
+	"github.com/bernardoforcillo/authlayer/access"
+
+	"github.com/bernardoforcillo/ignition/go-packages/billing"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/auth"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/workspace"
+
+	"github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1/saasv1connect"
+
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/core"
+)
+
+// The interfaces below are declared here, by their consumer, and
+// satisfied structurally by the identity, features and billing
+// libraries (wired in internal/adapter/saas and main.go). Each handler
+// takes only the slice of them it uses.
+
+type authService interface {
+	SignUp(ctx context.Context, email, password, clientIP string) error
+	VerifyEmail(ctx context.Context, token string) error
+	Login(ctx context.Context, email, password, clientIP, userAgent string) (auth.Tokens, error)
+	Refresh(ctx context.Context, refreshToken string) (auth.Tokens, error)
+	Logout(ctx context.Context, refreshToken string) error
+	RequestPasswordReset(ctx context.Context, email, clientIP string) error
+	ResetPassword(ctx context.Context, token, newPassword string) error
+}
+
+type workspaceService interface {
+	ListFor(ctx context.Context, userID string) ([]workspace.Membership, error)
+	Create(ctx context.Context, userID, name, slug string) (workspace.Workspace, error)
+	Get(ctx context.Context, userID, workspaceID string) (workspace.Workspace, error)
+	ListMembers(ctx context.Context, userID, workspaceID string) ([]workspace.Member, error)
+	Invite(ctx context.Context, userID, workspaceID, email, roleKey string) (workspace.Invitation, error)
+	AcceptInvite(ctx context.Context, userID, token string) (workspace.Workspace, error)
+}
+
+// memberDirectory resolves account ids to email addresses for member lists. It is optional: a
+// nil directory just means members are listed without emails.
+type memberDirectory interface {
+	MemberEmails(ctx context.Context, ids []string) (map[string]string, error)
+}
+
+type accountService interface {
+	Me(ctx context.Context, userID string) (auth.User, error)
+	Export(ctx context.Context, userID string) (data []byte, filename string, err error)
+	Delete(ctx context.Context, userID, password string) error
+}
+
+type workspaceMembership interface {
+	Get(ctx context.Context, userID, workspaceID string) (workspace.Workspace, error)
+}
+
+type workspaceAuthorizer interface {
+	Authorize(ctx context.Context, userID, workspaceID, resource string, actions ...access.Action) error
+}
+
+type featureChecker interface {
+	Evaluate(ctx context.Context, key catalog.Key, workspaceID, userID string) featurelayer.Decision
+	Usage(ctx context.Context, key catalog.Key, workspaceID, userID string) (featurelayer.Decision, error)
+}
+
+type checkoutStarter interface {
+	StartCheckout(ctx context.Context, req billing.CheckoutRequest) (string, error)
+	OpenPortal(ctx context.Context, workspaceID, returnURL string) (string, error)
+	Subscription(ctx context.Context, workspaceID string) (core.SubscriptionInfo, error)
+	Prices() []core.PriceInfo
+}
+
+// SaaS is everything the transport needs to serve the SaaS surface. The
+// composition root builds it (see internal/adapter/saas); a nil
+// ServerConfig.SaaS means "no SaaS routes at all".
+type SaaS struct {
+	Auth       authService
+	Tokens     tokenVerifier
+	Account    accountService
+	Workspaces interface {
+		workspaceService
+		workspaceAuthorizer
+	}
+	Features featureChecker
+	// Directory fills Member.email; nil leaves it empty.
+	Directory memberDirectory
+
+	// Files is nil when object storage is not configured; FileService then answers Unimplemented.
+	Files fileService
+
+	// Billing and BillingWebhook are nil when billing is not configured;
+	// BillingService and POST /webhooks/stripe are then not served.
+	Billing        checkoutStarter
+	BillingWebhook http.Handler
+
+	// Clients resolves the real client address behind trusted reverse proxies (the per-IP
+	// rate-limit budgets of sign-up, login and password reset key on it). Nil trusts no proxy: the TCP peer is used.
+	Clients *ClientIPResolver
+
+	// AppURL is the public web app origin; checkout and portal return
+	// URLs are built from it, never taken from the client.
+	AppURL string
+	// Ready reports whether the SaaS dependencies (the database) are
+	// reachable; /readyz fails while it errors. May be nil.
+	Ready func(ctx context.Context) error
+}
+
+// stripeWebhookPath is the public path the payment provider posts to.
+const stripeWebhookPath = "/webhooks/stripe"
+
+// mountSaaS registers the Connect services and the webhook on app. It
+// runs before the proxy catch-all is registered; the trie router prefers
+// these static paths over the catch-all wildcard, exactly as it does for
+// the Ping RPC.
+func mountSaaS(app *amaro.App, s *SaaS) {
+	opts := connect.WithInterceptors(authInterceptor(s.Tokens))
+
+	mustMount(app, func() (string, http.Handler) {
+		return saasv1connect.NewAuthServiceHandler(&authHandler{auth: s.Auth, clients: s.Clients}, opts)
+	})
+	mustMount(app, func() (string, http.Handler) {
+		return saasv1connect.NewWorkspaceServiceHandler(&workspaceHandler{workspaces: s.Workspaces, directory: s.Directory}, opts)
+	})
+	mustMount(app, func() (string, http.Handler) {
+		return saasv1connect.NewAccountServiceHandler(&accountHandler{account: s.Account}, opts)
+	})
+	mustMount(app, func() (string, http.Handler) {
+		return saasv1connect.NewFeatureServiceHandler(&featureHandler{features: s.Features, members: s.Workspaces}, opts)
+	})
+
+	if s.Files != nil {
+		mustMount(app, func() (string, http.Handler) {
+			return saasv1connect.NewFileServiceHandler(&fileHandler{files: s.Files, authz: s.Workspaces}, opts)
+		})
+	} else {
+		// STORAGE_PROVIDER=disabled: still authenticated, then a clean "not available here".
+		mustMount(app, func() (string, http.Handler) {
+			return saasv1connect.NewFileServiceHandler(saasv1connect.UnimplementedFileServiceHandler{}, opts)
+		})
+	}
+
+	if s.Billing != nil {
+		mustMount(app, func() (string, http.Handler) {
+			return saasv1connect.NewBillingServiceHandler(
+				&billingHandler{billing: s.Billing, authz: s.Workspaces, members: s.Workspaces, appURL: s.AppURL}, opts)
+		})
+	}
+	if s.BillingWebhook != nil {
+		if err := app.Any(stripeWebhookPath, amaro.WrapHTTPHandler(s.BillingWebhook)); err != nil {
+			panic("httpapi: mounting " + stripeWebhookPath + ": " + err.Error())
+		}
+	}
+}
+
+func mustMount(app *amaro.App, build func() (string, http.Handler)) {
+	path, h := build()
+	if err := app.Mount(path, h); err != nil {
+		panic("httpapi: mounting " + path + ": " + err.Error())
+	}
+}

@@ -1,7 +1,29 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "e2e"
+allowBuilds:
+  core-js: false
+  esbuild: true
+# Refuse to resolve any package version published less than 7 days ago (10080 minutes):
+# most supply-chain attacks target a package's latest version and are yanked within days.
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - framer-motion@13.4.6
   - motion-dom@13.4.5
   - motion@13.4.6
+  # Locked before the 7-day policy; drop once they are older than the cutoff.
+  - "@tanstack/query-core@5.104.0"
+  - "@tanstack/react-query@5.104.0"
+  - "@tanstack/react-router@1.170.40"
+  - "@tanstack/router-core@1.171.33"
+  - "@turbo/darwin-64@2.11.5"
+  - "@turbo/darwin-arm64@2.11.5"
+  - "@turbo/linux-64@2.11.5"
+  - "@turbo/linux-arm64@2.11.5"
+  - "@turbo/windows-64@2.11.5"
+  - "@turbo/windows-arm64@2.11.5"
+  - "@types/node@26.6.3"
+  - ansi-regex@6.4.0
+  - turbo@2.11.5
+  - "@turbo/gen@2.11.5"

@@ -1,0 +1,66 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:recommended", ":dependencyDashboard"],
+	"schedule": ["before 6am on monday"],
+	"prConcurrentLimit": 5,
+	"prHourlyLimit": 2,
+	"labels": ["dependencies"],
+	"semanticCommits": "enabled",
+	"semanticCommitType": "chore",
+	"semanticCommitScope": "deps",
+	"rangeStrategy": "bump",
+	"minimumReleaseAge": "5 days",
+	"internalChecksFilter": "strict",
+	"osvVulnerabilityAlerts": true,
+	"postUpdateOptions": ["gomodTidy"],
+	"lockFileMaintenance": {
+		"enabled": true,
+		"schedule": ["before 6am on the first day of the month"]
+	},
+	"vulnerabilityAlerts": {
+		"enabled": true,
+		"prCreation": "immediate",
+		"minimumReleaseAge": null,
+		"semanticCommitType": "fix",
+		"labels": ["dependencies", "security"],
+		"commitMessageSuffix": ""
+	},
+	"packageRules": [
+		{
+			"description": "Group non-major npm updates",
+			"matchManagers": ["npm"],
+			"matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+			"groupName": "npm non-major"
+		},
+		{
+			"description": "Group non-major Go module updates",
+			"matchManagers": ["gomod"],
+			"matchUpdateTypes": ["minor", "patch", "digest"],
+			"groupName": "go modules non-major"
+		},
+		{
+			"description": "Pin base images by digest and bump them fast, off schedule and without soak",
+			"matchManagers": ["dockerfile"],
+			"groupName": "container base images",
+			"pinDigests": true,
+			"schedule": ["at any time"],
+			"minimumReleaseAge": null
+		},
+		{
+			"description": "Pin GitHub Actions by digest (the workflows use major tags) and keep them in one group",
+			"matchManagers": ["github-actions"],
+			"groupName": "github actions",
+			"pinDigests": true,
+			"schedule": ["at any time"],
+			"minimumReleaseAge": null
+		},
+		{
+			"description": "Majors need explicit approval from the dependency dashboard",
+			"matchUpdateTypes": ["major"],
+			"dependencyDashboardApproval": true,
+			"minimumReleaseAge": "14 days",
+			"labels": ["dependencies", "major"],
+			"groupName": "{{manager}} majors"
+		}
+	]
+}

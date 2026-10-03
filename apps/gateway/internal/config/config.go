@@ -12,6 +12,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"net/url"
 	"os"
 	"strconv"
@@ -34,7 +35,89 @@ type Config struct {
 	RateLimitRPS    float64
 	RateLimitBurst  int
 	ShutdownTimeout time.Duration
+
+	// Telemetry configures logging format and error/event reporting.
+	Telemetry Telemetry
+
+	// TrustedProxies are the reverse-proxy networks whose X-Forwarded-For is believed. Empty
+	// means the TCP peer is always the client.
+	TrustedProxies []netip.Prefix
+
+	// SaaS is nil unless DATABASE_URL is set; nil means the gateway is a
+	// pure proxy (plus the Ping RPC).
+	SaaS *SaaS
 }
+
+// Telemetry holds the observability settings. Logs always go to stdout (where the platform, e.g.
+// Cloud Logging on GCP, collects them); PostHog receives only critical errors and a few business
+// events, and only when an API key is set.
+type Telemetry struct {
+	PostHogAPIKey string
+	PostHogHost   string
+	// Environment tags every reported event, e.g. "production".
+	Environment string
+	// GCPLogFormat writes severity/message/timestamp the way Cloud Logging expects.
+	GCPLogFormat bool
+}
+
+// SaaS holds the settings of the optional SaaS surface (accounts,
+// workspaces, features, billing). All fields are plain values: the
+// composition root and internal/adapter/saas turn them into services.
+type SaaS struct {
+	DatabaseURL string
+
+	AuthSecret []byte
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
+
+	AppURL       string
+	AssetBaseURL string
+	CompanyName  string
+	MailFrom     string
+	MailReplyTo  string
+	// ResendAPIKey empty means "log mails instead of sending them".
+	ResendAPIKey string
+
+	// ResendBaseURL overrides Resend's API origin. Test-only (end-to-end tests point it at a
+	// fake that captures the emails); empty means the real API.
+	ResendBaseURL string
+
+	// JobsDisabled turns off the background jobs (cleanups, trial reminders) that otherwise run
+	// inside the gateway process whenever SaaS is on.
+	JobsDisabled bool
+
+	// Billing is nil unless STRIPE_WEBHOOK_SECRET is set.
+	Billing *Billing
+
+	// Storage is nil unless STORAGE_PROVIDER is gcs or s3; nil means FileService is Unimplemented.
+	Storage *Storage
+}
+
+// Billing holds the Stripe settings; it exists only when the webhook
+// secret is configured.
+type Billing struct {
+	StripeAPIKey        string
+	StripeWebhookSecret string
+	// FreePlan empty means "the feature catalog's free plan"; the saas
+	// adapter fills it in, since config must not know the catalog.
+	FreePlan string
+	Prices   []PriceSpec
+	// StripeAPIBaseURL overrides Stripe's API origin. Test-only, like SaaS.ResendBaseURL.
+	StripeAPIBaseURL string
+}
+
+// PriceSpec maps one provider price id to a plan or add-on.
+type PriceSpec struct {
+	ProviderPriceID string
+	Kind            string // "plan" or "addon"
+	ID              string
+}
+
+const (
+	minAuthSecretLen  = 32
+	defaultAccessTTL  = 15 * time.Minute
+	defaultRefreshTTL = 720 * time.Hour
+)
 
 // Load builds a Config from environment variables:
 //
@@ -46,6 +129,54 @@ type Config struct {
 //	RATE_LIMIT_RPS            requests/sec per client IP; unset or <=0 disables
 //	RATE_LIMIT_BURST          token bucket burst size, default 20
 //	GATEWAY_SHUTDOWN_TIMEOUT  graceful shutdown timeout, default "10s"
+//
+// The SaaS surface is optional and enabled only when DATABASE_URL is set;
+// with it unset none of the variables below are read.
+//
+//	LOG_FORMAT                "json" (default) or "gcp" (Cloud Logging severity/message/timestamp)
+//	ENVIRONMENT               tag on reported events, default "development"
+//	POSTHOG_API_KEY           optional; enables critical-error and business-event reporting to PostHog
+//	POSTHOG_HOST              PostHog ingestion host, default https://eu.i.posthog.com
+//	TRUSTED_PROXIES           optional; comma-separated CIDRs/IPs of reverse proxies whose
+//	                          X-Forwarded-For is trusted (the per-IP auth rate limits key on it)
+//	DATABASE_URL              Postgres DSN; enables the SaaS surface
+//	AUTH_SECRET               required with SaaS: access-token signing key, >= 32 bytes
+//	APP_URL                   required with SaaS: public web app URL (mail links, checkout return URLs)
+//	COMPANY_NAME              required with SaaS: name shown in emails
+//	MAIL_FROM                 required with SaaS: sender, e.g. "Ignition <hello@example.com>"
+//	MAIL_REPLY_TO             optional reply-to address
+//	ASSET_BASE_URL            optional origin serving email images, default APP_URL
+//	RESEND_API_KEY            optional; unset logs mails (recipient+subject) instead of sending
+//	RESEND_BASE_URL           TEST ONLY: Resend API origin, so an end-to-end test can capture mails;
+//	                          leave unset in every real deployment
+//	JOBS_DISABLED             "true" turns off the in-process background jobs (expired invitation,
+//	                          session and token cleanup; trial-ending reminders), default false
+//	ACCESS_TTL                access-token lifetime, default "15m"
+//	REFRESH_TTL               refresh-token lifetime, default "720h"
+//	STRIPE_WEBHOOK_SECRET     enables billing (POST /webhooks/stripe, BillingService) when set
+//	STRIPE_API_KEY            Stripe key for checkout/portal calls (with billing)
+//	BILLING_PRICES            "price_id=plan:<plan>,price_id=addon:<add-on>,..." price catalog
+//	BILLING_FREE_PLAN         plan a lapsed workspace falls back to, default the features catalog's free plan
+//	STORAGE_PROVIDER          "gcs", "s3" or "disabled" (default): the object store behind FileService;
+//	                          disabled makes FileService answer Unimplemented
+//	STORAGE_BUCKET            required with a provider: the (private) bucket
+//	STORAGE_ENDPOINT          s3 only: service origin, e.g. https://<account>.r2.cloudflarestorage.com or
+//	                          http://minio:9000; unset means AWS S3
+//	STORAGE_REGION            s3 only: signing region, default us-east-1 ("auto" for R2)
+//	STORAGE_S3_PATH_STYLE     s3 only: put the bucket in the path (MinIO needs true), default false
+//	STORAGE_ACCESS_KEY_ID     s3 only, required: access key (a secret in production)
+//	STORAGE_SECRET_ACCESS_KEY s3 only, required: secret key (a secret)
+//	STORAGE_GCS_CREDENTIALS_JSON gcs only, required: service account key JSON (a secret)
+//	STORAGE_MAX_FILE_BYTES    largest single file, default 26214400 (25 MiB), at most 5 GiB
+//	STORAGE_ALLOWED_TYPES     comma-separated exact media types, default png, jpeg, gif, webp, pdf,
+//	                          plain text, csv, json and zip
+//	STORAGE_UPLOAD_URL_TTL    lifetime of a signed upload URL, default "10m", at most 1h
+//	STORAGE_DOWNLOAD_URL_TTL  lifetime of a signed download URL, default "5m", at most 1h
+//	STORAGE_PENDING_TTL       how long an upload may stay unconfirmed before the cleanup job removes it,
+//	                          default "1h"; must exceed STORAGE_UPLOAD_URL_TTL
+//	STORAGE_GCS_ENDPOINT      TEST ONLY: GCS API origin for an emulator; leave unset in every real deployment
+//	STRIPE_API_BASE_URL       TEST ONLY: Stripe API origin for an end-to-end fake; leave unset in
+//	                          every real deployment
 func Load() (Config, error) {
 	cfg := Config{
 		ListenAddr:      getEnv("GATEWAY_LISTEN_ADDR", ":8080"),
@@ -85,7 +216,157 @@ func Load() (Config, error) {
 		cfg.ShutdownTimeout = d
 	}
 
+	tel, err := loadTelemetry()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.Telemetry = tel
+
+	proxies, err := parseTrustedProxies(os.Getenv("TRUSTED_PROXIES"))
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.TrustedProxies = proxies
+
+	saas, err := loadSaaS()
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.SaaS = saas
+
 	return cfg, nil
+}
+
+func loadTelemetry() (Telemetry, error) {
+	t := Telemetry{
+		PostHogAPIKey: os.Getenv("POSTHOG_API_KEY"),
+		PostHogHost:   os.Getenv("POSTHOG_HOST"),
+		Environment:   getEnv("ENVIRONMENT", "development"),
+	}
+	switch format := strings.ToLower(getEnv("LOG_FORMAT", "json")); format {
+	case "json":
+	case "gcp":
+		t.GCPLogFormat = true
+	default:
+		return Telemetry{}, fmt.Errorf("config: invalid LOG_FORMAT %q: want json or gcp", format)
+	}
+	return t, nil
+}
+
+// parseTrustedProxies reads "10.0.0.0/8, 192.168.1.5, fd00::/8". A bare address is a single-host
+// prefix. An empty value is valid and trusts no proxy.
+func parseTrustedProxies(raw string) ([]netip.Prefix, error) {
+	var out []netip.Prefix
+	for _, part := range strings.Split(raw, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if p, err := netip.ParsePrefix(part); err == nil {
+			out = append(out, p.Masked())
+			continue
+		}
+		a, err := netip.ParseAddr(part)
+		if err != nil {
+			return nil, fmt.Errorf("config: invalid TRUSTED_PROXIES entry %q: want a CIDR or an IP", part)
+		}
+		out = append(out, netip.PrefixFrom(a.Unmap(), a.Unmap().BitLen()))
+	}
+	return out, nil
+}
+
+// loadSaaS returns nil when DATABASE_URL is unset (SaaS disabled).
+func loadSaaS() (*SaaS, error) {
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		return nil, nil
+	}
+	s := &SaaS{
+		DatabaseURL:  dsn,
+		AuthSecret:   []byte(os.Getenv("AUTH_SECRET")),
+		AccessTTL:    defaultAccessTTL,
+		RefreshTTL:   defaultRefreshTTL,
+		AppURL:       os.Getenv("APP_URL"),
+		AssetBaseURL: os.Getenv("ASSET_BASE_URL"),
+		CompanyName:  os.Getenv("COMPANY_NAME"),
+		MailFrom:     os.Getenv("MAIL_FROM"),
+		MailReplyTo:  os.Getenv("MAIL_REPLY_TO"),
+		ResendAPIKey: os.Getenv("RESEND_API_KEY"),
+
+		ResendBaseURL: os.Getenv("RESEND_BASE_URL"),
+	}
+	if len(s.AuthSecret) < minAuthSecretLen {
+		return nil, fmt.Errorf("config: AUTH_SECRET must be at least %d bytes when DATABASE_URL is set", minAuthSecretLen)
+	}
+	for _, r := range []struct{ name, value string }{
+		{"APP_URL", s.AppURL},
+		{"COMPANY_NAME", s.CompanyName},
+		{"MAIL_FROM", s.MailFrom},
+	} {
+		if r.value == "" {
+			return nil, fmt.Errorf("config: %s is required when DATABASE_URL is set", r.name)
+		}
+	}
+	if v := os.Getenv("JOBS_DISABLED"); v != "" {
+		disabled, err := strconv.ParseBool(v)
+		if err != nil {
+			return nil, fmt.Errorf("config: invalid JOBS_DISABLED %q: want true or false", v)
+		}
+		s.JobsDisabled = disabled
+	}
+	for _, d := range []struct {
+		name string
+		dst  *time.Duration
+	}{{"ACCESS_TTL", &s.AccessTTL}, {"REFRESH_TTL", &s.RefreshTTL}} {
+		v := os.Getenv(d.name)
+		if v == "" {
+			continue
+		}
+		parsed, err := time.ParseDuration(v)
+		if err != nil || parsed <= 0 {
+			return nil, fmt.Errorf("config: invalid %s %q: want a positive duration", d.name, v)
+		}
+		*d.dst = parsed
+	}
+
+	if secret := os.Getenv("STRIPE_WEBHOOK_SECRET"); secret != "" {
+		prices, err := parsePrices(os.Getenv("BILLING_PRICES"))
+		if err != nil {
+			return nil, err
+		}
+		s.Billing = &Billing{
+			StripeAPIKey:        os.Getenv("STRIPE_API_KEY"),
+			StripeWebhookSecret: secret,
+			FreePlan:            os.Getenv("BILLING_FREE_PLAN"),
+			Prices:              prices,
+			StripeAPIBaseURL:    os.Getenv("STRIPE_API_BASE_URL"),
+		}
+	}
+	storage, err := loadStorage()
+	if err != nil {
+		return nil, err
+	}
+	s.Storage = storage
+	return s, nil
+}
+
+// parsePrices reads "price_id=plan:pro,price_id=addon:extra".
+func parsePrices(raw string) ([]PriceSpec, error) {
+	var prices []PriceSpec
+	for _, pair := range strings.Split(raw, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		id, target, ok := strings.Cut(pair, "=")
+		kind, name, ok2 := strings.Cut(target, ":")
+		id, kind, name = strings.TrimSpace(id), strings.TrimSpace(kind), strings.TrimSpace(name)
+		if !ok || !ok2 || id == "" || name == "" || (kind != "plan" && kind != "addon") {
+			return nil, fmt.Errorf("config: invalid BILLING_PRICES entry %q, want price_id=plan:<id> or price_id=addon:<id>", pair)
+		}
+		prices = append(prices, PriceSpec{ProviderPriceID: id, Kind: kind, ID: name})
+	}
+	return prices, nil
 }
 
 func parseRoutes() ([]RouteSpec, error) {

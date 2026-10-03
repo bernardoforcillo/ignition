@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+// AuditService exposes a workspace's audit trail: who did what, to what, and
+// when, for the actions that matter to a business customer (invitations, role
+// changes, member removal, billing changes, file deletion, data export...).
+// Events are append-only and written by the server; there is no write RPC.
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
+
+service AuditService {
+  // ListEvents returns the workspace's events, newest first, with keyset
+  // pagination. Needs the audit:read permission (owner and admin).
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+}
+
+message AuditEvent {
+  string id = 1;
+  string workspace_id = 2;
+  // actor_id is the account that acted; empty for system actions (a webhook, a job).
+  string actor_id = 3;
+  // actor_email is resolved at read time and may be empty (deleted account).
+  string actor_email = 4;
+  // action is a stable dotted name such as "invitation.sent" or "member.role_changed".
+  string action = 5;
+  // target_type and target_id name what was acted on ("member", "invitation", "file"...).
+  string target_type = 6;
+  string target_id = 7;
+  // metadata holds small, non-secret context (e.g. the old and new role). Never personal
+  // data beyond ids and role keys.
+  map<string, string> metadata = 8;
+  // created_at is an RFC 3339 timestamp (UTC).
+  string created_at = 9;
+}
+
+message ListEventsRequest {
+  string workspace_id = 1;
+  // action filters by exact action name; empty means all.
+  string action = 2;
+  // page_size defaults to 50 and is capped at 200.
+  int32 page_size = 3;
+  // page_token is the opaque next_page_token of the previous page.
+  string page_token = 4;
+}
+
+message ListEventsResponse {
+  repeated AuditEvent events = 1;
+  // next_page_token is empty on the last page.
+  string next_page_token = 2;
+}

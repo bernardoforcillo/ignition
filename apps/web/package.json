@@ -9,16 +9,23 @@
 		"preview": "vite preview",
 		"lint": "biome check .",
 		"format": "biome check --write .",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run"
 	},
 	"dependencies": {
+		"@bufbuild/protobuf": "^2.15.0",
+		"@connectrpc/connect": "^2.2.0",
+		"@connectrpc/connect-web": "^2.2.0",
 		"@ignition/components": "workspace:*",
+		"@ignition/proto": "workspace:*",
 		"@tanstack/react-query": "^5.104.0",
 		"@tanstack/react-router": "^1.170.40",
-		"moment": "^2.31.0",
 		"motion": "^13.4.6",
+		"posthog-js": "^1.434.14",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
+		"react-markdown": "^10.1.0",
+		"remark-gfm": "^4.0.1",
 		"zustand": "^5.0.15"
 	},
 	"devDependencies": {
@@ -29,6 +36,7 @@
 		"@vitejs/plugin-react": "^6.1.1",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
-		"vite": "^8.3.1"
+		"vite": "^8.3.1",
+		"vitest": "^5.0.2"
 	}
 }

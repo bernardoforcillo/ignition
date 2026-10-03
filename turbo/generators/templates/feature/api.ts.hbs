@@ -1,0 +1,8 @@
+export interface {{pascalCase name}}Response {
+	message: string;
+}
+
+/** Stand-in transport call: replace with the generated Connect client. */
+export async function fetch{{pascalCase name}}(): Promise<{{pascalCase name}}Response> {
+	return { message: "{{titleCase name}} is wired up." };
+}

@@ -1,0 +1,38 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(pnpm install)",
+			"Bash(pnpm build)",
+			"Bash(pnpm dev)",
+			"Bash(pnpm lint)",
+			"Bash(pnpm format)",
+			"Bash(pnpm typecheck)",
+			"Bash(pnpm add *)",
+			"Bash(pnpm --filter *)",
+			"Bash(pnpm exec *)",
+			"Bash(turbo run *)",
+			"Bash(biome *)",
+			"Bash(go *)",
+			"Bash(gofmt *)",
+			"Bash(buf *)",
+			"Bash(node .claude/memory/check.mjs)",
+			"Bash(git status)",
+			"Bash(git diff *)",
+			"Bash(git log *)"
+		],
+		"deny": ["Bash(rm -rf *)"]
+	},
+	"hooks": {
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": ".claude/hooks/capture-learnings-nudge.sh",
+						"shell": "bash"
+					}
+				]
+			}
+		]
+	}
+}

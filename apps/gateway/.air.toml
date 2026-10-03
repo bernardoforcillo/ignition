@@ -1,3 +1,5 @@
+# Air watches only this directory: after editing a sibling module under
+# go-packages/ (identity, features, billing, ...), restart air to rebuild.
 root = "."
 tmp_dir = "tmp"
 
@@ -5,7 +7,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./tmp/gateway.exe ."
   bin = "./tmp/gateway.exe"
   include_ext = ["go"]
-  exclude_dir = ["tmp", "internal/gen", "proto"]
+  exclude_dir = ["tmp"]
   exclude_regex = ["_test\\.go"]
   delay = 1000
   stop_on_error = true
