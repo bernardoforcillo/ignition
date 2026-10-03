@@ -88,6 +88,9 @@ type SaaS struct {
 
 	// Billing is nil unless STRIPE_WEBHOOK_SECRET is set.
 	Billing *Billing
+
+	// Storage is nil unless STORAGE_PROVIDER is gcs or s3; nil means FileService is Unimplemented.
+	Storage *Storage
 }
 
 // Billing holds the Stripe settings; it exists only when the webhook
@@ -154,6 +157,24 @@ const (
 //	STRIPE_API_KEY            Stripe key for checkout/portal calls (with billing)
 //	BILLING_PRICES            "price_id=plan:<plan>,price_id=addon:<add-on>,..." price catalog
 //	BILLING_FREE_PLAN         plan a lapsed workspace falls back to, default the features catalog's free plan
+//	STORAGE_PROVIDER          "gcs", "s3" or "disabled" (default): the object store behind FileService;
+//	                          disabled makes FileService answer Unimplemented
+//	STORAGE_BUCKET            required with a provider: the (private) bucket
+//	STORAGE_ENDPOINT          s3 only: service origin, e.g. https://<account>.r2.cloudflarestorage.com or
+//	                          http://minio:9000; unset means AWS S3
+//	STORAGE_REGION            s3 only: signing region, default us-east-1 ("auto" for R2)
+//	STORAGE_S3_PATH_STYLE     s3 only: put the bucket in the path (MinIO needs true), default false
+//	STORAGE_ACCESS_KEY_ID     s3 only, required: access key (a secret in production)
+//	STORAGE_SECRET_ACCESS_KEY s3 only, required: secret key (a secret)
+//	STORAGE_GCS_CREDENTIALS_JSON gcs only, required: service account key JSON (a secret)
+//	STORAGE_MAX_FILE_BYTES    largest single file, default 26214400 (25 MiB), at most 5 GiB
+//	STORAGE_ALLOWED_TYPES     comma-separated exact media types, default png, jpeg, gif, webp, pdf,
+//	                          plain text, csv, json and zip
+//	STORAGE_UPLOAD_URL_TTL    lifetime of a signed upload URL, default "10m", at most 1h
+//	STORAGE_DOWNLOAD_URL_TTL  lifetime of a signed download URL, default "5m", at most 1h
+//	STORAGE_PENDING_TTL       how long an upload may stay unconfirmed before the cleanup job removes it,
+//	                          default "1h"; must exceed STORAGE_UPLOAD_URL_TTL
+//	STORAGE_GCS_ENDPOINT      TEST ONLY: GCS API origin for an emulator; leave unset in every real deployment
 //	STRIPE_API_BASE_URL       TEST ONLY: Stripe API origin for an end-to-end fake; leave unset in
 //	                          every real deployment
 func Load() (Config, error) {
@@ -321,6 +342,11 @@ func loadSaaS() (*SaaS, error) {
 			StripeAPIBaseURL:    os.Getenv("STRIPE_API_BASE_URL"),
 		}
 	}
+	storage, err := loadStorage()
+	if err != nil {
+		return nil, err
+	}
+	s.Storage = storage
 	return s, nil
 }
 
