@@ -24,6 +24,9 @@ const (
 	ActionRead   = scope.ActionRead
 	ActionUpdate = scope.ActionUpdate
 	ActionDelete = scope.ActionDelete
+
+	// ActionWrite covers uploading and deleting files: ResourceFile has two permissions, read and write.
+	ActionWrite access.Action = "write"
 )
 
 // Default role keys. They exist in every workspace without a stored row: owner
@@ -41,11 +44,16 @@ const (
 // Statements. Delete this example once the first real resource exists.
 const ResourceProject = "project"
 
+// ResourceFile is the workspace's uploaded files: file:read lists and downloads, file:write
+// uploads and deletes. Owners and admins hold both; grant members through a custom role.
+const ResourceFile = "file"
+
 // Statements is the product-specific part of the permission surface.
 func Statements() map[string][]access.Action {
 	return map[string][]access.Action{
 		// ADD PRODUCT RESOURCES HERE.
 		ResourceProject: {ActionCreate, ActionRead, ActionUpdate, ActionDelete},
+		ResourceFile:    {ActionRead, ActionWrite},
 	}
 }
 

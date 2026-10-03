@@ -22,6 +22,11 @@ const (
 	// kill-switch flag below, so one Require/Consume answers both "is it
 	// switched on" and "is there budget left".
 	APICalls catalog.Key = "api.calls"
+	// StorageBytes is the workspace's file storage allowance, in bytes. It is a gauge, not a meter:
+	// the limit lives here (so plans and add-ons raise it), while the amount in use is the sum of
+	// the workspace's stored files, which shrinks when a file is deleted; the gateway's file
+	// service compares the two. Period None means the limit never resets.
+	StorageBytes catalog.Key = "storage.bytes"
 )
 
 // Plans.
@@ -33,6 +38,12 @@ const (
 // AddOnExtraAPICalls tops up the monthly API-call budget. Add-on limits are
 // added to the plan's, and it only applies to a tenant on Pro.
 const AddOnExtraAPICalls entitlement.AddOnID = "extra-api-calls"
+
+// Storage allowances in bytes.
+const (
+	FreeStorageBytes int64 = 100 << 20 // 100 MiB
+	ProStorageBytes  int64 = 10 << 30  // 10 GiB
+)
 
 // Monthly API-call allowances.
 const (
@@ -51,6 +62,8 @@ func Config() featurelayer.Config {
 				Description: "Download the workspace's data. Pro only."},
 			{Key: APICalls, Name: "API calls", Lifecycle: catalog.GA,
 				Description: "Metered monthly API budget."},
+			{Key: StorageBytes, Name: "File storage", Lifecycle: catalog.GA,
+				Description: "Bytes of uploaded files a workspace may keep."},
 		},
 		// Kill switch: Enabled:true with an On default is a no-op. Flip
 		// Enabled to false and every APICalls check is refused with reason
@@ -64,6 +77,7 @@ func Config() featurelayer.Config {
 				ID: PlanFree, Name: "Free",
 				Entitlements: []entitlement.Entitlement{
 					entitlement.Limited(APICalls, FreeAPICalls, entitlement.Month),
+					entitlement.Limited(StorageBytes, FreeStorageBytes, entitlement.None),
 				},
 			},
 			{
@@ -73,6 +87,7 @@ func Config() featurelayer.Config {
 				Entitlements: []entitlement.Entitlement{
 					{Feature: DataExport},
 					entitlement.Limited(APICalls, ProAPICalls, entitlement.Month),
+					entitlement.Limited(StorageBytes, ProStorageBytes, entitlement.None),
 				},
 			},
 		},

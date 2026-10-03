@@ -314,3 +314,20 @@ func (h countingHandler) Handle(context.Context, slog.Record) error {
 }
 func (h countingHandler) WithAttrs([]slog.Attr) slog.Handler { return h }
 func (h countingHandler) WithGroup(string) slog.Handler      { return h }
+
+func TestStorageBytes_LimitFollowsThePlanAndNeverResets(t *testing.T) {
+	for plan, want := range map[entitlement.PlanID]int64{
+		features.PlanFree: features.FreeStorageBytes,
+		features.PlanPro:  features.ProStorageBytes,
+	} {
+		f := newFixture(t)
+		f.subscribe(plan)
+		d := f.engine.Evaluate(context.Background(), features.StorageBytes, ws, "u-1")
+		if !d.Enabled || d.Entitlement == nil || d.Entitlement.Limit == nil {
+			t.Fatalf("%s: decision = %+v, want a limited entitlement", plan, d)
+		}
+		if got := d.Entitlement.Limit; got.Max != want || got.Period != entitlement.None {
+			t.Errorf("%s: limit = %+v, want %d bytes with no period", plan, got, want)
+		}
+	}
+}
