@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  GOVULNCHECK_VERSION: v1.1.4
+  GOVULNCHECK_VERSION: v1.8.0
 
 jobs:
   govulncheck:
@@ -36,7 +36,6 @@ jobs:
           - go-packages/mailer
           - go-packages/proto
           - go-packages/telemetry
-          - tools
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -44,6 +43,7 @@ jobs:
           go-version-file: go.work
           cache-dependency-path: "**/go.sum"
       # Symbol-level scan: exits non-zero only for vulnerabilities the code actually calls.
+      # `tools` is not scanned: it has only `tool` directives and no packages (govulncheck exits 2).
       - uses: ./.github/actions/setup-js
       - run: pnpm gen:email
       - name: govulncheck
@@ -73,7 +73,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v4.9.0
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
@@ -149,7 +149,7 @@ jobs:
       - uses: actions/checkout@v6
       # Vulnerabilities in lockfiles/go.mod, misconfigurations in Dockerfiles and Kubernetes manifests.
       # Allow-list entries live in .trivyignore (each with a justification).
-      - uses: aquasecurity/trivy-action@0.33.1
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -166,7 +166,7 @@ jobs:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
       - name: Fail on HIGH/CRITICAL findings
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .

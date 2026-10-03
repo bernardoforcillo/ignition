@@ -86,7 +86,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
       - name: Trivy image scan (SARIF)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.meta.outputs.scan_tag }}
           severity: HIGH,CRITICAL
@@ -103,7 +103,7 @@ jobs:
           category: trivy-image-${{ matrix.name }}
 
       - name: Trivy gate (fixable HIGH/CRITICAL fails the build)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.meta.outputs.scan_tag }}
           severity: HIGH,CRITICAL

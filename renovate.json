@@ -47,6 +47,14 @@
 			"minimumReleaseAge": null
 		},
 		{
+			"description": "Pin GitHub Actions by digest (the workflows use major tags) and keep them in one group",
+			"matchManagers": ["github-actions"],
+			"groupName": "github actions",
+			"pinDigests": true,
+			"schedule": ["at any time"],
+			"minimumReleaseAge": null
+		},
+		{
 			"description": "Majors need explicit approval from the dependency dashboard",
 			"matchUpdateTypes": ["major"],
 			"dependencyDashboardApproval": true,
