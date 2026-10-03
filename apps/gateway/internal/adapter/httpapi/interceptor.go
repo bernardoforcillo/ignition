@@ -28,6 +28,7 @@ var publicProcedures = map[string]bool{
 	// External sign-in: the web lists the configured providers, then redeems the one-time code
 	// the OAuth callback redirected back with. Neither has a session yet.
 	saasv1connect.AuthServiceListAuthProvidersProcedure: true,
+	saasv1connect.AuthServiceStartOAuthProcedure:        true,
 	saasv1connect.AuthServiceExchangeOAuthCodeProcedure: true,
 
 	// The purchasable catalog is public by design: the landing page shows prices to visitors who

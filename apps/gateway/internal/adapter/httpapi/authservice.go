@@ -114,6 +114,11 @@ func (h *authHandler) ListAuthProviders(_ context.Context, _ *connect.Request[sa
 	return connect.NewResponse(&saasv1.ListAuthProvidersResponse{}), nil
 }
 
+// StartOAuth is not implemented until external sign-in is configured.
+func (h *authHandler) StartOAuth(context.Context, *connect.Request[saasv1.StartOAuthRequest]) (*connect.Response[saasv1.StartOAuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("external sign-in is not configured"))
+}
+
 // ExchangeOAuthCode is not implemented until external sign-in is configured.
 func (h *authHandler) ExchangeOAuthCode(context.Context, *connect.Request[saasv1.ExchangeOAuthCodeRequest]) (*connect.Response[saasv1.ExchangeOAuthCodeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("external sign-in is not configured"))

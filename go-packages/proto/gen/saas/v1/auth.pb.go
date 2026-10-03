@@ -714,10 +714,7 @@ type AuthProvider struct {
 	// id is the stable provider key, e.g. "google".
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// name is the label for the button, e.g. "Google".
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// start_url is the gateway path that begins the dance, e.g.
-	// "/auth/google/start"; the web navigates the browser there.
-	StartUrl      string `protobuf:"bytes,3,opt,name=start_url,json=startUrl,proto3" json:"start_url,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -762,13 +759,6 @@ func (x *AuthProvider) GetId() string {
 func (x *AuthProvider) GetName() string {
 	if x != nil {
 		return x.Name
-	}
-	return ""
-}
-
-func (x *AuthProvider) GetStartUrl() string {
-	if x != nil {
-		return x.StartUrl
 	}
 	return ""
 }
@@ -853,16 +843,116 @@ func (x *ListAuthProvidersResponse) GetProviders() []*AuthProvider {
 	return nil
 }
 
+type StartOAuthRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// provider is an id from ListAuthProviders.
+	Provider      string `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartOAuthRequest) Reset() {
+	*x = StartOAuthRequest{}
+	mi := &file_saas_v1_auth_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartOAuthRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartOAuthRequest) ProtoMessage() {}
+
+func (x *StartOAuthRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_auth_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartOAuthRequest.ProtoReflect.Descriptor instead.
+func (*StartOAuthRequest) Descriptor() ([]byte, []int) {
+	return file_saas_v1_auth_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *StartOAuthRequest) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+type StartOAuthResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// authorization_url is where to send the browser.
+	AuthorizationUrl string `protobuf:"bytes,1,opt,name=authorization_url,json=authorizationUrl,proto3" json:"authorization_url,omitempty"`
+	// state must be kept by the web and sent back to ExchangeOAuthCode.
+	State         string `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartOAuthResponse) Reset() {
+	*x = StartOAuthResponse{}
+	mi := &file_saas_v1_auth_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartOAuthResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartOAuthResponse) ProtoMessage() {}
+
+func (x *StartOAuthResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_saas_v1_auth_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartOAuthResponse.ProtoReflect.Descriptor instead.
+func (*StartOAuthResponse) Descriptor() ([]byte, []int) {
+	return file_saas_v1_auth_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *StartOAuthResponse) GetAuthorizationUrl() string {
+	if x != nil {
+		return x.AuthorizationUrl
+	}
+	return ""
+}
+
+func (x *StartOAuthResponse) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
 type ExchangeOAuthCodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExchangeOAuthCodeRequest) Reset() {
 	*x = ExchangeOAuthCodeRequest{}
-	mi := &file_saas_v1_auth_proto_msgTypes[18]
+	mi := &file_saas_v1_auth_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -874,7 +964,7 @@ func (x *ExchangeOAuthCodeRequest) String() string {
 func (*ExchangeOAuthCodeRequest) ProtoMessage() {}
 
 func (x *ExchangeOAuthCodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_saas_v1_auth_proto_msgTypes[18]
+	mi := &file_saas_v1_auth_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -887,12 +977,19 @@ func (x *ExchangeOAuthCodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExchangeOAuthCodeRequest.ProtoReflect.Descriptor instead.
 func (*ExchangeOAuthCodeRequest) Descriptor() ([]byte, []int) {
-	return file_saas_v1_auth_proto_rawDescGZIP(), []int{18}
+	return file_saas_v1_auth_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ExchangeOAuthCodeRequest) GetCode() string {
 	if x != nil {
 		return x.Code
+	}
+	return ""
+}
+
+func (x *ExchangeOAuthCodeRequest) GetState() string {
+	if x != nil {
+		return x.State
 	}
 	return ""
 }
@@ -910,7 +1007,7 @@ type ExchangeOAuthCodeResponse struct {
 
 func (x *ExchangeOAuthCodeResponse) Reset() {
 	*x = ExchangeOAuthCodeResponse{}
-	mi := &file_saas_v1_auth_proto_msgTypes[19]
+	mi := &file_saas_v1_auth_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -922,7 +1019,7 @@ func (x *ExchangeOAuthCodeResponse) String() string {
 func (*ExchangeOAuthCodeResponse) ProtoMessage() {}
 
 func (x *ExchangeOAuthCodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_saas_v1_auth_proto_msgTypes[19]
+	mi := &file_saas_v1_auth_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -935,7 +1032,7 @@ func (x *ExchangeOAuthCodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExchangeOAuthCodeResponse.ProtoReflect.Descriptor instead.
 func (*ExchangeOAuthCodeResponse) Descriptor() ([]byte, []int) {
-	return file_saas_v1_auth_proto_rawDescGZIP(), []int{19}
+	return file_saas_v1_auth_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ExchangeOAuthCodeResponse) GetUser() *User {
@@ -1003,21 +1100,26 @@ const file_saas_v1_auth_proto_rawDesc = "" +
 	"\x14ResetPasswordRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
 	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"\x17\n" +
-	"\x15ResetPasswordResponse\"O\n" +
+	"\x15ResetPasswordResponse\"2\n" +
 	"\fAuthProvider\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
-	"\tstart_url\x18\x03 \x01(\tR\bstartUrl\"\x1a\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\x1a\n" +
 	"\x18ListAuthProvidersRequest\"P\n" +
 	"\x19ListAuthProvidersResponse\x123\n" +
-	"\tproviders\x18\x01 \x03(\v2\x15.saas.v1.AuthProviderR\tproviders\".\n" +
+	"\tproviders\x18\x01 \x03(\v2\x15.saas.v1.AuthProviderR\tproviders\"/\n" +
+	"\x11StartOAuthRequest\x12\x1a\n" +
+	"\bprovider\x18\x01 \x01(\tR\bprovider\"W\n" +
+	"\x12StartOAuthResponse\x12+\n" +
+	"\x11authorization_url\x18\x01 \x01(\tR\x10authorizationUrl\x12\x14\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"D\n" +
 	"\x18ExchangeOAuthCodeRequest\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code\"\xa0\x01\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"\xa0\x01\n" +
 	"\x19ExchangeOAuthCodeResponse\x12!\n" +
 	"\x04user\x18\x01 \x01(\v2\r.saas.v1.UserR\x04user\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12\x18\n" +
-	"\acreated\x18\x04 \x01(\bR\acreated2\xb0\x05\n" +
+	"\acreated\x18\x04 \x01(\bR\acreated2\xf7\x05\n" +
 	"\vAuthService\x129\n" +
 	"\x06SignUp\x12\x16.saas.v1.SignUpRequest\x1a\x17.saas.v1.SignUpResponse\x12H\n" +
 	"\vVerifyEmail\x12\x1b.saas.v1.VerifyEmailRequest\x1a\x1c.saas.v1.VerifyEmailResponse\x126\n" +
@@ -1026,7 +1128,9 @@ const file_saas_v1_auth_proto_rawDesc = "" +
 	"\x06Logout\x12\x16.saas.v1.LogoutRequest\x1a\x17.saas.v1.LogoutResponse\x12c\n" +
 	"\x14RequestPasswordReset\x12$.saas.v1.RequestPasswordResetRequest\x1a%.saas.v1.RequestPasswordResetResponse\x12N\n" +
 	"\rResetPassword\x12\x1d.saas.v1.ResetPasswordRequest\x1a\x1e.saas.v1.ResetPasswordResponse\x12Z\n" +
-	"\x11ListAuthProviders\x12!.saas.v1.ListAuthProvidersRequest\x1a\".saas.v1.ListAuthProvidersResponse\x12Z\n" +
+	"\x11ListAuthProviders\x12!.saas.v1.ListAuthProvidersRequest\x1a\".saas.v1.ListAuthProvidersResponse\x12E\n" +
+	"\n" +
+	"StartOAuth\x12\x1a.saas.v1.StartOAuthRequest\x1a\x1b.saas.v1.StartOAuthResponse\x12Z\n" +
 	"\x11ExchangeOAuthCode\x12!.saas.v1.ExchangeOAuthCodeRequest\x1a\".saas.v1.ExchangeOAuthCodeResponseBKZIgithub.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1b\x06proto3"
 
 var (
@@ -1041,7 +1145,7 @@ func file_saas_v1_auth_proto_rawDescGZIP() []byte {
 	return file_saas_v1_auth_proto_rawDescData
 }
 
-var file_saas_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_saas_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_saas_v1_auth_proto_goTypes = []any{
 	(*User)(nil),                         // 0: saas.v1.User
 	(*SignUpRequest)(nil),                // 1: saas.v1.SignUpRequest
@@ -1061,8 +1165,10 @@ var file_saas_v1_auth_proto_goTypes = []any{
 	(*AuthProvider)(nil),                 // 15: saas.v1.AuthProvider
 	(*ListAuthProvidersRequest)(nil),     // 16: saas.v1.ListAuthProvidersRequest
 	(*ListAuthProvidersResponse)(nil),    // 17: saas.v1.ListAuthProvidersResponse
-	(*ExchangeOAuthCodeRequest)(nil),     // 18: saas.v1.ExchangeOAuthCodeRequest
-	(*ExchangeOAuthCodeResponse)(nil),    // 19: saas.v1.ExchangeOAuthCodeResponse
+	(*StartOAuthRequest)(nil),            // 18: saas.v1.StartOAuthRequest
+	(*StartOAuthResponse)(nil),           // 19: saas.v1.StartOAuthResponse
+	(*ExchangeOAuthCodeRequest)(nil),     // 20: saas.v1.ExchangeOAuthCodeRequest
+	(*ExchangeOAuthCodeResponse)(nil),    // 21: saas.v1.ExchangeOAuthCodeResponse
 }
 var file_saas_v1_auth_proto_depIdxs = []int32{
 	0,  // 0: saas.v1.LoginResponse.user:type_name -> saas.v1.User
@@ -1077,18 +1183,20 @@ var file_saas_v1_auth_proto_depIdxs = []int32{
 	11, // 9: saas.v1.AuthService.RequestPasswordReset:input_type -> saas.v1.RequestPasswordResetRequest
 	13, // 10: saas.v1.AuthService.ResetPassword:input_type -> saas.v1.ResetPasswordRequest
 	16, // 11: saas.v1.AuthService.ListAuthProviders:input_type -> saas.v1.ListAuthProvidersRequest
-	18, // 12: saas.v1.AuthService.ExchangeOAuthCode:input_type -> saas.v1.ExchangeOAuthCodeRequest
-	2,  // 13: saas.v1.AuthService.SignUp:output_type -> saas.v1.SignUpResponse
-	4,  // 14: saas.v1.AuthService.VerifyEmail:output_type -> saas.v1.VerifyEmailResponse
-	6,  // 15: saas.v1.AuthService.Login:output_type -> saas.v1.LoginResponse
-	8,  // 16: saas.v1.AuthService.Refresh:output_type -> saas.v1.RefreshResponse
-	10, // 17: saas.v1.AuthService.Logout:output_type -> saas.v1.LogoutResponse
-	12, // 18: saas.v1.AuthService.RequestPasswordReset:output_type -> saas.v1.RequestPasswordResetResponse
-	14, // 19: saas.v1.AuthService.ResetPassword:output_type -> saas.v1.ResetPasswordResponse
-	17, // 20: saas.v1.AuthService.ListAuthProviders:output_type -> saas.v1.ListAuthProvidersResponse
-	19, // 21: saas.v1.AuthService.ExchangeOAuthCode:output_type -> saas.v1.ExchangeOAuthCodeResponse
-	13, // [13:22] is the sub-list for method output_type
-	4,  // [4:13] is the sub-list for method input_type
+	18, // 12: saas.v1.AuthService.StartOAuth:input_type -> saas.v1.StartOAuthRequest
+	20, // 13: saas.v1.AuthService.ExchangeOAuthCode:input_type -> saas.v1.ExchangeOAuthCodeRequest
+	2,  // 14: saas.v1.AuthService.SignUp:output_type -> saas.v1.SignUpResponse
+	4,  // 15: saas.v1.AuthService.VerifyEmail:output_type -> saas.v1.VerifyEmailResponse
+	6,  // 16: saas.v1.AuthService.Login:output_type -> saas.v1.LoginResponse
+	8,  // 17: saas.v1.AuthService.Refresh:output_type -> saas.v1.RefreshResponse
+	10, // 18: saas.v1.AuthService.Logout:output_type -> saas.v1.LogoutResponse
+	12, // 19: saas.v1.AuthService.RequestPasswordReset:output_type -> saas.v1.RequestPasswordResetResponse
+	14, // 20: saas.v1.AuthService.ResetPassword:output_type -> saas.v1.ResetPasswordResponse
+	17, // 21: saas.v1.AuthService.ListAuthProviders:output_type -> saas.v1.ListAuthProvidersResponse
+	19, // 22: saas.v1.AuthService.StartOAuth:output_type -> saas.v1.StartOAuthResponse
+	21, // 23: saas.v1.AuthService.ExchangeOAuthCode:output_type -> saas.v1.ExchangeOAuthCodeResponse
+	14, // [14:24] is the sub-list for method output_type
+	4,  // [4:14] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1105,7 +1213,7 @@ func file_saas_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_saas_v1_auth_proto_rawDesc), len(file_saas_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

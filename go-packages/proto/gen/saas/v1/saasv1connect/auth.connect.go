@@ -55,6 +55,8 @@ const (
 	// AuthServiceListAuthProvidersProcedure is the fully-qualified name of the AuthService's
 	// ListAuthProviders RPC.
 	AuthServiceListAuthProvidersProcedure = "/saas.v1.AuthService/ListAuthProviders"
+	// AuthServiceStartOAuthProcedure is the fully-qualified name of the AuthService's StartOAuth RPC.
+	AuthServiceStartOAuthProcedure = "/saas.v1.AuthService/StartOAuth"
 	// AuthServiceExchangeOAuthCodeProcedure is the fully-qualified name of the AuthService's
 	// ExchangeOAuthCode RPC.
 	AuthServiceExchangeOAuthCodeProcedure = "/saas.v1.AuthService/ExchangeOAuthCode"
@@ -85,10 +87,16 @@ type AuthServiceClient interface {
 	// deployment (e.g. Google) so the web shows only the buttons that work.
 	// Public.
 	ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error)
+	// StartOAuth begins an external sign-in: it returns the provider's
+	// authorization URL (with PKCE and a server-side state record) for the web to
+	// navigate the browser to, and the opaque state the web must keep (in
+	// sessionStorage) and present again to ExchangeOAuthCode. Public.
+	StartOAuth(context.Context, *connect.Request[v1.StartOAuthRequest]) (*connect.Response[v1.StartOAuthResponse], error)
 	// ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
-	// OAuth callback redirected the browser back with, and returns the same
-	// session a password login returns. The provider's tokens never reach the
-	// browser. Public.
+	// provider callback redirected the browser back with, bound to the state
+	// StartOAuth returned (so a code obtained in another browser is useless), and
+	// returns the same session a password login returns. The provider's tokens
+	// never reach the browser. Public.
 	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
 }
 
@@ -151,6 +159,12 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("ListAuthProviders")),
 			connect.WithClientOptions(opts...),
 		),
+		startOAuth: connect.NewClient[v1.StartOAuthRequest, v1.StartOAuthResponse](
+			httpClient,
+			baseURL+AuthServiceStartOAuthProcedure,
+			connect.WithSchema(authServiceMethods.ByName("StartOAuth")),
+			connect.WithClientOptions(opts...),
+		),
 		exchangeOAuthCode: connect.NewClient[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse](
 			httpClient,
 			baseURL+AuthServiceExchangeOAuthCodeProcedure,
@@ -170,6 +184,7 @@ type authServiceClient struct {
 	requestPasswordReset *connect.Client[v1.RequestPasswordResetRequest, v1.RequestPasswordResetResponse]
 	resetPassword        *connect.Client[v1.ResetPasswordRequest, v1.ResetPasswordResponse]
 	listAuthProviders    *connect.Client[v1.ListAuthProvidersRequest, v1.ListAuthProvidersResponse]
+	startOAuth           *connect.Client[v1.StartOAuthRequest, v1.StartOAuthResponse]
 	exchangeOAuthCode    *connect.Client[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse]
 }
 
@@ -213,6 +228,11 @@ func (c *authServiceClient) ListAuthProviders(ctx context.Context, req *connect.
 	return c.listAuthProviders.CallUnary(ctx, req)
 }
 
+// StartOAuth calls saas.v1.AuthService.StartOAuth.
+func (c *authServiceClient) StartOAuth(ctx context.Context, req *connect.Request[v1.StartOAuthRequest]) (*connect.Response[v1.StartOAuthResponse], error) {
+	return c.startOAuth.CallUnary(ctx, req)
+}
+
 // ExchangeOAuthCode calls saas.v1.AuthService.ExchangeOAuthCode.
 func (c *authServiceClient) ExchangeOAuthCode(ctx context.Context, req *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {
 	return c.exchangeOAuthCode.CallUnary(ctx, req)
@@ -243,10 +263,16 @@ type AuthServiceHandler interface {
 	// deployment (e.g. Google) so the web shows only the buttons that work.
 	// Public.
 	ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error)
+	// StartOAuth begins an external sign-in: it returns the provider's
+	// authorization URL (with PKCE and a server-side state record) for the web to
+	// navigate the browser to, and the opaque state the web must keep (in
+	// sessionStorage) and present again to ExchangeOAuthCode. Public.
+	StartOAuth(context.Context, *connect.Request[v1.StartOAuthRequest]) (*connect.Response[v1.StartOAuthResponse], error)
 	// ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
-	// OAuth callback redirected the browser back with, and returns the same
-	// session a password login returns. The provider's tokens never reach the
-	// browser. Public.
+	// provider callback redirected the browser back with, bound to the state
+	// StartOAuth returned (so a code obtained in another browser is useless), and
+	// returns the same session a password login returns. The provider's tokens
+	// never reach the browser. Public.
 	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
 }
 
@@ -305,6 +331,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("ListAuthProviders")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceStartOAuthHandler := connect.NewUnaryHandler(
+		AuthServiceStartOAuthProcedure,
+		svc.StartOAuth,
+		connect.WithSchema(authServiceMethods.ByName("StartOAuth")),
+		connect.WithHandlerOptions(opts...),
+	)
 	authServiceExchangeOAuthCodeHandler := connect.NewUnaryHandler(
 		AuthServiceExchangeOAuthCodeProcedure,
 		svc.ExchangeOAuthCode,
@@ -329,6 +361,8 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceResetPasswordHandler.ServeHTTP(w, r)
 		case AuthServiceListAuthProvidersProcedure:
 			authServiceListAuthProvidersHandler.ServeHTTP(w, r)
+		case AuthServiceStartOAuthProcedure:
+			authServiceStartOAuthHandler.ServeHTTP(w, r)
 		case AuthServiceExchangeOAuthCodeProcedure:
 			authServiceExchangeOAuthCodeHandler.ServeHTTP(w, r)
 		default:
@@ -370,6 +404,10 @@ func (UnimplementedAuthServiceHandler) ResetPassword(context.Context, *connect.R
 
 func (UnimplementedAuthServiceHandler) ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.AuthService.ListAuthProviders is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) StartOAuth(context.Context, *connect.Request[v1.StartOAuthRequest]) (*connect.Response[v1.StartOAuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.AuthService.StartOAuth is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {

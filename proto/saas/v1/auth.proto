@@ -35,10 +35,17 @@ service AuthService {
   // Public.
   rpc ListAuthProviders(ListAuthProvidersRequest) returns (ListAuthProvidersResponse);
 
+  // StartOAuth begins an external sign-in: it returns the provider's
+  // authorization URL (with PKCE and a server-side state record) for the web to
+  // navigate the browser to, and the opaque state the web must keep (in
+  // sessionStorage) and present again to ExchangeOAuthCode. Public.
+  rpc StartOAuth(StartOAuthRequest) returns (StartOAuthResponse);
+
   // ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
-  // OAuth callback redirected the browser back with, and returns the same
-  // session a password login returns. The provider's tokens never reach the
-  // browser. Public.
+  // provider callback redirected the browser back with, bound to the state
+  // StartOAuth returned (so a code obtained in another browser is useless), and
+  // returns the same session a password login returns. The provider's tokens
+  // never reach the browser. Public.
   rpc ExchangeOAuthCode(ExchangeOAuthCodeRequest) returns (ExchangeOAuthCodeResponse);
 }
 
@@ -105,9 +112,6 @@ message AuthProvider {
   string id = 1;
   // name is the label for the button, e.g. "Google".
   string name = 2;
-  // start_url is the gateway path that begins the dance, e.g.
-  // "/auth/google/start"; the web navigates the browser there.
-  string start_url = 3;
 }
 
 message ListAuthProvidersRequest {}
@@ -116,8 +120,21 @@ message ListAuthProvidersResponse {
   repeated AuthProvider providers = 1;
 }
 
+message StartOAuthRequest {
+  // provider is an id from ListAuthProviders.
+  string provider = 1;
+}
+
+message StartOAuthResponse {
+  // authorization_url is where to send the browser.
+  string authorization_url = 1;
+  // state must be kept by the web and sent back to ExchangeOAuthCode.
+  string state = 2;
+}
+
 message ExchangeOAuthCodeRequest {
   string code = 1;
+  string state = 2;
 }
 
 message ExchangeOAuthCodeResponse {
