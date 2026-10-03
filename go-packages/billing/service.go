@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"slices"
+	"strings"
 )
 
 // Service turns provider events into subscription state for the sink.
@@ -59,7 +60,7 @@ func (s *Service) HandleEvent(ctx context.Context, ev Event) error {
 		return fmt.Errorf("check event %q: %w", ev.ID, err)
 	}
 	if seen {
-		s.log.InfoContext(ctx, "billing event replay skipped", "event_id", ev.ID)
+		s.log.InfoContext(ctx, "billing event replay skipped", "event_id", logSafe(ev.ID))
 		return nil
 	}
 	if ev.WorkspaceID == "" {
@@ -77,8 +78,8 @@ func (s *Service) HandleEvent(ctx context.Context, ev Event) error {
 		return fmt.Errorf("record event %q: %w", ev.ID, err)
 	}
 	s.log.InfoContext(ctx, "billing event applied",
-		"event_id", ev.ID, "type", string(ev.Type), "workspace_id", ev.WorkspaceID,
-		"plan", sub.PlanID, "status", string(sub.Status))
+		"event_id", logSafe(ev.ID), "type", logSafe(string(ev.Type)), "workspace_id", logSafe(ev.WorkspaceID),
+		"plan", logSafe(sub.PlanID), "status", logSafe(string(sub.Status)))
 	return nil
 }
 
@@ -124,4 +125,10 @@ func (s *Service) subscriptionFor(ev Event) (Subscription, error) {
 		return Subscription{}, fmt.Errorf("%w: no plan price on subscription", ErrUnknownPrice)
 	}
 	return sub, nil
+}
+
+// logSafe drops line breaks from a provider-supplied value before it is logged,
+// so it cannot forge a log line in a plain-text sink.
+func logSafe(v string) string {
+	return strings.NewReplacer("\n", "", "\r", "").Replace(v)
 }

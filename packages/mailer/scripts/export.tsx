@@ -4,7 +4,7 @@
  *
  *   pnpm gen:email    write the files (generated, never committed: see go-packages/mailer)
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -46,7 +46,13 @@ files.set("manifest.json", `${JSON.stringify(manifest, null, "\t")}\n`);
 
 for (const [file, contents] of files) {
 	const target = path.join(outDir, file);
-	const current = existsSync(target) ? readFileSync(target, "utf8") : null;
+	// Read and catch instead of checking first, so there is no gap between check and use.
+	let current: string | null = null;
+	try {
+		current = readFileSync(target, "utf8");
+	} catch {
+		// Not exported yet.
+	}
 	if (current === contents) continue;
 	mkdirSync(outDir, { recursive: true });
 	writeFileSync(target, contents);

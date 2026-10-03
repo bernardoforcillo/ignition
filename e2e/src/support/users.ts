@@ -25,8 +25,11 @@ export function uniqueEmail(label = "user"): string {
  * header and the gateway trusts it from the loopback hop.
  */
 function uniqueClientIp(): string {
-	const [a, b, c] = randomBytes(3);
-	return `10.${a}.${b}.${((c ?? 0) % 250) + 1}`;
+	const [a, b] = randomBytes(2);
+	// Rejection sampling: `% 250` over a byte would favour the low values.
+	let last = 255;
+	while (last >= 250) last = randomBytes(1)[0] ?? 255;
+	return `10.${a}.${b}.${last + 1}`;
 }
 
 /** A browser context with its own client IP (see above) and its own storage. */

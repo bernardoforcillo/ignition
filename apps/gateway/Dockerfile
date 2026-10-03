@@ -16,7 +16,9 @@
 # embeds. The output is generated here and never committed.
 FROM node:26-alpine AS emails
 WORKDIR /src
-RUN corepack enable
+# Node 25+ no longer ships corepack; keep in step with "packageManager" in package.json.
+ARG PNPM_VERSION=11.5.0
+RUN npm install --global "pnpm@${PNPM_VERSION}"
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json apps/web/
 COPY packages packages
@@ -51,6 +53,7 @@ RUN go -C apps/gateway build -trimpath -ldflags="-s -w" -o /out/gateway .
 # image's built-in non-root user. No shell, no package manager — the
 # smallest attack surface reasonable for a template default.
 FROM gcr.io/distroless/static-debian12:nonroot
+USER nonroot:nonroot
 COPY --from=build /out/gateway /gateway
 
 EXPOSE 8080

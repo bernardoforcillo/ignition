@@ -56,7 +56,7 @@ jobs:
           - go-packages/proto
           - go-packages/storage
           - go-packages/telemetry
-          - tools
+          # `tools` has only tool directives and no packages, so vet and test have nothing to run.
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6

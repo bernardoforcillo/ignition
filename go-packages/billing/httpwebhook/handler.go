@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/bernardoforcillo/ignition/go-packages/billing"
 )
@@ -67,9 +68,9 @@ func (h *webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	status := statusFor(err)
 	if status >= http.StatusInternalServerError {
-		h.log.ErrorContext(r.Context(), "billing webhook failed", "error", err)
+		h.log.ErrorContext(r.Context(), "billing webhook failed", "error", logSafe(err.Error()))
 	} else if err != nil {
-		h.log.WarnContext(r.Context(), "billing webhook rejected", "error", err, "status", status)
+		h.log.WarnContext(r.Context(), "billing webhook rejected", "error", logSafe(err.Error()), "status", status)
 	}
 	w.WriteHeader(status)
 }
@@ -86,4 +87,10 @@ func statusFor(err error) int {
 	default:
 		return http.StatusInternalServerError
 	}
+}
+
+// logSafe drops line breaks from an error that may echo request content, so it
+// cannot forge a log line in a plain-text sink.
+func logSafe(v string) string {
+	return strings.NewReplacer("\n", "", "\r", "").Replace(v)
 }
