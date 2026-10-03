@@ -13,6 +13,10 @@ export async function requireAuth(href: string): Promise<void> {
 	}
 }
 
+/** Public pages that adapt to the session (landing, docs): learn it first, never redirect. */
+export const restoreSession = (): Promise<void> =>
+	useAuthStore.getState().restore();
+
 /** Public-only pages (login, signup): signed-in users are sent on to where they were going. */
 export async function redirectIfAuthenticated(target: unknown): Promise<void> {
 	await useAuthStore.getState().restore();

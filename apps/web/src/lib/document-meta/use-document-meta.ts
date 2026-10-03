@@ -3,9 +3,7 @@ import { useEffect } from "react";
 type Meta = { title: string; description: string };
 
 const descriptionTag = (): HTMLMetaElement => {
-	let tag = document.querySelector<HTMLMetaElement>(
-		'meta[name="description"]',
-	);
+	let tag = document.querySelector<HTMLMetaElement>('meta[name="description"]');
 	if (!tag) {
 		tag = document.createElement("meta");
 		tag.name = "description";

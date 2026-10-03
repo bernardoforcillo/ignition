@@ -19,6 +19,8 @@ export interface AnalyticsEvents {
 	billing_portal_opened: { location: "billing" };
 	data_exported: { location: "settings" };
 	account_deleted: { location: "settings" };
+	pricing_cta_clicked: { location: "landing"; plan_id: string };
+	docs_page_viewed: { location: "docs"; slug: string };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

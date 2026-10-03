@@ -6,6 +6,7 @@ use (
 	./go-packages/database
 	./go-packages/features
 	./go-packages/identity
+	./go-packages/jobs
 	./go-packages/mailer
 	./go-packages/proto
 	./go-packages/telemetry
