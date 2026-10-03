@@ -5,6 +5,7 @@ import { AccountService } from "@ignition/proto/saas/v1/account_pb";
 import { AuthService } from "@ignition/proto/saas/v1/auth_pb";
 import { BillingService } from "@ignition/proto/saas/v1/billing_pb";
 import { FeatureService } from "@ignition/proto/saas/v1/feature_pb";
+import { FileService } from "@ignition/proto/saas/v1/file_pb";
 import { WorkspaceService } from "@ignition/proto/saas/v1/workspace_pb";
 
 import { createAuthInterceptor, type Session } from "./auth-interceptor";
@@ -42,3 +43,4 @@ export const accountClient = createClient(AccountService, transport);
 export const workspaceClient = createClient(WorkspaceService, transport);
 export const featureClient = createClient(FeatureService, transport);
 export const billingClient = createClient(BillingService, transport);
+export const fileClient = createClient(FileService, transport);

@@ -6,6 +6,7 @@ export type ErrorContext =
 	| "workspace"
 	| "token"
 	| "password"
+	| "files"
 	| "default";
 
 const GENERIC = "Something went wrong. Please try again.";
@@ -40,7 +41,9 @@ export function errorMessage(
 				? "Invalid email or password"
 				: "Your session expired. Please sign in again.";
 		case Code.ResourceExhausted:
-			return "Too many attempts, try again later";
+			return context === "files"
+				? "This workspace has run out of storage. Delete some files or upgrade your plan to upload more."
+				: "Too many attempts, try again later";
 		case Code.AlreadyExists:
 			return context === "workspace"
 				? "That workspace URL is already taken. Try another."
@@ -51,8 +54,9 @@ export function errorMessage(
 		case Code.PermissionDenied:
 			// DeleteAccount answers a wrong password with permission_denied (not unauthenticated, which
 			// would make the client try to refresh a session that is fine).
-			return context === "password"
-				? "Incorrect password."
+			if (context === "password") return "Incorrect password.";
+			return context === "files"
+				? "You don't have permission to manage files in this workspace. Ask an owner or admin."
 				: "You don't have permission to do that.";
 		case Code.NotFound:
 			return "We couldn't find that. It may have expired or been removed.";
@@ -67,6 +71,15 @@ export function errorMessage(
 export function isBillingDisabled(err: unknown): boolean {
 	const { code } = ConnectError.from(err);
 	return code === Code.Unimplemented || code === Code.NotFound;
+}
+
+/** FileService answers unimplemented while the deployment has no object storage configured. */
+export function isFilesDisabled(err: unknown): boolean {
+	return ConnectError.from(err).code === Code.Unimplemented;
+}
+
+export function isPermissionDenied(err: unknown): boolean {
+	return ConnectError.from(err).code === Code.PermissionDenied;
 }
 
 export function isUnauthenticated(err: unknown): boolean {

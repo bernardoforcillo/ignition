@@ -14,6 +14,7 @@ import { signOut, useAuthStore } from "~/stores/auth";
 const NAV = [
 	{ to: "/app", label: "Overview", exact: true },
 	{ to: "/app/members", label: "Members", exact: false },
+	{ to: "/app/files", label: "Files", exact: false },
 	{ to: "/app/billing", label: "Billing", exact: false },
 	{ to: "/app/settings", label: "Settings", exact: false },
 ] as const;

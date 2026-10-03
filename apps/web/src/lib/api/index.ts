@@ -12,6 +12,13 @@ export {
 	subscriptionQuery,
 } from "./billing";
 export {
+	completeUpload,
+	createUpload,
+	deleteFile,
+	filesQuery,
+	getDownloadUrl,
+} from "./files";
+export {
 	acceptInvite,
 	createWorkspace,
 	inviteMember,

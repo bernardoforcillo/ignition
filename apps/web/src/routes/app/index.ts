@@ -34,6 +34,12 @@ const membersRoute = createRoute({
 	),
 });
 
+const filesRoute = createRoute({
+	getParentRoute: () => appRoute,
+	path: "/files",
+	component: lazyRouteComponent(() => import("~/features/files"), "FilesPanel"),
+});
+
 const billingRoute = createRoute({
 	getParentRoute: () => appRoute,
 	path: "/billing",
@@ -55,6 +61,7 @@ const settingsRoute = createRoute({
 export const appRoutes = appRoute.addChildren([
 	overviewRoute,
 	membersRoute,
+	filesRoute,
 	billingRoute,
 	settingsRoute,
 ]);

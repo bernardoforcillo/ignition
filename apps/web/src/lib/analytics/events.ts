@@ -17,6 +17,11 @@ export interface AnalyticsEvents {
 	invitation_accepted: { location: "invite_accept" };
 	checkout_started: { location: "billing"; kind: string; target_id: string };
 	billing_portal_opened: { location: "billing" };
+	file_uploaded: {
+		location: "files";
+		size_bytes: number;
+		type_category: string;
+	};
 	data_exported: { location: "settings" };
 	account_deleted: { location: "settings" };
 	pricing_cta_clicked: { location: "landing"; plan_id: string };

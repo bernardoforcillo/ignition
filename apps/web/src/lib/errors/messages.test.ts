@@ -1,7 +1,12 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { describe, expect, it } from "vitest";
 
-import { errorMessage, isBillingDisabled } from "./messages";
+import {
+	errorMessage,
+	isBillingDisabled,
+	isFilesDisabled,
+	isPermissionDenied,
+} from "./messages";
 
 const err = (code: Code, message = "boom") => new ConnectError(message, code);
 
@@ -74,5 +79,40 @@ describe("isBillingDisabled", () => {
 
 	it("is false for other failures", () => {
 		expect(isBillingDisabled(err(Code.Internal))).toBe(false);
+	});
+});
+
+describe("errorMessage in the files context", () => {
+	it("explains an exhausted quota instead of blaming rate limits", () => {
+		expect(errorMessage(err(Code.ResourceExhausted), "files")).toMatch(
+			/run out of storage/i,
+		);
+	});
+
+	it("tells a member without the permission who can help", () => {
+		expect(errorMessage(err(Code.PermissionDenied), "files")).toMatch(
+			/owner or admin/i,
+		);
+	});
+
+	it("shows the validation text the API returns for a refused file", () => {
+		expect(
+			errorMessage(
+				err(Code.InvalidArgument, "this file type is not allowed"),
+				"files",
+			),
+		).toBe("this file type is not allowed");
+	});
+});
+
+describe("file service availability", () => {
+	it("treats unimplemented as storage not enabled", () => {
+		expect(isFilesDisabled(err(Code.Unimplemented))).toBe(true);
+		expect(isFilesDisabled(err(Code.Internal))).toBe(false);
+	});
+
+	it("recognizes a permission error", () => {
+		expect(isPermissionDenied(err(Code.PermissionDenied))).toBe(true);
+		expect(isPermissionDenied(err(Code.NotFound))).toBe(false);
 	});
 });
