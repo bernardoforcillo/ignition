@@ -8,6 +8,21 @@ package saas.v1;
 option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
 
 service WorkspaceService {
+  // ChangeMemberRole sets a member's role. Needs the member:update permission
+  // and the privilege-escalation guard: nobody can grant more than they hold.
+  // The last owner cannot be demoted.
+  rpc ChangeMemberRole(ChangeMemberRoleRequest) returns (ChangeMemberRoleResponse);
+
+  // RemoveMember removes a member from the workspace (member:delete, with the
+  // same guard). The last owner cannot be removed.
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+
+  // ListInvitations lists the workspace's pending invitations (invite:read).
+  rpc ListInvitations(ListInvitationsRequest) returns (ListInvitationsResponse);
+
+  // RevokeInvitation cancels a pending invitation (invite:delete).
+  rpc RevokeInvitation(RevokeInvitationRequest) returns (RevokeInvitationResponse);
+
   // ListWorkspaces returns the workspaces the caller belongs to, with the
   // caller's role in each. The web uses it to decide between onboarding (no
   // workspace yet) and the app, and to fill the workspace switcher.
@@ -99,3 +114,33 @@ message WorkspaceMembership {
 message ListWorkspacesResponse {
   repeated WorkspaceMembership workspaces = 1;
 }
+
+message ChangeMemberRoleRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+  string role_key = 3;
+}
+
+message ChangeMemberRoleResponse {}
+
+message RemoveMemberRequest {
+  string workspace_id = 1;
+  string user_id = 2;
+}
+
+message RemoveMemberResponse {}
+
+message ListInvitationsRequest {
+  string workspace_id = 1;
+}
+
+message ListInvitationsResponse {
+  repeated Invitation invitations = 1;
+}
+
+message RevokeInvitationRequest {
+  string workspace_id = 1;
+  string invitation_id = 2;
+}
+
+message RevokeInvitationResponse {}

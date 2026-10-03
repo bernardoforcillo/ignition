@@ -62,6 +62,12 @@ module:
 
 ## Do
 
+- **Connect for every client-facing API.** Anything the web or another typed client calls
+  is a Connect RPC defined in `/proto`: never a hand-rolled JSON/HTTP endpoint. Plain HTTP
+  is only for what a third party dictates: provider callbacks (the OAuth redirect), provider
+  webhooks (Stripe), probes (`/healthz`, `/readyz`) and the signed URLs object storage
+  serves. Even then, keep the handler a thin adapter that hands off to the same services
+  the RPCs use.
 - **Transport by caller.** Browser or typed client → a **native Connect**
   handler whose service is generated from the shared `/proto` into
   `go-packages/proto` (`protobuf-codegen.md`). Plain HTTP only for probes (`/healthz`,

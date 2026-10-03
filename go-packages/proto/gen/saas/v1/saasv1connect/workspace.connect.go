@@ -36,6 +36,18 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// WorkspaceServiceChangeMemberRoleProcedure is the fully-qualified name of the WorkspaceService's
+	// ChangeMemberRole RPC.
+	WorkspaceServiceChangeMemberRoleProcedure = "/saas.v1.WorkspaceService/ChangeMemberRole"
+	// WorkspaceServiceRemoveMemberProcedure is the fully-qualified name of the WorkspaceService's
+	// RemoveMember RPC.
+	WorkspaceServiceRemoveMemberProcedure = "/saas.v1.WorkspaceService/RemoveMember"
+	// WorkspaceServiceListInvitationsProcedure is the fully-qualified name of the WorkspaceService's
+	// ListInvitations RPC.
+	WorkspaceServiceListInvitationsProcedure = "/saas.v1.WorkspaceService/ListInvitations"
+	// WorkspaceServiceRevokeInvitationProcedure is the fully-qualified name of the WorkspaceService's
+	// RevokeInvitation RPC.
+	WorkspaceServiceRevokeInvitationProcedure = "/saas.v1.WorkspaceService/RevokeInvitation"
 	// WorkspaceServiceListWorkspacesProcedure is the fully-qualified name of the WorkspaceService's
 	// ListWorkspaces RPC.
 	WorkspaceServiceListWorkspacesProcedure = "/saas.v1.WorkspaceService/ListWorkspaces"
@@ -58,6 +70,17 @@ const (
 
 // WorkspaceServiceClient is a client for the saas.v1.WorkspaceService service.
 type WorkspaceServiceClient interface {
+	// ChangeMemberRole sets a member's role. Needs the member:update permission
+	// and the privilege-escalation guard: nobody can grant more than they hold.
+	// The last owner cannot be demoted.
+	ChangeMemberRole(context.Context, *connect.Request[v1.ChangeMemberRoleRequest]) (*connect.Response[v1.ChangeMemberRoleResponse], error)
+	// RemoveMember removes a member from the workspace (member:delete, with the
+	// same guard). The last owner cannot be removed.
+	RemoveMember(context.Context, *connect.Request[v1.RemoveMemberRequest]) (*connect.Response[v1.RemoveMemberResponse], error)
+	// ListInvitations lists the workspace's pending invitations (invite:read).
+	ListInvitations(context.Context, *connect.Request[v1.ListInvitationsRequest]) (*connect.Response[v1.ListInvitationsResponse], error)
+	// RevokeInvitation cancels a pending invitation (invite:delete).
+	RevokeInvitation(context.Context, *connect.Request[v1.RevokeInvitationRequest]) (*connect.Response[v1.RevokeInvitationResponse], error)
 	// ListWorkspaces returns the workspaces the caller belongs to, with the
 	// caller's role in each. The web uses it to decide between onboarding (no
 	// workspace yet) and the app, and to fill the workspace switcher.
@@ -85,6 +108,30 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 	baseURL = strings.TrimRight(baseURL, "/")
 	workspaceServiceMethods := v1.File_saas_v1_workspace_proto.Services().ByName("WorkspaceService").Methods()
 	return &workspaceServiceClient{
+		changeMemberRole: connect.NewClient[v1.ChangeMemberRoleRequest, v1.ChangeMemberRoleResponse](
+			httpClient,
+			baseURL+WorkspaceServiceChangeMemberRoleProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ChangeMemberRole")),
+			connect.WithClientOptions(opts...),
+		),
+		removeMember: connect.NewClient[v1.RemoveMemberRequest, v1.RemoveMemberResponse](
+			httpClient,
+			baseURL+WorkspaceServiceRemoveMemberProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("RemoveMember")),
+			connect.WithClientOptions(opts...),
+		),
+		listInvitations: connect.NewClient[v1.ListInvitationsRequest, v1.ListInvitationsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceListInvitationsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ListInvitations")),
+			connect.WithClientOptions(opts...),
+		),
+		revokeInvitation: connect.NewClient[v1.RevokeInvitationRequest, v1.RevokeInvitationResponse](
+			httpClient,
+			baseURL+WorkspaceServiceRevokeInvitationProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("RevokeInvitation")),
+			connect.WithClientOptions(opts...),
+		),
 		listWorkspaces: connect.NewClient[v1.ListWorkspacesRequest, v1.ListWorkspacesResponse](
 			httpClient,
 			baseURL+WorkspaceServiceListWorkspacesProcedure,
@@ -126,12 +173,36 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 
 // workspaceServiceClient implements WorkspaceServiceClient.
 type workspaceServiceClient struct {
-	listWorkspaces  *connect.Client[v1.ListWorkspacesRequest, v1.ListWorkspacesResponse]
-	createWorkspace *connect.Client[v1.CreateWorkspaceRequest, v1.CreateWorkspaceResponse]
-	getWorkspace    *connect.Client[v1.GetWorkspaceRequest, v1.GetWorkspaceResponse]
-	listMembers     *connect.Client[v1.ListMembersRequest, v1.ListMembersResponse]
-	inviteMember    *connect.Client[v1.InviteMemberRequest, v1.InviteMemberResponse]
-	acceptInvite    *connect.Client[v1.AcceptInviteRequest, v1.AcceptInviteResponse]
+	changeMemberRole *connect.Client[v1.ChangeMemberRoleRequest, v1.ChangeMemberRoleResponse]
+	removeMember     *connect.Client[v1.RemoveMemberRequest, v1.RemoveMemberResponse]
+	listInvitations  *connect.Client[v1.ListInvitationsRequest, v1.ListInvitationsResponse]
+	revokeInvitation *connect.Client[v1.RevokeInvitationRequest, v1.RevokeInvitationResponse]
+	listWorkspaces   *connect.Client[v1.ListWorkspacesRequest, v1.ListWorkspacesResponse]
+	createWorkspace  *connect.Client[v1.CreateWorkspaceRequest, v1.CreateWorkspaceResponse]
+	getWorkspace     *connect.Client[v1.GetWorkspaceRequest, v1.GetWorkspaceResponse]
+	listMembers      *connect.Client[v1.ListMembersRequest, v1.ListMembersResponse]
+	inviteMember     *connect.Client[v1.InviteMemberRequest, v1.InviteMemberResponse]
+	acceptInvite     *connect.Client[v1.AcceptInviteRequest, v1.AcceptInviteResponse]
+}
+
+// ChangeMemberRole calls saas.v1.WorkspaceService.ChangeMemberRole.
+func (c *workspaceServiceClient) ChangeMemberRole(ctx context.Context, req *connect.Request[v1.ChangeMemberRoleRequest]) (*connect.Response[v1.ChangeMemberRoleResponse], error) {
+	return c.changeMemberRole.CallUnary(ctx, req)
+}
+
+// RemoveMember calls saas.v1.WorkspaceService.RemoveMember.
+func (c *workspaceServiceClient) RemoveMember(ctx context.Context, req *connect.Request[v1.RemoveMemberRequest]) (*connect.Response[v1.RemoveMemberResponse], error) {
+	return c.removeMember.CallUnary(ctx, req)
+}
+
+// ListInvitations calls saas.v1.WorkspaceService.ListInvitations.
+func (c *workspaceServiceClient) ListInvitations(ctx context.Context, req *connect.Request[v1.ListInvitationsRequest]) (*connect.Response[v1.ListInvitationsResponse], error) {
+	return c.listInvitations.CallUnary(ctx, req)
+}
+
+// RevokeInvitation calls saas.v1.WorkspaceService.RevokeInvitation.
+func (c *workspaceServiceClient) RevokeInvitation(ctx context.Context, req *connect.Request[v1.RevokeInvitationRequest]) (*connect.Response[v1.RevokeInvitationResponse], error) {
+	return c.revokeInvitation.CallUnary(ctx, req)
 }
 
 // ListWorkspaces calls saas.v1.WorkspaceService.ListWorkspaces.
@@ -166,6 +237,17 @@ func (c *workspaceServiceClient) AcceptInvite(ctx context.Context, req *connect.
 
 // WorkspaceServiceHandler is an implementation of the saas.v1.WorkspaceService service.
 type WorkspaceServiceHandler interface {
+	// ChangeMemberRole sets a member's role. Needs the member:update permission
+	// and the privilege-escalation guard: nobody can grant more than they hold.
+	// The last owner cannot be demoted.
+	ChangeMemberRole(context.Context, *connect.Request[v1.ChangeMemberRoleRequest]) (*connect.Response[v1.ChangeMemberRoleResponse], error)
+	// RemoveMember removes a member from the workspace (member:delete, with the
+	// same guard). The last owner cannot be removed.
+	RemoveMember(context.Context, *connect.Request[v1.RemoveMemberRequest]) (*connect.Response[v1.RemoveMemberResponse], error)
+	// ListInvitations lists the workspace's pending invitations (invite:read).
+	ListInvitations(context.Context, *connect.Request[v1.ListInvitationsRequest]) (*connect.Response[v1.ListInvitationsResponse], error)
+	// RevokeInvitation cancels a pending invitation (invite:delete).
+	RevokeInvitation(context.Context, *connect.Request[v1.RevokeInvitationRequest]) (*connect.Response[v1.RevokeInvitationResponse], error)
 	// ListWorkspaces returns the workspaces the caller belongs to, with the
 	// caller's role in each. The web uses it to decide between onboarding (no
 	// workspace yet) and the app, and to fill the workspace switcher.
@@ -189,6 +271,30 @@ type WorkspaceServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	workspaceServiceMethods := v1.File_saas_v1_workspace_proto.Services().ByName("WorkspaceService").Methods()
+	workspaceServiceChangeMemberRoleHandler := connect.NewUnaryHandler(
+		WorkspaceServiceChangeMemberRoleProcedure,
+		svc.ChangeMemberRole,
+		connect.WithSchema(workspaceServiceMethods.ByName("ChangeMemberRole")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceRemoveMemberHandler := connect.NewUnaryHandler(
+		WorkspaceServiceRemoveMemberProcedure,
+		svc.RemoveMember,
+		connect.WithSchema(workspaceServiceMethods.ByName("RemoveMember")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceListInvitationsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceListInvitationsProcedure,
+		svc.ListInvitations,
+		connect.WithSchema(workspaceServiceMethods.ByName("ListInvitations")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceRevokeInvitationHandler := connect.NewUnaryHandler(
+		WorkspaceServiceRevokeInvitationProcedure,
+		svc.RevokeInvitation,
+		connect.WithSchema(workspaceServiceMethods.ByName("RevokeInvitation")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workspaceServiceListWorkspacesHandler := connect.NewUnaryHandler(
 		WorkspaceServiceListWorkspacesProcedure,
 		svc.ListWorkspaces,
@@ -227,6 +333,14 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 	)
 	return "/saas.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case WorkspaceServiceChangeMemberRoleProcedure:
+			workspaceServiceChangeMemberRoleHandler.ServeHTTP(w, r)
+		case WorkspaceServiceRemoveMemberProcedure:
+			workspaceServiceRemoveMemberHandler.ServeHTTP(w, r)
+		case WorkspaceServiceListInvitationsProcedure:
+			workspaceServiceListInvitationsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceRevokeInvitationProcedure:
+			workspaceServiceRevokeInvitationHandler.ServeHTTP(w, r)
 		case WorkspaceServiceListWorkspacesProcedure:
 			workspaceServiceListWorkspacesHandler.ServeHTTP(w, r)
 		case WorkspaceServiceCreateWorkspaceProcedure:
@@ -247,6 +361,22 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 
 // UnimplementedWorkspaceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWorkspaceServiceHandler struct{}
+
+func (UnimplementedWorkspaceServiceHandler) ChangeMemberRole(context.Context, *connect.Request[v1.ChangeMemberRoleRequest]) (*connect.Response[v1.ChangeMemberRoleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.ChangeMemberRole is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) RemoveMember(context.Context, *connect.Request[v1.RemoveMemberRequest]) (*connect.Response[v1.RemoveMemberResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.RemoveMember is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ListInvitations(context.Context, *connect.Request[v1.ListInvitationsRequest]) (*connect.Response[v1.ListInvitationsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.ListInvitations is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) RevokeInvitation(context.Context, *connect.Request[v1.RevokeInvitationRequest]) (*connect.Response[v1.RevokeInvitationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.RevokeInvitation is not implemented"))
+}
 
 func (UnimplementedWorkspaceServiceHandler) ListWorkspaces(context.Context, *connect.Request[v1.ListWorkspacesRequest]) (*connect.Response[v1.ListWorkspacesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.WorkspaceService.ListWorkspaces is not implemented"))

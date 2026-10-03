@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/auth.proto.
  */
 export const file_saas_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("ChJzYWFzL3YxL2F1dGgucHJvdG8SB3NhYXMudjEiIQoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCSIwCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJIhAKDlNpZ25VcFJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSIVChNWZXJpZnlFbWFpbFJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJZCg1Mb2dpblJlc3BvbnNlEhsKBHVzZXIYASABKAsyDS5zYWFzLnYxLlVzZXISFAoMYWNjZXNzX3Rva2VuGAIgASgJEhUKDXJlZnJlc2hfdG9rZW4YAyABKAkiJwoOUmVmcmVzaFJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJbCg9SZWZyZXNoUmVzcG9uc2USGwoEdXNlchgBIAEoCzINLnNhYXMudjEuVXNlchIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSFQoNcmVmcmVzaF90b2tlbhgDIAEoCSImCg1Mb2dvdXRSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiEAoOTG9nb3V0UmVzcG9uc2UiLAobUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIh4KHFJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2UiOwoUUmVzZXRQYXNzd29yZFJlcXVlc3QSDQoFdG9rZW4YASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIhcKFVJlc2V0UGFzc3dvcmRSZXNwb25zZTL4AwoLQXV0aFNlcnZpY2USOQoGU2lnblVwEhYuc2Fhcy52MS5TaWduVXBSZXF1ZXN0Ghcuc2Fhcy52MS5TaWduVXBSZXNwb25zZRJICgtWZXJpZnlFbWFpbBIbLnNhYXMudjEuVmVyaWZ5RW1haWxSZXF1ZXN0Ghwuc2Fhcy52MS5WZXJpZnlFbWFpbFJlc3BvbnNlEjYKBUxvZ2luEhUuc2Fhcy52MS5Mb2dpblJlcXVlc3QaFi5zYWFzLnYxLkxvZ2luUmVzcG9uc2USPAoHUmVmcmVzaBIXLnNhYXMudjEuUmVmcmVzaFJlcXVlc3QaGC5zYWFzLnYxLlJlZnJlc2hSZXNwb25zZRI5CgZMb2dvdXQSFi5zYWFzLnYxLkxvZ291dFJlcXVlc3QaFy5zYWFzLnYxLkxvZ291dFJlc3BvbnNlEmMKFFJlcXVlc3RQYXNzd29yZFJlc2V0EiQuc2Fhcy52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QaJS5zYWFzLnYxLlJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2USTgoNUmVzZXRQYXNzd29yZBIdLnNhYXMudjEuUmVzZXRQYXNzd29yZFJlcXVlc3QaHi5zYWFzLnYxLlJlc2V0UGFzc3dvcmRSZXNwb25zZUJLWklnaXRodWIuY29tL2Jlcm5hcmRvZm9yY2lsbG8vaWduaXRpb24vZ28tcGFja2FnZXMvcHJvdG8vZ2VuL3NhYXMvdjE7c2Fhc3YxYgZwcm90bzM");
+  fileDesc("ChJzYWFzL3YxL2F1dGgucHJvdG8SB3NhYXMudjEiIQoEVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCSIwCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJIhAKDlNpZ25VcFJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSIVChNWZXJpZnlFbWFpbFJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJZCg1Mb2dpblJlc3BvbnNlEhsKBHVzZXIYASABKAsyDS5zYWFzLnYxLlVzZXISFAoMYWNjZXNzX3Rva2VuGAIgASgJEhUKDXJlZnJlc2hfdG9rZW4YAyABKAkiJwoOUmVmcmVzaFJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJbCg9SZWZyZXNoUmVzcG9uc2USGwoEdXNlchgBIAEoCzINLnNhYXMudjEuVXNlchIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSFQoNcmVmcmVzaF90b2tlbhgDIAEoCSImCg1Mb2dvdXRSZXF1ZXN0EhUKDXJlZnJlc2hfdG9rZW4YASABKAkiEAoOTG9nb3V0UmVzcG9uc2UiLAobUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIh4KHFJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2UiOwoUUmVzZXRQYXNzd29yZFJlcXVlc3QSDQoFdG9rZW4YASABKAkSFAoMbmV3X3Bhc3N3b3JkGAIgASgJIhcKFVJlc2V0UGFzc3dvcmRSZXNwb25zZSIoCgxBdXRoUHJvdmlkZXISCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCSIaChhMaXN0QXV0aFByb3ZpZGVyc1JlcXVlc3QiRQoZTGlzdEF1dGhQcm92aWRlcnNSZXNwb25zZRIoCglwcm92aWRlcnMYASADKAsyFS5zYWFzLnYxLkF1dGhQcm92aWRlciIlChFTdGFydE9BdXRoUmVxdWVzdBIQCghwcm92aWRlchgBIAEoCSI+ChJTdGFydE9BdXRoUmVzcG9uc2USGQoRYXV0aG9yaXphdGlvbl91cmwYASABKAkSDQoFc3RhdGUYAiABKAkiNwoYRXhjaGFuZ2VPQXV0aENvZGVSZXF1ZXN0EgwKBGNvZGUYASABKAkSDQoFc3RhdGUYAiABKAkidgoZRXhjaGFuZ2VPQXV0aENvZGVSZXNwb25zZRIbCgR1c2VyGAEgASgLMg0uc2Fhcy52MS5Vc2VyEhQKDGFjY2Vzc190b2tlbhgCIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAMgASgJEg8KB2NyZWF0ZWQYBCABKAgy9wUKC0F1dGhTZXJ2aWNlEjkKBlNpZ25VcBIWLnNhYXMudjEuU2lnblVwUmVxdWVzdBoXLnNhYXMudjEuU2lnblVwUmVzcG9uc2USSAoLVmVyaWZ5RW1haWwSGy5zYWFzLnYxLlZlcmlmeUVtYWlsUmVxdWVzdBocLnNhYXMudjEuVmVyaWZ5RW1haWxSZXNwb25zZRI2CgVMb2dpbhIVLnNhYXMudjEuTG9naW5SZXF1ZXN0GhYuc2Fhcy52MS5Mb2dpblJlc3BvbnNlEjwKB1JlZnJlc2gSFy5zYWFzLnYxLlJlZnJlc2hSZXF1ZXN0Ghguc2Fhcy52MS5SZWZyZXNoUmVzcG9uc2USOQoGTG9nb3V0EhYuc2Fhcy52MS5Mb2dvdXRSZXF1ZXN0Ghcuc2Fhcy52MS5Mb2dvdXRSZXNwb25zZRJjChRSZXF1ZXN0UGFzc3dvcmRSZXNldBIkLnNhYXMudjEuUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0GiUuc2Fhcy52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlc3BvbnNlEk4KDVJlc2V0UGFzc3dvcmQSHS5zYWFzLnYxLlJlc2V0UGFzc3dvcmRSZXF1ZXN0Gh4uc2Fhcy52MS5SZXNldFBhc3N3b3JkUmVzcG9uc2USWgoRTGlzdEF1dGhQcm92aWRlcnMSIS5zYWFzLnYxLkxpc3RBdXRoUHJvdmlkZXJzUmVxdWVzdBoiLnNhYXMudjEuTGlzdEF1dGhQcm92aWRlcnNSZXNwb25zZRJFCgpTdGFydE9BdXRoEhouc2Fhcy52MS5TdGFydE9BdXRoUmVxdWVzdBobLnNhYXMudjEuU3RhcnRPQXV0aFJlc3BvbnNlEloKEUV4Y2hhbmdlT0F1dGhDb2RlEiEuc2Fhcy52MS5FeGNoYW5nZU9BdXRoQ29kZVJlcXVlc3QaIi5zYWFzLnYxLkV4Y2hhbmdlT0F1dGhDb2RlUmVzcG9uc2VCS1pJZ2l0aHViLmNvbS9iZXJuYXJkb2ZvcmNpbGxvL2lnbml0aW9uL2dvLXBhY2thZ2VzL3Byb3RvL2dlbi9zYWFzL3YxO3NhYXN2MWIGcHJvdG8z");
 
 /**
  * @generated from message saas.v1.User
@@ -292,6 +292,163 @@ export const ResetPasswordResponseSchema: GenMessage<ResetPasswordResponse> = /*
   messageDesc(file_saas_v1_auth, 14);
 
 /**
+ * @generated from message saas.v1.AuthProvider
+ */
+export type AuthProvider = Message<"saas.v1.AuthProvider"> & {
+  /**
+   * id is the stable provider key, e.g. "google".
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * name is the label for the button, e.g. "Google".
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message saas.v1.AuthProvider.
+ * Use `create(AuthProviderSchema)` to create a new message.
+ */
+export const AuthProviderSchema: GenMessage<AuthProvider> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 15);
+
+/**
+ * @generated from message saas.v1.ListAuthProvidersRequest
+ */
+export type ListAuthProvidersRequest = Message<"saas.v1.ListAuthProvidersRequest"> & {
+};
+
+/**
+ * Describes the message saas.v1.ListAuthProvidersRequest.
+ * Use `create(ListAuthProvidersRequestSchema)` to create a new message.
+ */
+export const ListAuthProvidersRequestSchema: GenMessage<ListAuthProvidersRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 16);
+
+/**
+ * @generated from message saas.v1.ListAuthProvidersResponse
+ */
+export type ListAuthProvidersResponse = Message<"saas.v1.ListAuthProvidersResponse"> & {
+  /**
+   * @generated from field: repeated saas.v1.AuthProvider providers = 1;
+   */
+  providers: AuthProvider[];
+};
+
+/**
+ * Describes the message saas.v1.ListAuthProvidersResponse.
+ * Use `create(ListAuthProvidersResponseSchema)` to create a new message.
+ */
+export const ListAuthProvidersResponseSchema: GenMessage<ListAuthProvidersResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 17);
+
+/**
+ * @generated from message saas.v1.StartOAuthRequest
+ */
+export type StartOAuthRequest = Message<"saas.v1.StartOAuthRequest"> & {
+  /**
+   * provider is an id from ListAuthProviders.
+   *
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+};
+
+/**
+ * Describes the message saas.v1.StartOAuthRequest.
+ * Use `create(StartOAuthRequestSchema)` to create a new message.
+ */
+export const StartOAuthRequestSchema: GenMessage<StartOAuthRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 18);
+
+/**
+ * @generated from message saas.v1.StartOAuthResponse
+ */
+export type StartOAuthResponse = Message<"saas.v1.StartOAuthResponse"> & {
+  /**
+   * authorization_url is where to send the browser.
+   *
+   * @generated from field: string authorization_url = 1;
+   */
+  authorizationUrl: string;
+
+  /**
+   * state must be kept by the web and sent back to ExchangeOAuthCode.
+   *
+   * @generated from field: string state = 2;
+   */
+  state: string;
+};
+
+/**
+ * Describes the message saas.v1.StartOAuthResponse.
+ * Use `create(StartOAuthResponseSchema)` to create a new message.
+ */
+export const StartOAuthResponseSchema: GenMessage<StartOAuthResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 19);
+
+/**
+ * @generated from message saas.v1.ExchangeOAuthCodeRequest
+ */
+export type ExchangeOAuthCodeRequest = Message<"saas.v1.ExchangeOAuthCodeRequest"> & {
+  /**
+   * @generated from field: string code = 1;
+   */
+  code: string;
+
+  /**
+   * @generated from field: string state = 2;
+   */
+  state: string;
+};
+
+/**
+ * Describes the message saas.v1.ExchangeOAuthCodeRequest.
+ * Use `create(ExchangeOAuthCodeRequestSchema)` to create a new message.
+ */
+export const ExchangeOAuthCodeRequestSchema: GenMessage<ExchangeOAuthCodeRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 20);
+
+/**
+ * @generated from message saas.v1.ExchangeOAuthCodeResponse
+ */
+export type ExchangeOAuthCodeResponse = Message<"saas.v1.ExchangeOAuthCodeResponse"> & {
+  /**
+   * @generated from field: saas.v1.User user = 1;
+   */
+  user?: User | undefined;
+
+  /**
+   * @generated from field: string access_token = 2;
+   */
+  accessToken: string;
+
+  /**
+   * @generated from field: string refresh_token = 3;
+   */
+  refreshToken: string;
+
+  /**
+   * created is true when this sign-in provisioned a new account (first run).
+   *
+   * @generated from field: bool created = 4;
+   */
+  created: boolean;
+};
+
+/**
+ * Describes the message saas.v1.ExchangeOAuthCodeResponse.
+ * Use `create(ExchangeOAuthCodeResponseSchema)` to create a new message.
+ */
+export const ExchangeOAuthCodeResponseSchema: GenMessage<ExchangeOAuthCodeResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_auth, 21);
+
+/**
  * @generated from service saas.v1.AuthService
  */
 export const AuthService: GenService<{
@@ -369,6 +526,45 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ResetPasswordRequestSchema;
     output: typeof ResetPasswordResponseSchema;
+  },
+  /**
+   * ListAuthProviders lists the external sign-in providers configured on this
+   * deployment (e.g. Google) so the web shows only the buttons that work.
+   * Public.
+   *
+   * @generated from rpc saas.v1.AuthService.ListAuthProviders
+   */
+  listAuthProviders: {
+    methodKind: "unary";
+    input: typeof ListAuthProvidersRequestSchema;
+    output: typeof ListAuthProvidersResponseSchema;
+  },
+  /**
+   * StartOAuth begins an external sign-in: it returns the provider's
+   * authorization URL (with PKCE and a server-side state record) for the web to
+   * navigate the browser to, and the opaque state the web must keep (in
+   * sessionStorage) and present again to ExchangeOAuthCode. Public.
+   *
+   * @generated from rpc saas.v1.AuthService.StartOAuth
+   */
+  startOAuth: {
+    methodKind: "unary";
+    input: typeof StartOAuthRequestSchema;
+    output: typeof StartOAuthResponseSchema;
+  },
+  /**
+   * ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
+   * provider callback redirected the browser back with, bound to the state
+   * StartOAuth returned (so a code obtained in another browser is useless), and
+   * returns the same session a password login returns. The provider's tokens
+   * never reach the browser. Public.
+   *
+   * @generated from rpc saas.v1.AuthService.ExchangeOAuthCode
+   */
+  exchangeOAuthCode: {
+    methodKind: "unary";
+    input: typeof ExchangeOAuthCodeRequestSchema;
+    output: typeof ExchangeOAuthCodeResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_saas_v1_auth, 0);

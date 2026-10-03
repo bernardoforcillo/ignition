@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"connectrpc.com/connect"
@@ -153,4 +154,24 @@ func (h *workspaceHandler) memberEmails(ctx context.Context, members []workspace
 		return nil
 	}
 	return emails
+}
+
+// The four RPCs below are declared by the contract and implemented with the audit trail; until
+// then they answer unimplemented rather than silently doing nothing.
+var errNotYet = errors.New("not implemented yet")
+
+func (h *workspaceHandler) ChangeMemberRole(context.Context, *connect.Request[saasv1.ChangeMemberRoleRequest]) (*connect.Response[saasv1.ChangeMemberRoleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNotYet)
+}
+
+func (h *workspaceHandler) RemoveMember(context.Context, *connect.Request[saasv1.RemoveMemberRequest]) (*connect.Response[saasv1.RemoveMemberResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNotYet)
+}
+
+func (h *workspaceHandler) ListInvitations(context.Context, *connect.Request[saasv1.ListInvitationsRequest]) (*connect.Response[saasv1.ListInvitationsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNotYet)
+}
+
+func (h *workspaceHandler) RevokeInvitation(context.Context, *connect.Request[saasv1.RevokeInvitationRequest]) (*connect.Response[saasv1.RevokeInvitationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errNotYet)
 }

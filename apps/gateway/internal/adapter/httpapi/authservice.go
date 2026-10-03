@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 
 	"connectrpc.com/connect"
 
@@ -106,3 +107,19 @@ func (h *authHandler) ResetPassword(ctx context.Context, req *connect.Request[sa
 }
 
 func userMessage(u auth.User) *saasv1.User { return &saasv1.User{Id: u.ID, Email: u.Email} }
+
+// ListAuthProviders reports the external sign-in providers configured here. None until the OAuth
+// wiring lands, which is also the correct answer for a deployment that never configures one.
+func (h *authHandler) ListAuthProviders(_ context.Context, _ *connect.Request[saasv1.ListAuthProvidersRequest]) (*connect.Response[saasv1.ListAuthProvidersResponse], error) {
+	return connect.NewResponse(&saasv1.ListAuthProvidersResponse{}), nil
+}
+
+// StartOAuth is not implemented until external sign-in is configured.
+func (h *authHandler) StartOAuth(context.Context, *connect.Request[saasv1.StartOAuthRequest]) (*connect.Response[saasv1.StartOAuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("external sign-in is not configured"))
+}
+
+// ExchangeOAuthCode is not implemented until external sign-in is configured.
+func (h *authHandler) ExchangeOAuthCode(context.Context, *connect.Request[saasv1.ExchangeOAuthCodeRequest]) (*connect.Response[saasv1.ExchangeOAuthCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("external sign-in is not configured"))
+}

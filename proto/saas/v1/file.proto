@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+// FileService manages a workspace's uploaded files. Bytes never pass through
+// the gateway: the client uploads straight to object storage with a short-lived,
+// size-capped signed URL (CreateUpload), then confirms (CompleteUpload), and
+// downloads the same way (GetDownloadUrl).
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
+
+service FileService {
+  // CreateUpload registers a pending file and returns the signed URL to PUT the
+  // bytes to. The size and content type are validated here (size cap, allowlist,
+  // workspace quota); the signed URL enforces them again at the storage edge.
+  rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse);
+
+  // CompleteUpload checks that the object exists with the declared size and marks
+  // the file ready. A file never completed is garbage-collected by a job.
+  rpc CompleteUpload(CompleteUploadRequest) returns (CompleteUploadResponse);
+
+  // ListFiles lists the workspace's ready files, newest first.
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+
+  // GetDownloadUrl returns a short-lived signed URL to download one file.
+  rpc GetDownloadUrl(GetDownloadUrlRequest) returns (GetDownloadUrlResponse);
+
+  // DeleteFile removes the file's object and record.
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+}
+
+message File {
+  string id = 1;
+  string workspace_id = 2;
+  // name is the original file name (display only; the object key is generated).
+  string name = 3;
+  string content_type = 4;
+  int64 size_bytes = 5;
+  // status is "pending" until CompleteUpload, then "ready".
+  string status = 6;
+  string created_by = 7;
+  // created_at is an RFC 3339 timestamp (UTC).
+  string created_at = 8;
+}
+
+message CreateUploadRequest {
+  string workspace_id = 1;
+  string name = 2;
+  string content_type = 3;
+  int64 size_bytes = 4;
+}
+
+message CreateUploadResponse {
+  File file = 1;
+  // upload_url is where the client sends the bytes.
+  string upload_url = 2;
+  // upload_method is the HTTP method to use, normally "PUT".
+  string upload_method = 3;
+  // upload_headers must be sent exactly as given (e.g. Content-Type).
+  map<string, string> upload_headers = 4;
+  // expires_at is when the signed URL stops working (RFC 3339).
+  string expires_at = 5;
+}
+
+message CompleteUploadRequest {
+  string workspace_id = 1;
+  string file_id = 2;
+}
+
+message CompleteUploadResponse {
+  File file = 1;
+}
+
+message ListFilesRequest {
+  string workspace_id = 1;
+}
+
+message ListFilesResponse {
+  repeated File files = 1;
+}
+
+message GetDownloadUrlRequest {
+  string workspace_id = 1;
+  string file_id = 2;
+}
+
+message GetDownloadUrlResponse {
+  string url = 1;
+  string expires_at = 2;
+}
+
+message DeleteFileRequest {
+  string workspace_id = 1;
+  string file_id = 2;
+}
+
+message DeleteFileResponse {}
