@@ -9,6 +9,11 @@ export const WEBHOOK_SECRET = "whsec_test";
 export const RESEND_KEY = "re_test";
 export const STRIPE_KEY = "sk_test_x";
 export const POSTHOG_KEY = "phc_e2e_fake_key";
+export const STORAGE_BUCKET = "e2e-files";
+export const STORAGE_REGION = "e2e-region";
+export const STORAGE_ACCESS_KEY_ID = "AKIAE2EFAKEKEY";
+export const STORAGE_SECRET_ACCESS_KEY =
+	"e2e-fake-secret-access-key-0123456789";
 
 const required = (name: string): string => {
 	const value = process.env[name];
@@ -29,6 +34,9 @@ export const env = {
 	},
 	get stripeUrl() {
 		return required("E2E_STRIPE_URL");
+	},
+	get storageUrl() {
+		return required("E2E_STORAGE_URL");
 	},
 	get posthogUrl() {
 		return required("E2E_POSTHOG_URL");

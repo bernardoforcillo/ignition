@@ -1,8 +1,9 @@
 # @ignition/e2e
 
 Playwright tests that drive the **real** stack in a browser: the Go gateway, a Postgres database and the
-production build of `apps/web`. Only the two third parties are faked, because they cannot be reached from
-a test: Resend (email) and Stripe (checkout, portal, webhooks), plus a PostHog capture host.
+production build of `apps/web`. Only the third parties are faked, because they cannot be reached from
+a test: Resend (email), Stripe (checkout, portal, webhooks), an S3-compatible bucket (workspace files), plus a
+PostHog capture host.
 
 ## What `playwright test` starts
 
@@ -14,8 +15,15 @@ Every port is picked dynamically, so runs never collide with each other or with 
 3. **Fake Stripe API** (`POST /v1/checkout/sessions`, `/v1/billing_portal/sessions`; records the form each
    call carried). Webhooks are posted by the tests to the real gateway, signed with `whsec_test`.
 4. **Fake PostHog** host (records every request, decodes bodies).
+4b. **Fake S3 bucket** (`src/harness/fake-s3.ts`): path-style, accepts only requests whose SigV4 presigned
+   signature is valid for the request as received (signed content type and length, expiry), answers the CORS
+   preflight a cross-origin browser PUT needs, and lists what it holds at `GET /__objects`. It is written
+   independently of the Go signer, so a signing bug fails an end-to-end upload. Bytes go from the browser
+   straight to it; the gateway only signs, verifies (`Stat`) and deletes.
 5. **Gateway**: `go build` into `.run/`, then run with `RESEND_BASE_URL` / `STRIPE_API_BASE_URL` pointing at
-   the fakes, billing prices `price_pro=plan:pro,price_extra=addon:extra-api-calls`, and `/readyz` awaited.
+   the fakes, billing prices `price_pro=plan:pro,price_extra=addon:extra-api-calls`, `STORAGE_PROVIDER=s3` aimed
+   at the fake bucket (file cap raised to 200 MiB so a test can reserve most of the 100 MiB free quota with one
+   RPC), and `/readyz` awaited.
 6. **Web**, built **twice** (`VITE_*` is baked in at build time) and served by `vite preview`, which proxies
    the Connect RPCs to the gateway so the browser sees one origin:
    - `chromium` project: no analytics key.
@@ -100,8 +108,8 @@ steps:
 ```
 playwright.config.ts      projects: chromium, analytics; picks the two web ports
 src/harness/              global setup, the fakes, process and database helpers
-src/support/              mail, signed Stripe webhooks, PostHog captures, users and fixtures
-tests/                    registration, password-reset, invitations, billing, gdpr, auth-hygiene, analytics
+src/support/              mail, signed Stripe webhooks, PostHog captures, files (bucket contents, quota reservation), users and fixtures
+tests/                    registration, password-reset, invitations, billing, files, gdpr, auth-hygiene, analytics
 ```
 
 ## Known limits
@@ -109,5 +117,9 @@ tests/                    registration, password-reset, invitations, billing, gd
 - Session replay is not exercised: the fake PostHog does not serve the recorder script, so a recording that
   captured the page URL (rrweb `Meta` events) is not covered by the token assertions.
 - Stripe is a fake of the two REST calls the adapter makes; the hosted pages are placeholders.
+- The fake bucket speaks SigV4 only; the GCS signer is covered by `go-packages/storage`'s tests against its
+  in-memory server, not in the browser. Its CORS answer echoes the requested headers because every browser
+  context sends a per-context `X-Forwarded-For`; a real bucket lists `Content-Type` (and, on GCS,
+  `x-goog-content-length-range`) in its CORS rule.
 - Email is checked through its plain-text part (the verify/reset/invite links); HTML rendering is covered by
   the mailer's own tests.
