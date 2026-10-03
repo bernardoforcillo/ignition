@@ -42,12 +42,13 @@ recipient and subject (never the body, which carries single-use links).
 
 ## Templates
 
-The ten templates come from the react.email
+The eleven templates come from the react.email
 [Barebone collection](https://demo.react.email/preview/01-Barebone/welcome)
 (`activation`, `welcome`, `password-reset`, `subscription-confirmation`,
 `subscription-update`, `feature-announcement`, `product-update`, `text-only`)
-plus two in the same style: `account-exists` and `workspace-invitation`.
-`SendVerification` uses `activation`, `SendPasswordReset` uses `password-reset`.
+plus three in the same style: `account-exists`, `workspace-invitation` and `trial-ending`.
+`SendVerification` uses `activation`, `SendPasswordReset` uses `password-reset`,
+`SendTrialEnding` uses `trial-ending` (sent by the gateway's `trials.remind` job).
 
 `CompanyName` and `AssetBaseUrl` are filled in by the `Mailer` from its `Config`
 and cannot be overridden by a caller. Everything else is passed in the data map

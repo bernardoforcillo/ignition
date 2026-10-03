@@ -8,6 +8,7 @@ import ProductUpdate from "./emails/product-update";
 import SubscriptionConfirmation from "./emails/subscription-confirmation";
 import SubscriptionUpdate from "./emails/subscription-update";
 import TextOnly from "./emails/text-only";
+import TrialEnding from "./emails/trial-ending";
 import Welcome from "./emails/welcome";
 import WorkspaceInvitation from "./emails/workspace-invitation";
 
@@ -97,6 +98,11 @@ export const templates = {
 		component: WorkspaceInvitation,
 		subject: ({ workspaceName }) => `Join ${workspaceName}`,
 		variables: ["companyName", "workspaceName", "url"],
+	}),
+	"trial-ending": define({
+		component: TrialEnding,
+		subject: ({ workspaceName }) => `Your ${workspaceName} trial is ending soon`,
+		variables: ["companyName", "workspaceName", "endsOn", "url"],
 	}),
 } as const;
 

@@ -156,6 +156,16 @@ func (m *Mailer) SendInvitation(ctx context.Context, to, workspaceName, link str
 	})
 }
 
+// SendTrialEnding warns a workspace owner that the workspace's trial ends on endsOn (a date already
+// formatted for display); url is the billing page where the plan is kept.
+func (m *Mailer) SendTrialEnding(ctx context.Context, to, workspaceName, endsOn, url string) error {
+	return m.SendTemplate(ctx, "trial-ending", to, map[string]string{
+		"WorkspaceName": workspaceName,
+		"EndsOn":        endsOn,
+		"Url":           url,
+	})
+}
+
 // LogSender writes each message to the log instead of sending it: the default for local
 // development, where no provider key is configured. It never logs the body, which carries
 // single-use links.

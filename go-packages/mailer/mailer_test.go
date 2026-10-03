@@ -238,3 +238,30 @@ var (
 		SendInvitation(ctx context.Context, to, workspaceName, link string) error
 	} = (*mailer.Mailer)(nil)
 )
+
+func TestSendTrialEnding_FillsWorkspaceDateAndLink(t *testing.T) {
+	m, rec := newMailer(t)
+
+	err := m.SendTrialEnding(context.Background(), "ada@example.com", `Acme <b>`, "12 October 2026", "https://app.example.com/app/billing")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msgs := rec.Messages()
+	if len(msgs) != 1 {
+		t.Fatalf("got %d messages, want 1", len(msgs))
+	}
+	got := msgs[0]
+	if got.To[0] != "ada@example.com" || !strings.Contains(got.Subject, "trial is ending soon") {
+		t.Errorf("to/subject = %v / %q", got.To, got.Subject)
+	}
+	if !strings.Contains(got.HTML, "12 October 2026") || !strings.Contains(got.HTML, `href="https://app.example.com/app/billing"`) {
+		t.Errorf("html lacks the date or billing link")
+	}
+	if strings.Contains(got.HTML, "Acme <b>") {
+		t.Errorf("workspace name is not escaped in html")
+	}
+	if !strings.Contains(got.Text, "https://app.example.com/app/billing") {
+		t.Errorf("text lacks the billing link")
+	}
+}
