@@ -99,6 +99,7 @@ ignored otherwise. Secrets belong in a `secretKeyRef`, never in a ConfigMap.
 | `ASSET_BASE_URL`         | `APP_URL` | Origin serving the email images (`<origin>/static/...`). |
 | `RESEND_API_KEY`         | —       | Resend key. Unset logs each email (recipient and subject only) instead of sending it: fine for local dev, not for production. |
 | `RESEND_BASE_URL`        | Resend's API | **Test only.** Resend API origin, so an end-to-end test can point the gateway at a fake that captures the emails (their text carries the verify/reset/invite links). Never set it in a deployment. |
+| `JOBS_DISABLED`          | `false` | `true` turns off the background jobs that otherwise run inside the gateway whenever SaaS is on (see "Background jobs"). Set it on the gateway when the jobs run in their own service. |
 | `ACCESS_TTL`             | `15m`   | Access-token lifetime. |
 | `REFRESH_TTL`            | `720h`  | Refresh-token lifetime. |
 | `STRIPE_WEBHOOK_SECRET`  | —       | `whsec_...`. **Setting it enables billing** (`BillingService` and `POST /webhooks/stripe`). |
@@ -147,6 +148,28 @@ Enabled by `DATABASE_URL`. `main.go` opens the database and calls
 schema, features stores, billing tables) through `go-packages/database`, then
 wires `go-packages/{identity,features,billing,mailer}`. Any replica can start
 first: migrations are advisory-locked and idempotent.
+
+### Background jobs
+
+With SaaS on, `internal/adapter/jobs` runs three periodic tasks in the gateway process,
+scheduled by `go-packages/jobs` (its README has the model and guarantees). The schedule lives
+in Postgres (`scheduled_job_runs`), so with any number of replicas each tick runs once; a
+crashed replica's run is taken over after its lease. `JOBS_DISABLED=true` turns them off.
+
+| Task | Every | What |
+| ---- | ----- | ---- |
+| `invitations.cleanup` | 1h | Deletes workspace invitations past their expiry. Logs the count. |
+| `sessions.cleanup` | 24h | Deletes refresh sessions expired for more than 7 days and verification tokens expired for more than a day; a session that has not expired is never touched. Logs the counts. |
+| `trials.remind` | 24h | Emails every owner of a workspace whose provider trial (`billing_subscriptions`: status `trialing`, `current_period_end`) ends within 3 days, with the `trial-ending` template and a link to `{APP_URL}/app/billing`. Once per owner and trial end date (`job_notifications`, unique `(kind, key)`), so retries and replicas never double-send; one failing workspace does not stop the others and the run is retried with backoff. |
+
+A reminder is claimed in `job_notifications` before it is sent and released if the send fails,
+so the rare crash between the two loses that one reminder rather than sending it twice.
+
+To move the jobs into their own service (a different scaling profile, long tasks): scaffold it
+with `pnpm gen service`, build the same `saas.Services` there (or just the database and mailer)
+and the runner from `internal/adapter/jobs`, then set `JOBS_DISABLED=true` on the gateway. The
+schedule is in the database, so nothing migrates; during the switch both may run and the
+claims keep every tick single.
 
 Connect procedures (`/proto/saas/v1` at the repo root, package `saas.v1`; JSON over HTTP works
 with plain `curl` as for `Ping`):
@@ -203,7 +226,7 @@ Things worth knowing:
 
 ## Dependencies and the workspace
 
-`go.mod` requires the five local modules with relative `replace` directives
+`go.mod` requires the local modules with relative `replace` directives
 (`../../go-packages/<name>`), so the gateway builds both inside the repo's
 `go.work` and standalone (`GOWORK=off go build ./...`), which is what the
 Docker build relies on. Hence the repo-root build context above.
@@ -239,6 +262,10 @@ apps/gateway/
                                     the billing sink/event store, the
                                     new-workspace free plan and the
                                     in-memory auth rate limiter
+      jobs/                        background jobs: the three periodic
+                                    tasks, their SQL and the runner over
+                                    go-packages/jobs (stopped before the
+                                    database closes on shutdown)
       proxy/                       capabilities/adapter layer — implements
                                     core.Forwarder using
                                     net/http/httputil.ReverseProxy
