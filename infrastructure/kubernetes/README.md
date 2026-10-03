@@ -37,6 +37,8 @@ kubectl apply -k development/ignition-development
   (>= 32 bytes) and, when used, `RESEND_API_KEY`, `STRIPE_API_KEY`,
   `STRIPE_WEBHOOK_SECRET` and `BILLING_PRICES`. `APP_URL`, `COMPANY_NAME` and
   `MAIL_FROM` are in each `gateway/configmap.yaml`. Never commit these values.
+  Workspace files stay off (`STORAGE_PROVIDER: "disabled"`) until a bucket is configured: set the
+  provider and bucket in the same ConfigMap and add the storage credentials to `gateway-secrets`.
 - The gateway image is built from the repo root:
   `docker build -f apps/gateway/Dockerfile .`
 - Requires an `nginx` ingress controller in the `ingress-nginx` namespace

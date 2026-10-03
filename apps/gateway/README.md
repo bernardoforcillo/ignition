@@ -107,6 +107,18 @@ ignored otherwise. Secrets belong in a `secretKeyRef`, never in a ConfigMap.
 | `BILLING_PRICES`         | —       | Price catalog `price_id=plan:<plan>,price_id=addon:<add-on>,...`, e.g. `price_123=plan:pro,price_456=addon:extra-api-calls`. Plan and add-on ids must exist in the feature catalog (`go-packages/features/catalog.go`) or startup fails. Only these prices can be checked out. |
 | `STRIPE_API_BASE_URL`    | Stripe's API | **Test only.** Stripe API origin for an end-to-end fake of checkout/portal. Never set it in a deployment. |
 | `BILLING_FREE_PLAN`      | the features catalog's free plan (`free`) | Plan a new or lapsed workspace holds. |
+| `STORAGE_PROVIDER`       | `disabled` | `gcs`, `s3` or `disabled`. Selects the object store behind `FileService` (see "Files"); `disabled` makes every `FileService` RPC answer `unimplemented`. |
+| `STORAGE_BUCKET`         | —       | Required with a provider: the private bucket the files live in. |
+| `STORAGE_GCS_CREDENTIALS_JSON` | —  | `gcs`, required: the service account key JSON (a secret). The account needs object read, write and delete on the bucket. |
+| `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | — | `s3`, required: the access key pair (secrets). |
+| `STORAGE_ENDPOINT`       | AWS S3  | `s3`: service origin, e.g. `https://<account>.r2.cloudflarestorage.com` (R2), `http://minio:9000` (MinIO) or `https://storage.googleapis.com` (GCS with an HMAC key). |
+| `STORAGE_REGION`         | `us-east-1` | `s3`: signing region (`auto` for R2). |
+| `STORAGE_S3_PATH_STYLE`  | `false` | `s3`: put the bucket in the path instead of the host name (MinIO needs `true`). |
+| `STORAGE_MAX_FILE_BYTES` | `26214400` (25 MiB) | Largest single file; at most 5 GiB (one signed PUT). |
+| `STORAGE_ALLOWED_TYPES`  | png, jpeg, gif, webp, pdf, plain text, csv, json, zip | Comma-separated exact media types. Nothing a browser executes (HTML, SVG) is in the default; do not add it. |
+| `STORAGE_UPLOAD_URL_TTL`, `STORAGE_DOWNLOAD_URL_TTL` | `10m`, `5m` | Lifetime of the signed URLs; at most `1h`. |
+| `STORAGE_PENDING_TTL`    | `1h`    | How long an upload may stay unconfirmed before `files.cleanup` removes it; must exceed `STORAGE_UPLOAD_URL_TTL`. |
+| `STORAGE_GCS_ENDPOINT`   | Google's API | **Test only.** GCS API origin for an emulator. Never set it in a deployment. |
 
 Optional pool settings of `go-packages/database` (`DATABASE_MAX_OPEN_CONNS`,
 etc.) are not wired; the module's defaults apply.
@@ -151,7 +163,7 @@ first: migrations are advisory-locked and idempotent.
 
 ### Background jobs
 
-With SaaS on, `internal/adapter/jobs` runs three periodic tasks in the gateway process,
+With SaaS on, `internal/adapter/jobs` runs periodic tasks in the gateway process,
 scheduled by `go-packages/jobs` (its README has the model and guarantees). The schedule lives
 in Postgres (`scheduled_job_runs`), so with any number of replicas each tick runs once; a
 crashed replica's run is taken over after its lease. `JOBS_DISABLED=true` turns them off.
@@ -162,6 +174,8 @@ crashed replica's run is taken over after its lease. `JOBS_DISABLED=true` turns 
 | `sessions.cleanup` | 24h | Deletes refresh sessions expired for more than 7 days and verification tokens expired for more than a day; a session that has not expired is never touched. Logs the counts. |
 | `trials.remind` | 24h | Emails every owner of a workspace whose provider trial (`billing_subscriptions`: status `trialing`, `current_period_end`) ends within 3 days, with the `trial-ending` template and a link to `{APP_URL}/app/billing`. Once per owner and trial end date (`job_notifications`, unique `(kind, key)`), so retries and replicas never double-send; one failing workspace does not stop the others and the run is retried with backoff. |
 
+| `files.cleanup` | 15m | Only with object storage on. Deletes the object and then the record of an upload never confirmed within `STORAGE_PENDING_TTL`, and of every file of an erased workspace. It first claims the record (`pending` to `abandoned`), so a `CompleteUpload` racing with it either wins before or finds nothing after; a storage failure leaves the `abandoned` record and the next run retries it. Logs the count. |
+
 A reminder is claimed in `job_notifications` before it is sent and released if the send fails,
 so the rare crash between the two loses that one reminder rather than sending it twice.
 
@@ -170,6 +184,42 @@ with `pnpm gen service`, build the same `saas.Services` there (or just the datab
 and the runner from `internal/adapter/jobs`, then set `JOBS_DISABLED=true` on the gateway. The
 schedule is in the database, so nothing migrates; during the switch both may run and the
 claims keep every tick single.
+
+### Files
+
+`FileService` stores workspace files in a bucket without the bytes ever passing through the gateway
+(`system-design.md`, large files). The flow:
+
+1. `CreateUpload(workspace_id, name, content_type, size_bytes)` validates the type against
+   `STORAGE_ALLOWED_TYPES` and the size against `STORAGE_MAX_FILE_BYTES`, reserves the bytes against
+   the workspace's `storage.bytes` quota and returns a **pending** file plus a signed `PUT` URL
+   (`upload_url`, `upload_method`, `upload_headers`, `expires_at`). The object key is
+   `workspaces/<workspace id>/<uuid>`, generated here: the name is display-only.
+2. The client uploads straight to the bucket with exactly those headers. The signature binds the
+   content type and the exact length, so the storage service refuses anything else.
+3. `CompleteUpload` calls `Stat` on the object and, if size and content type match, marks the file
+   **ready** (idempotent). A mismatching object is deleted along with its record.
+4. `ListFiles` pages ready files newest first (`page_size`, `next_page_token`; a keyset on
+   `(created_at, id)`) and returns `used_bytes` and `quota_bytes` (absent: unlimited).
+   `GetDownloadUrl` returns a signed `GET` that expires in `STORAGE_DOWNLOAD_URL_TTL` and forces a
+   download under the original name. `DeleteFile` removes the object, then the record.
+
+Rules worth knowing:
+
+- **Quota.** `storage.bytes` is a limit in the feature catalog (`go-packages/features/catalog.go`: free
+  100 MiB, pro 10 GiB, add-ons can raise it). It is a gauge, not a monthly meter: the amount in use is the
+  sum of the workspace's pending and ready files, so deleting a file frees it. The check and the insert are
+  one transaction under a per-workspace advisory lock, so concurrent uploads cannot both take the last
+  bytes, on any number of replicas. A plan without the feature is `permission_denied`, a used-up quota
+  `resource_exhausted`.
+- **Tenancy.** Every query filters by the workspace the caller was authorized for; a file id from another
+  workspace is `not_found`, exactly like a missing one.
+- **Roles.** `file:read` and `file:write` (`go-packages/identity/permissions`). Owners and admins hold them.
+- **Bucket.** Keep it private, enable CORS for `APP_URL` (`PUT, GET, HEAD`; headers `Content-Type` and, on
+  GCS, `x-goog-content-length-range`) and see `go-packages/storage/README.md` for the signing details and
+  the choice of not using a vendor SDK.
+- **Provider notes.** GCS signs with the service account key (`STORAGE_GCS_CREDENTIALS_JSON`); under
+  Workload Identity use `s3` against `https://storage.googleapis.com` with an HMAC key instead.
 
 Connect procedures (`/proto/saas/v1` at the repo root, package `saas.v1`; JSON over HTTP works
 with plain `curl` as for `Ping`):
@@ -183,6 +233,7 @@ with plain `curl` as for `Ping`):
 | `FeatureService` | `CheckFeature` | bearer + member | Returns `enabled`, `reason` and, for a finite meter, `limit` and `remaining`. Consumes nothing. |
 | `BillingService` | `StartCheckout`, `OpenPortal` | bearer + `organization:update` (owner/admin) | Served only when billing is enabled. Return URLs are built from `APP_URL`, never taken from the client. |
 | `BillingService` | `GetSubscription`, `ListPrices` | bearer (+ member for `GetSubscription`) | Same availability. `GetSubscription` returns plan and add-ons from the entitlement store (the free plan before any), status and period end as the provider last reported them (`billing_subscriptions`, written by the subscription sink; empty until then) and `can_manage` (provider customer exists and the caller may update the workspace). `ListPrices` is `BILLING_PRICES`. |
+| `FileService` | `CreateUpload`, `CompleteUpload`, `ListFiles`, `GetDownloadUrl`, `DeleteFile` | bearer + `file:write` (create, complete, delete) or `file:read` (list, download) | Served always; answers `unimplemented` unless `STORAGE_PROVIDER` is set (see "Files"). Owners and admins hold both permissions; members hold none until a custom role grants them. |
 | `AccountService` | `GetMe`, `ExportData`, `DeleteAccount` | bearer | The caller's own account. `ExportData` returns a JSON document (account, memberships, pending invitations for the address; no hash or tokens). `DeleteAccount` re-checks the password (`permission_denied` if wrong, not `unauthenticated`), refuses with `failed_precondition` while the caller owns a workspace that still has other members or a workspace the provider still bills, otherwise erases the workspaces owned alone, leaves the others, deletes the account and its sessions. |
 
 Plain HTTP: `POST /webhooks/stripe` (billing enabled only; verified by Stripe
@@ -262,7 +313,9 @@ apps/gateway/
                                     the billing sink/event store, the
                                     new-workspace free plan and the
                                     in-memory auth rate limiter
-      jobs/                        background jobs: the three periodic
+      objectstore/                 core.ObjectStore over go-packages/storage
+                                    (GCS or S3-compatible signed URLs)
+      jobs/                        background jobs: the periodic
                                     tasks, their SQL and the runner over
                                     go-packages/jobs (stopped before the
                                     database closes on shutdown)
@@ -286,7 +339,8 @@ apps/gateway/
                                     mounting of the SaaS routes
         authservice.go, workspaceservice.go,
         featureservice.go, billingservice.go,
-        accountservice.go          one Connect handler per service
+        accountservice.go,
+        fileservice.go             one Connect handler per service
         interceptor.go             bearer-token authentication; the public
                                     procedure allow-list
         errors.go                  the one domain-error -> Connect mapper
@@ -303,7 +357,8 @@ deployable populates all five layers.
 
 Dependency direction is enforced by what each package is allowed to import:
 `core` imports only the standard library (`core/errors.go` holds the one
-SaaS-facing sentinel, `ErrNoBillingCustomer`); `adapter/proxy` and `adapter/httpapi`
+SaaS-facing sentinel, `ErrNoBillingCustomer`; `core/files.go` holds the file use
+cases and the ports they need: repository, object store, quota); `adapter/proxy` and `adapter/httpapi`
 import `core` (never the reverse); `config` imports neither `core` nor any
 adapter; `main.go` is the only place that imports a concrete adapter package
 directly and wires it in behind the interface (`core.Forwarder`,
