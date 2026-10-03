@@ -9,6 +9,7 @@ use (
 	./go-packages/jobs
 	./go-packages/mailer
 	./go-packages/proto
+	./go-packages/storage
 	./go-packages/telemetry
 	./tools
 )

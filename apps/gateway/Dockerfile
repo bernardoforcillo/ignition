@@ -28,7 +28,7 @@ WORKDIR /src
 ENV GOWORK=off CGO_ENABLED=0 GOOS=linux
 
 # Module manifests first, so `go mod download` is cached until a
-# dependency actually changes. billing and mailer are stdlib-only and
+# dependency actually changes. billing, mailer and storage are stdlib-only and
 # have no go.sum.
 COPY go-packages/billing/go.mod go-packages/billing/go.mod
 COPY go-packages/database/go.mod go-packages/database/go.sum go-packages/database/
@@ -37,6 +37,7 @@ COPY go-packages/identity/go.mod go-packages/identity/go.sum go-packages/identit
 COPY go-packages/jobs/go.mod go-packages/jobs/go.sum go-packages/jobs/
 COPY go-packages/mailer/go.mod go-packages/mailer/go.mod
 COPY go-packages/proto/go.mod go-packages/proto/go.sum go-packages/proto/
+COPY go-packages/storage/go.mod go-packages/storage/go.mod
 COPY go-packages/telemetry/go.mod go-packages/telemetry/go.sum go-packages/telemetry/
 COPY apps/gateway/go.mod apps/gateway/go.sum apps/gateway/
 RUN go -C apps/gateway mod download
