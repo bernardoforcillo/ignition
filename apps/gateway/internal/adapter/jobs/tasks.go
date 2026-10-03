@@ -16,6 +16,7 @@ const (
 	InvitationsCleanup = "invitations.cleanup"
 	SessionsCleanup    = "sessions.cleanup"
 	TrialsRemind       = "trials.remind"
+	FilesCleanup       = "files.cleanup"
 )
 
 const (
@@ -53,6 +54,12 @@ type trialSource interface {
 	EndingTrials(ctx context.Context, from, to time.Time) ([]EndingTrial, error)
 }
 
+// AbandonedFilesPurger removes uploads that were never completed and the files of erased workspaces:
+// it deletes their objects, then their records, and reports how many files it removed.
+type AbandonedFilesPurger interface {
+	PurgeAbandoned(ctx context.Context) (int, error)
+}
+
 // OwnerDirectory resolves who to write to. saas.Services implements it.
 type OwnerDirectory interface {
 	// OwnerIDs lists the account ids holding the owner role of the workspace.
@@ -82,6 +89,16 @@ func invitationsCleanup(p invitationPurger, now func() time.Time, log *slog.Logg
 		}
 		log.InfoContext(ctx, "expired invitations deleted", "count", n)
 		return nil
+	}
+}
+
+// filesCleanup runs the purge; a partial failure is returned after the count is logged, so the run is
+// retried and the files already removed are not counted twice (their records are gone).
+func filesCleanup(p AbandonedFilesPurger, log *slog.Logger) func(context.Context) error {
+	return func(ctx context.Context) error {
+		n, err := p.PurgeAbandoned(ctx)
+		log.InfoContext(ctx, "abandoned files purged", "count", n)
+		return err
 	}
 }
 
@@ -187,9 +204,13 @@ func tasks(d Deps, every time.Duration) []jobslib.Task {
 		trials: st, owners: d.Owners, sent: st, mail: d.Mail,
 		billingURL: strings.TrimRight(d.AppURL, "/") + "/app/billing", now: d.Now, log: log,
 	}
-	return []jobslib.Task{
+	list := []jobslib.Task{
 		{Name: InvitationsCleanup, Every: interval(time.Hour), Run: invitationsCleanup(st, d.Now, log)},
 		{Name: SessionsCleanup, Every: interval(24 * time.Hour), Run: sessionsCleanup(st, d.Now, log)},
 		{Name: TrialsRemind, Every: interval(24 * time.Hour), Run: reminder.run},
 	}
+	if d.Files != nil {
+		list = append(list, jobslib.Task{Name: FilesCleanup, Every: interval(15 * time.Minute), Run: filesCleanup(d.Files, log)})
+	}
+	return list
 }

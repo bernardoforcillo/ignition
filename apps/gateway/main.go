@@ -21,6 +21,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi"
 	jobsadapter "github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/jobs"
+	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/objectstore"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/proxy"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/saas"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
@@ -161,7 +162,20 @@ func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger, events
 	if err != nil {
 		return nil, err
 	}
-	services, err := saas.Build(ctx, cfg, db, logger, saas.WithEvents(events))
+	opts := []saas.Option{saas.WithEvents(events)}
+	if cfg.Storage != nil {
+		// Files exist only with an object store; without one FileService answers Unimplemented.
+		objects, err := objectstore.New(*cfg.Storage)
+		if err != nil {
+			_ = db.Close()
+			return nil, err
+		}
+		opts = append(opts, saas.WithFiles(objects, core.FileLimits{
+			MaxFileBytes: cfg.Storage.MaxFileBytes, AllowedTypes: cfg.Storage.AllowedTypes,
+			UploadTTL: cfg.Storage.UploadURLTTL, DownloadTTL: cfg.Storage.DownloadURLTTL, PendingTTL: cfg.Storage.PendingTTL,
+		}))
+	}
+	services, err := saas.Build(ctx, cfg, db, logger, opts...)
 	if err != nil {
 		_ = db.Close()
 		return nil, err
@@ -172,7 +186,11 @@ func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger, events
 // buildJobs wires the background jobs over the SaaS services and starts them. They run in this
 // process; internal/adapter/jobs says how to move them into a service of their own.
 func buildJobs(s *saas.Services, appURL string, logger *slog.Logger) (*jobsadapter.Runner, error) {
-	runner, err := jobsadapter.New(jobsadapter.Deps{DB: s.DB(), Owners: s, Mail: s.Mail, AppURL: appURL, Logger: logger})
+	deps := jobsadapter.Deps{DB: s.DB(), Owners: s, Mail: s.Mail, AppURL: appURL, Logger: logger}
+	if s.Files != nil { // not a typed nil: Deps.Files is an interface and nil means "no storage"
+		deps.Files = s.Files
+	}
+	runner, err := jobsadapter.New(deps)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +224,9 @@ func newSaaSAPI(s *saas.Services, appURL string, trustedProxies []netip.Prefix) 
 		Clients:    httpapi.NewClientIPResolver(trustedProxies),
 		AppURL:     appURL,
 		Ready:      s.Ready,
+	}
+	if s.Files != nil {
+		api.Files = s.Files
 	}
 	if s.Billing != nil {
 		api.Billing = s.Billing

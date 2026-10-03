@@ -1,5 +1,5 @@
-// Package jobs is the gateway's background-job adapter: it defines the three periodic tasks
-// (expired invitation cleanup, session and token cleanup, trial-ending reminders), holds their SQL
+// Package jobs is the gateway's background-job adapter: it defines the periodic tasks (expired
+// invitation cleanup, session and token cleanup, trial-ending reminders, abandoned upload cleanup), holds their SQL
 // and runs them with go-packages/jobs over the shared Postgres, so any number of gateway replicas
 // run each tick once.
 //
@@ -30,6 +30,9 @@ type Deps struct {
 	// AppURL is the public web app URL; the reminder links to {AppURL}/app/billing.
 	AppURL string
 	Logger *slog.Logger
+	// Files purges uploads that never completed and the files of erased workspaces (the files.cleanup
+	// task). Nil when object storage is off: the task is then not scheduled. *core.Files implements it.
+	Files AbandonedFilesPurger
 	// Now is the clock the tasks read; nil means time.Now.
 	Now func() time.Time
 }
