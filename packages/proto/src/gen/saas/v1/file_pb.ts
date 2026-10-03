@@ -15,7 +15,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/file.proto.
  */
 export const file_saas_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChJzYWFzL3YxL2ZpbGUucHJvdG8SB3NhYXMudjEimAEKBEZpbGUSCgoCaWQYASABKAkSFAoMd29ya3NwYWNlX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSFAoMY29udGVudF90eXBlGAQgASgJEhIKCnNpemVfYnl0ZXMYBSABKAMSDgoGc3RhdHVzGAYgASgJEhIKCmNyZWF0ZWRfYnkYByABKAkSEgoKY3JlYXRlZF9hdBgIIAEoCSJjChNDcmVhdGVVcGxvYWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgDIvIBChRDcmVhdGVVcGxvYWRSZXNwb25zZRIbCgRmaWxlGAEgASgLMg0uc2Fhcy52MS5GaWxlEhIKCnVwbG9hZF91cmwYAiABKAkSFQoNdXBsb2FkX21ldGhvZBgDIAEoCRJICg51cGxvYWRfaGVhZGVycxgEIAMoCzIwLnNhYXMudjEuQ3JlYXRlVXBsb2FkUmVzcG9uc2UuVXBsb2FkSGVhZGVyc0VudHJ5EhIKCmV4cGlyZXNfYXQYBSABKAkaNAoSVXBsb2FkSGVhZGVyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiPgoVQ29tcGxldGVVcGxvYWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdmaWxlX2lkGAIgASgJIjUKFkNvbXBsZXRlVXBsb2FkUmVzcG9uc2USGwoEZmlsZRgBIAEoCzINLnNhYXMudjEuRmlsZSIoChBMaXN0RmlsZXNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSIxChFMaXN0RmlsZXNSZXNwb25zZRIcCgVmaWxlcxgBIAMoCzINLnNhYXMudjEuRmlsZSI+ChVHZXREb3dubG9hZFVybFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2ZpbGVfaWQYAiABKAkiOQoWR2V0RG93bmxvYWRVcmxSZXNwb25zZRILCgN1cmwYASABKAkSEgoKZXhwaXJlc19hdBgCIAEoCSI6ChFEZWxldGVGaWxlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSDwoHZmlsZV9pZBgCIAEoCSIUChJEZWxldGVGaWxlUmVzcG9uc2UyiwMKC0ZpbGVTZXJ2aWNlEksKDENyZWF0ZVVwbG9hZBIcLnNhYXMudjEuQ3JlYXRlVXBsb2FkUmVxdWVzdBodLnNhYXMudjEuQ3JlYXRlVXBsb2FkUmVzcG9uc2USUQoOQ29tcGxldGVVcGxvYWQSHi5zYWFzLnYxLkNvbXBsZXRlVXBsb2FkUmVxdWVzdBofLnNhYXMudjEuQ29tcGxldGVVcGxvYWRSZXNwb25zZRJCCglMaXN0RmlsZXMSGS5zYWFzLnYxLkxpc3RGaWxlc1JlcXVlc3QaGi5zYWFzLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElEKDkdldERvd25sb2FkVXJsEh4uc2Fhcy52MS5HZXREb3dubG9hZFVybFJlcXVlc3QaHy5zYWFzLnYxLkdldERvd25sb2FkVXJsUmVzcG9uc2USRQoKRGVsZXRlRmlsZRIaLnNhYXMudjEuRGVsZXRlRmlsZVJlcXVlc3QaGy5zYWFzLnYxLkRlbGV0ZUZpbGVSZXNwb25zZUJLWklnaXRodWIuY29tL2Jlcm5hcmRvZm9yY2lsbG8vaWduaXRpb24vZ28tcGFja2FnZXMvcHJvdG8vZ2VuL3NhYXMvdjE7c2Fhc3YxYgZwcm90bzM");
+  fileDesc("ChJzYWFzL3YxL2ZpbGUucHJvdG8SB3NhYXMudjEimAEKBEZpbGUSCgoCaWQYASABKAkSFAoMd29ya3NwYWNlX2lkGAIgASgJEgwKBG5hbWUYAyABKAkSFAoMY29udGVudF90eXBlGAQgASgJEhIKCnNpemVfYnl0ZXMYBSABKAMSDgoGc3RhdHVzGAYgASgJEhIKCmNyZWF0ZWRfYnkYByABKAkSEgoKY3JlYXRlZF9hdBgIIAEoCSJjChNDcmVhdGVVcGxvYWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDGNvbnRlbnRfdHlwZRgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgDIvIBChRDcmVhdGVVcGxvYWRSZXNwb25zZRIbCgRmaWxlGAEgASgLMg0uc2Fhcy52MS5GaWxlEhIKCnVwbG9hZF91cmwYAiABKAkSFQoNdXBsb2FkX21ldGhvZBgDIAEoCRJICg51cGxvYWRfaGVhZGVycxgEIAMoCzIwLnNhYXMudjEuQ3JlYXRlVXBsb2FkUmVzcG9uc2UuVXBsb2FkSGVhZGVyc0VudHJ5EhIKCmV4cGlyZXNfYXQYBSABKAkaNAoSVXBsb2FkSGVhZGVyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiPgoVQ29tcGxldGVVcGxvYWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdmaWxlX2lkGAIgASgJIjUKFkNvbXBsZXRlVXBsb2FkUmVzcG9uc2USGwoEZmlsZRgBIAEoCzINLnNhYXMudjEuRmlsZSJPChBMaXN0RmlsZXNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIRCglwYWdlX3NpemUYAiABKAUSEgoKcGFnZV90b2tlbhgDIAEoCSKIAQoRTGlzdEZpbGVzUmVzcG9uc2USHAoFZmlsZXMYASADKAsyDS5zYWFzLnYxLkZpbGUSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJEhIKCnVzZWRfYnl0ZXMYAyABKAMSGAoLcXVvdGFfYnl0ZXMYBCABKANIAIgBAUIOCgxfcXVvdGFfYnl0ZXMiPgoVR2V0RG93bmxvYWRVcmxSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgdmaWxlX2lkGAIgASgJIjkKFkdldERvd25sb2FkVXJsUmVzcG9uc2USCwoDdXJsGAEgASgJEhIKCmV4cGlyZXNfYXQYAiABKAkiOgoRRGVsZXRlRmlsZVJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEg8KB2ZpbGVfaWQYAiABKAkiFAoSRGVsZXRlRmlsZVJlc3BvbnNlMosDCgtGaWxlU2VydmljZRJLCgxDcmVhdGVVcGxvYWQSHC5zYWFzLnYxLkNyZWF0ZVVwbG9hZFJlcXVlc3QaHS5zYWFzLnYxLkNyZWF0ZVVwbG9hZFJlc3BvbnNlElEKDkNvbXBsZXRlVXBsb2FkEh4uc2Fhcy52MS5Db21wbGV0ZVVwbG9hZFJlcXVlc3QaHy5zYWFzLnYxLkNvbXBsZXRlVXBsb2FkUmVzcG9uc2USQgoJTGlzdEZpbGVzEhkuc2Fhcy52MS5MaXN0RmlsZXNSZXF1ZXN0Ghouc2Fhcy52MS5MaXN0RmlsZXNSZXNwb25zZRJRCg5HZXREb3dubG9hZFVybBIeLnNhYXMudjEuR2V0RG93bmxvYWRVcmxSZXF1ZXN0Gh8uc2Fhcy52MS5HZXREb3dubG9hZFVybFJlc3BvbnNlEkUKCkRlbGV0ZUZpbGUSGi5zYWFzLnYxLkRlbGV0ZUZpbGVSZXF1ZXN0Ghsuc2Fhcy52MS5EZWxldGVGaWxlUmVzcG9uc2VCS1pJZ2l0aHViLmNvbS9iZXJuYXJkb2ZvcmNpbGxvL2lnbml0aW9uL2dvLXBhY2thZ2VzL3Byb3RvL2dlbi9zYWFzL3YxO3NhYXN2MWIGcHJvdG8z");
 
 /**
  * @generated from message saas.v1.File
@@ -199,6 +199,20 @@ export type ListFilesRequest = Message<"saas.v1.ListFilesRequest"> & {
    * @generated from field: string workspace_id = 1;
    */
   workspaceId: string;
+
+  /**
+   * page_size caps the page; 0 means the server default, and the server caps it.
+   *
+   * @generated from field: int32 page_size = 2;
+   */
+  pageSize: number;
+
+  /**
+   * page_token is the next_page_token of the previous page; empty starts at the newest file.
+   *
+   * @generated from field: string page_token = 3;
+   */
+  pageToken: string;
 };
 
 /**
@@ -216,6 +230,27 @@ export type ListFilesResponse = Message<"saas.v1.ListFilesResponse"> & {
    * @generated from field: repeated saas.v1.File files = 1;
    */
   files: File[];
+
+  /**
+   * next_page_token is empty on the last page. Treat it as opaque.
+   *
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+
+  /**
+   * used_bytes is what the workspace's files (ready or still uploading) count against its quota.
+   *
+   * @generated from field: int64 used_bytes = 3;
+   */
+  usedBytes: bigint;
+
+  /**
+   * quota_bytes is the storage the workspace's plan allows; absent means unlimited.
+   *
+   * @generated from field: optional int64 quota_bytes = 4;
+   */
+  quotaBytes?: bigint | undefined;
 };
 
 /**

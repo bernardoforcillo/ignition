@@ -72,10 +72,20 @@ message CompleteUploadResponse {
 
 message ListFilesRequest {
   string workspace_id = 1;
+  // page_size caps the page; 0 means the server default, and the server caps it.
+  int32 page_size = 2;
+  // page_token is the next_page_token of the previous page; empty starts at the newest file.
+  string page_token = 3;
 }
 
 message ListFilesResponse {
   repeated File files = 1;
+  // next_page_token is empty on the last page. Treat it as opaque.
+  string next_page_token = 2;
+  // used_bytes is what the workspace's files (ready or still uploading) count against its quota.
+  int64 used_bytes = 3;
+  // quota_bytes is the storage the workspace's plan allows; absent means unlimited.
+  optional int64 quota_bytes = 4;
 }
 
 message GetDownloadUrlRequest {

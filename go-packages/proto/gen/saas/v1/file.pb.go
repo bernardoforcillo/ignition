@@ -374,8 +374,12 @@ func (x *CompleteUploadResponse) GetFile() *File {
 }
 
 type ListFilesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	WorkspaceId string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
+	// page_size caps the page; 0 means the server default, and the server caps it.
+	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// page_token is the next_page_token of the previous page; empty starts at the newest file.
+	PageToken     string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -417,9 +421,29 @@ func (x *ListFilesRequest) GetWorkspaceId() string {
 	return ""
 }
 
+func (x *ListFilesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListFilesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
 type ListFilesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Files         []*File                `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Files []*File                `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	// next_page_token is empty on the last page. Treat it as opaque.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	// used_bytes is what the workspace's files (ready or still uploading) count against its quota.
+	UsedBytes int64 `protobuf:"varint,3,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
+	// quota_bytes is the storage the workspace's plan allows; absent means unlimited.
+	QuotaBytes    *int64 `protobuf:"varint,4,opt,name=quota_bytes,json=quotaBytes,proto3,oneof" json:"quota_bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -459,6 +483,27 @@ func (x *ListFilesResponse) GetFiles() []*File {
 		return x.Files
 	}
 	return nil
+}
+
+func (x *ListFilesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListFilesResponse) GetUsedBytes() int64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+func (x *ListFilesResponse) GetQuotaBytes() int64 {
+	if x != nil && x.QuotaBytes != nil {
+		return *x.QuotaBytes
+	}
+	return 0
 }
 
 type GetDownloadUrlRequest struct {
@@ -691,11 +736,20 @@ const file_saas_v1_file_proto_rawDesc = "" +
 	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x17\n" +
 	"\afile_id\x18\x02 \x01(\tR\x06fileId\";\n" +
 	"\x16CompleteUploadResponse\x12!\n" +
-	"\x04file\x18\x01 \x01(\v2\r.saas.v1.FileR\x04file\"5\n" +
+	"\x04file\x18\x01 \x01(\v2\r.saas.v1.FileR\x04file\"q\n" +
 	"\x10ListFilesRequest\x12!\n" +
-	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"8\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\xb5\x01\n" +
 	"\x11ListFilesResponse\x12#\n" +
-	"\x05files\x18\x01 \x03(\v2\r.saas.v1.FileR\x05files\"S\n" +
+	"\x05files\x18\x01 \x03(\v2\r.saas.v1.FileR\x05files\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\x03 \x01(\x03R\tusedBytes\x12$\n" +
+	"\vquota_bytes\x18\x04 \x01(\x03H\x00R\n" +
+	"quotaBytes\x88\x01\x01B\x0e\n" +
+	"\f_quota_bytes\"S\n" +
 	"\x15GetDownloadUrlRequest\x12!\n" +
 	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x17\n" +
 	"\afile_id\x18\x02 \x01(\tR\x06fileId\"I\n" +
@@ -769,6 +823,7 @@ func file_saas_v1_file_proto_init() {
 	if File_saas_v1_file_proto != nil {
 		return
 	}
+	file_saas_v1_file_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
