@@ -1,10 +1,8 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 
 import { requireAuth } from "~/lib/route-guards";
 import { rootRoute } from "~/routes/root";
 import { stringParam } from "~/routes/root/search";
-
-import { AcceptInvitePage } from "./accept-invite-page";
 
 /** Signed-out visitors sign in first, then return here (with the token) to accept. */
 export const acceptInviteRoute = createRoute({
@@ -15,5 +13,8 @@ export const acceptInviteRoute = createRoute({
 		return value ? { token: value } : {};
 	},
 	beforeLoad: ({ location }) => requireAuth(location.href),
-	component: AcceptInvitePage,
+	component: lazyRouteComponent(
+		() => import("./accept-invite-page"),
+		"AcceptInvitePage",
+	),
 });

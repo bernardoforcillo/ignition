@@ -216,7 +216,6 @@ func (s *Scheduler) execute(t Task, claim Claim, start time.Time) {
 	timedOut := make(chan struct{})
 	watcherDone := make(chan struct{})
 	timer := s.opt.clock.NewTimer(t.Timeout) // on the injected clock, so tests can drive it
-	defer timer.Stop()
 	go func() {
 		defer close(watcherDone)
 		select {
@@ -229,6 +228,7 @@ func (s *Scheduler) execute(t Task, claim Claim, start time.Time) {
 	err := safeRun(runCtx, t)
 	cancel()
 	<-watcherDone
+	timer.Stop()
 
 	end := s.opt.clock.Now()
 	took := end.Sub(start)

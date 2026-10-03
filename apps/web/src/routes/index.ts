@@ -2,17 +2,20 @@ import { createRouter } from "@tanstack/react-router";
 
 import { RouteError } from "~/features/error-boundary";
 import { appRoutes } from "~/routes/app";
+import { docsRoutes } from "~/routes/docs";
 import { forgotPasswordRoute } from "~/routes/forgot-password";
 import { acceptInviteRoute } from "~/routes/invite";
+import { landingRoute } from "~/routes/landing";
 import { loginRoute } from "~/routes/login";
 import { onboardingRoute } from "~/routes/onboarding";
 import { resetPasswordRoute } from "~/routes/reset-password";
-import { indexRoute, rootRoute } from "~/routes/root";
+import { rootRoute } from "~/routes/root";
 import { signupRoute } from "~/routes/signup";
 import { verifyEmailRoute } from "~/routes/verify-email";
 
 const routeTree = rootRoute.addChildren([
-	indexRoute,
+	landingRoute,
+	docsRoutes,
 	loginRoute,
 	signupRoute,
 	verifyEmailRoute,
@@ -25,6 +28,7 @@ const routeTree = rootRoute.addChildren([
 
 export const router = createRouter({
 	routeTree,
+	defaultPreload: "intent",
 	defaultErrorComponent: ({ error }) => RouteError({ error }),
 });
 

@@ -85,13 +85,13 @@ func (c *Clock) Pending() int {
 	return len(c.timers)
 }
 
-// WaitPending blocks until at least n timers are pending, so a test knows the scheduler's loops
+// WaitPending blocks until exactly n timers are pending, so a test knows the scheduler's loops
 // have gone to sleep before it advances time. It gives up after a real second and reports false.
 func (c *Clock) WaitPending(n int) bool {
 	deadline := time.After(time.Second)
 	for {
 		c.mu.Lock()
-		ok, changed := len(c.timers) >= n, c.changed
+		ok, changed := len(c.timers) == n, c.changed
 		c.mu.Unlock()
 		if ok {
 			return true

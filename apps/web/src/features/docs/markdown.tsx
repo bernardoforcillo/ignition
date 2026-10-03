@@ -11,13 +11,7 @@ import { nodeText } from "./node-text";
 const linkClass =
 	"font-medium text-brand-600 underline underline-offset-2 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-500";
 
-function Heading({
-	level,
-	children,
-}: {
-	level: 2 | 3;
-	children?: ReactNode;
-}) {
+function Heading({ level, children }: { level: 2 | 3; children?: ReactNode }) {
 	const id = headingId(nodeText(children));
 	const Tag = level === 2 ? "h2" : "h3";
 	return (
@@ -62,7 +56,9 @@ function DocLinkView({ href, children }: ComponentProps<"a">) {
 
 const components: Components = {
 	h1: ({ children }) => (
-		<h1 className="text-3xl font-semibold tracking-tight text-fg">{children}</h1>
+		<h1 className="text-3xl font-semibold tracking-tight text-fg">
+			{children}
+		</h1>
 	),
 	h2: ({ children }) => <Heading level={2}>{children}</Heading>,
 	h3: ({ children }) => <Heading level={3}>{children}</Heading>,
@@ -82,7 +78,8 @@ const components: Components = {
 	pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
 	code: ({ children, className }) => {
 		// A fenced block's text ends with a newline; inline code never does.
-		const block = /language-/.test(className ?? "") || /\n$/.test(nodeText(children));
+		const block =
+			/language-/.test(className ?? "") || /\n$/.test(nodeText(children));
 		return block ? (
 			<code className={className}>{children}</code>
 		) : (
@@ -93,10 +90,14 @@ const components: Components = {
 	},
 	table: ({ children }) => (
 		<div className="mt-4 overflow-x-auto rounded-card border border-line">
-			<table className="w-full border-collapse text-left text-sm">{children}</table>
+			<table className="w-full border-collapse text-left text-sm">
+				{children}
+			</table>
 		</div>
 	),
-	thead: ({ children }) => <thead className="bg-surface-muted">{children}</thead>,
+	thead: ({ children }) => (
+		<thead className="bg-surface-muted">{children}</thead>
+	),
 	th: ({ children }) => (
 		<th className="border-b border-line px-3 py-2 font-semibold text-fg">
 			{children}
@@ -113,11 +114,7 @@ const components: Components = {
 /** Renders trusted-but-untrusted-by-construction Markdown: raw HTML is dropped, links are vetted. */
 export function Markdown({ source }: { source: string }) {
 	return (
-		<ReactMarkdown
-			remarkPlugins={[remarkGfm]}
-			components={components}
-			skipHtml
-		>
+		<ReactMarkdown remarkPlugins={[remarkGfm]} components={components} skipHtml>
 			{source}
 		</ReactMarkdown>
 	);

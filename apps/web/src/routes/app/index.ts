@@ -1,10 +1,5 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 
-import { AppShell } from "~/features/app-shell";
-import { BillingPanel } from "~/features/billing";
-import { MembersPanel } from "~/features/members";
-import { OverviewPanel } from "~/features/overview";
-import { SettingsPanel } from "~/features/settings";
 import { requireAuth, requireWorkspace } from "~/lib/route-guards";
 import { rootRoute } from "~/routes/root";
 
@@ -15,31 +10,46 @@ export const appRoute = createRoute({
 		await requireAuth(location.href);
 		await requireWorkspace();
 	},
-	component: AppShell,
+	component: lazyRouteComponent(
+		() => import("~/features/app-shell"),
+		"AppShell",
+	),
 });
 
 const overviewRoute = createRoute({
 	getParentRoute: () => appRoute,
 	path: "/",
-	component: OverviewPanel,
+	component: lazyRouteComponent(
+		() => import("~/features/overview"),
+		"OverviewPanel",
+	),
 });
 
 const membersRoute = createRoute({
 	getParentRoute: () => appRoute,
 	path: "/members",
-	component: MembersPanel,
+	component: lazyRouteComponent(
+		() => import("~/features/members"),
+		"MembersPanel",
+	),
 });
 
 const billingRoute = createRoute({
 	getParentRoute: () => appRoute,
 	path: "/billing",
-	component: BillingPanel,
+	component: lazyRouteComponent(
+		() => import("~/features/billing"),
+		"BillingPanel",
+	),
 });
 
 const settingsRoute = createRoute({
 	getParentRoute: () => appRoute,
 	path: "/settings",
-	component: SettingsPanel,
+	component: lazyRouteComponent(
+		() => import("~/features/settings"),
+		"SettingsPanel",
+	),
 });
 
 export const appRoutes = appRoute.addChildren([

@@ -1,10 +1,8 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 
 import { redirectIfAuthenticated } from "~/lib/route-guards";
 import { rootRoute } from "~/routes/root";
 import { stringParam } from "~/routes/root/search";
-
-import { LoginPage } from "./login-page";
 
 export const loginRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -14,5 +12,5 @@ export const loginRoute = createRoute({
 		return value ? { redirect: value } : {};
 	},
 	beforeLoad: ({ search }) => redirectIfAuthenticated(search.redirect),
-	component: LoginPage,
+	component: lazyRouteComponent(() => import("./login-page"), "LoginPage"),
 });

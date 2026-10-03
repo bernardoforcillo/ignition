@@ -1,9 +1,7 @@
-import { createRoute } from "@tanstack/react-router";
+import { createRoute, lazyRouteComponent } from "@tanstack/react-router";
 
 import { rootRoute } from "~/routes/root";
 import { stringParam } from "~/routes/root/search";
-
-import { VerifyEmailPage } from "./verify-email-page";
 
 export const verifyEmailRoute = createRoute({
 	getParentRoute: () => rootRoute,
@@ -12,5 +10,8 @@ export const verifyEmailRoute = createRoute({
 		const value = stringParam(search.token);
 		return value ? { token: value } : {};
 	},
-	component: VerifyEmailPage,
+	component: lazyRouteComponent(
+		() => import("./verify-email-page"),
+		"VerifyEmailPage",
+	),
 });

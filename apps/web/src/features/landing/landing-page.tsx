@@ -1,4 +1,8 @@
-import { MAIN_CONTENT_ID, SiteFooter, SiteHeader } from "~/features/site-chrome";
+import {
+	MAIN_CONTENT_ID,
+	SiteFooter,
+	SiteHeader,
+} from "~/features/site-chrome";
 import { useDocumentMeta } from "~/lib/document-meta";
 
 import { FaqSection } from "./faq-section";

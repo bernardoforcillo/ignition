@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -101,5 +102,44 @@ func TestStore_RecordsTheRun(t *testing.T) {
 	}
 	if status != "failed" || lastErr != "boom" || runs != 1 || failures != 1 || !next.Equal(t0.Add(time.Hour)) || !started.Equal(t0) {
 		t.Errorf("row = %s %q %d %d %v %v", status, lastErr, runs, failures, next, started)
+	}
+}
+
+// Two schedulers (two replicas) over one real table must never run the same interval twice.
+func TestScheduler_TwoReplicasOnPostgresNeverDoubleRun(t *testing.T) {
+	db := openDB(t)
+	var mu sync.Mutex
+	var starts []time.Time
+	task := jobs.Task{Name: "pg-tick", Every: time.Second, Run: func(context.Context) error {
+		mu.Lock()
+		defer mu.Unlock()
+		starts = append(starts, time.Now())
+		return nil
+	}}
+	var stoppers []func()
+	for range 2 {
+		s, err := jobs.New(pgstore.New(db), []jobs.Task{task}, jobs.WithJitter(0))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Start(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		stoppers = append(stoppers, func() { _ = s.Stop(context.Background()) })
+	}
+	time.Sleep(2600 * time.Millisecond)
+	for _, stop := range stoppers {
+		stop()
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(starts) < 2 || len(starts) > 3 {
+		t.Fatalf("%d runs in 2.6s of a 1s task, want 2 or 3", len(starts))
+	}
+	for i := 1; i < len(starts); i++ {
+		if gap := starts[i].Sub(starts[i-1]); gap < 900*time.Millisecond {
+			t.Errorf("runs %d and %d only %v apart: the interval was run twice", i-1, i, gap)
+		}
 	}
 }

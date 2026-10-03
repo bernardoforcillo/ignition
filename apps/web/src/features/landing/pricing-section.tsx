@@ -15,7 +15,9 @@ function PlanCardView({ plan }: { plan: PlanCard }) {
 		<li
 			aria-labelledby={titleId}
 			className={`flex flex-col rounded-card border bg-surface p-6 shadow-sm ${
-				plan.highlighted ? "border-brand-500 ring-1 ring-brand-500" : "border-line"
+				plan.highlighted
+					? "border-brand-500 ring-1 ring-brand-500"
+					: "border-line"
 			}`}
 		>
 			<div className="flex items-center justify-between gap-2">
@@ -106,7 +108,7 @@ export function PricingSection() {
 						</p>
 					) : null}
 					{prices.isError && !disabled ? (
-						<Alert tone="warning">
+						<Alert tone="info">
 							We couldn't load the paid plans right now.{" "}
 							<button
 								type="button"

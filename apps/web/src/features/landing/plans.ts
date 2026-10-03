@@ -111,7 +111,9 @@ export function buildPricing(prices: readonly ListedPrice[]): Pricing {
 	}
 	const paid = planIds
 		.map((id, position) => ({ id, position }))
-		.sort((a, b) => copyOrder(a.id) - copyOrder(b.id) || a.position - b.position)
+		.sort(
+			(a, b) => copyOrder(a.id) - copyOrder(b.id) || a.position - b.position,
+		)
 		.map(({ id }) => planCard(id));
 
 	return {

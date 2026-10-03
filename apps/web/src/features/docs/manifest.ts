@@ -31,7 +31,8 @@ export const DOCS: readonly DocEntry[] = [
 	{
 		slug: "billing",
 		title: "Plans and billing",
-		summary: "Free and paid plans, checkout, the customer portal and cancellation.",
+		summary:
+			"Free and paid plans, checkout, the customer portal and cancellation.",
 	},
 	{
 		slug: "your-data",
@@ -46,7 +47,8 @@ export const DOCS: readonly DocEntry[] = [
 	{
 		slug: "self-hosting",
 		title: "Self-hosting",
-		summary: "Environment variables, Postgres, Kubernetes manifests and health probes.",
+		summary:
+			"Environment variables, Postgres, Kubernetes manifests and health probes.",
 	},
 	{
 		slug: "privacy",
