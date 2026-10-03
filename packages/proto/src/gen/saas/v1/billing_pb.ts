@@ -234,7 +234,8 @@ export const BillingService: GenService<{
   },
   /**
    * ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
-   * render plan cards without hard-coding provider price ids.
+   * render plan cards without hard-coding provider price ids. PUBLIC: the
+   * landing page shows it to visitors without an account.
    *
    * @generated from rpc saas.v1.BillingService.ListPrices
    */

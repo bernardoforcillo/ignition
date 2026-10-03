@@ -24,6 +24,10 @@ var publicProcedures = map[string]bool{
 
 	saasv1connect.AuthServiceRequestPasswordResetProcedure: true,
 	saasv1connect.AuthServiceResetPasswordProcedure:        true,
+
+	// The purchasable catalog is public by design: the landing page shows prices to visitors who
+	// have no account yet. It holds nothing workspace-specific.
+	saasv1connect.BillingServiceListPricesProcedure: true,
 }
 
 // tokenVerifier checks a bearer access token; *auth.Service satisfies it.

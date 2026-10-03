@@ -57,7 +57,8 @@ type BillingServiceClient interface {
 	// workspace membership.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
 	// ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
-	// render plan cards without hard-coding provider price ids.
+	// render plan cards without hard-coding provider price ids. PUBLIC: the
+	// landing page shows it to visitors without an account.
 	ListPrices(context.Context, *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error)
 	// StartCheckout returns the hosted checkout URL for a catalog price.
 	StartCheckout(context.Context, *connect.Request[v1.StartCheckoutRequest]) (*connect.Response[v1.StartCheckoutResponse], error)
@@ -138,7 +139,8 @@ type BillingServiceHandler interface {
 	// workspace membership.
 	GetSubscription(context.Context, *connect.Request[v1.GetSubscriptionRequest]) (*connect.Response[v1.GetSubscriptionResponse], error)
 	// ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
-	// render plan cards without hard-coding provider price ids.
+	// render plan cards without hard-coding provider price ids. PUBLIC: the
+	// landing page shows it to visitors without an account.
 	ListPrices(context.Context, *connect.Request[v1.ListPricesRequest]) (*connect.Response[v1.ListPricesResponse], error)
 	// StartCheckout returns the hosted checkout URL for a catalog price.
 	StartCheckout(context.Context, *connect.Request[v1.StartCheckoutRequest]) (*connect.Response[v1.StartCheckoutResponse], error)

@@ -41,6 +41,15 @@ func TestAuthInterceptor_PublicProceduresNeedNoToken(t *testing.T) {
 	}
 }
 
+func TestAuthInterceptor_ThePriceCatalogIsPublic(t *testing.T) {
+	h := newHarness(t, true)
+	c := saasv1connect.NewBillingServiceClient(h.srv.Client(), h.srv.URL)
+
+	if _, err := c.ListPrices(t.Context(), connect.NewRequest(&saasv1.ListPricesRequest{})); err != nil {
+		t.Fatalf("ListPrices without a token: %v", err)
+	}
+}
+
 func TestAuthInterceptor_ProtectedProceduresRejectMissingAndBadTokens(t *testing.T) {
 	h := newHarness(t, true)
 	procedures := []string{
@@ -54,7 +63,6 @@ func TestAuthInterceptor_ProtectedProceduresRejectMissingAndBadTokens(t *testing
 		saasv1connect.BillingServiceStartCheckoutProcedure,
 		saasv1connect.BillingServiceOpenPortalProcedure,
 		saasv1connect.BillingServiceGetSubscriptionProcedure,
-		saasv1connect.BillingServiceListPricesProcedure,
 		saasv1connect.WorkspaceServiceListWorkspacesProcedure,
 		saasv1connect.AccountServiceGetMeProcedure,
 		saasv1connect.AccountServiceExportDataProcedure,
