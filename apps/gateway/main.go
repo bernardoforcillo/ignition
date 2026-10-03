@@ -14,11 +14,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bernardoforcillo/ignition/go-packages/database"
 	"github.com/bernardoforcillo/ignition/go-packages/telemetry"
 
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/httpapi"
+	jobsadapter "github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/jobs"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/proxy"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/adapter/saas"
 	"github.com/bernardoforcillo/ignition/apps/gateway/internal/config"
@@ -68,6 +70,7 @@ func run(logger *slog.Logger) error {
 	// only when DATABASE_URL is set; otherwise the gateway is the pure
 	// proxy it always was.
 	var saasAPI *httpapi.SaaS
+	var jobs *jobsadapter.Runner
 	if cfg.SaaS != nil {
 		services, err := buildSaaS(context.Background(), *cfg.SaaS, logger, tel)
 		if err != nil {
@@ -75,6 +78,16 @@ func run(logger *slog.Logger) error {
 		}
 		defer func() { _ = services.Close() }()
 		saasAPI = newSaaSAPI(services, cfg.SaaS.AppURL, cfg.TrustedProxies)
+
+		// Background jobs share the database with the API, so they are stopped before it is closed:
+		// this defer is registered after services.Close's and therefore runs first. The graceful
+		// path below stops them explicitly; Stop is idempotent.
+		if !cfg.SaaS.JobsDisabled {
+			if jobs, err = buildJobs(services, cfg.SaaS.AppURL, logger); err != nil {
+				return err
+			}
+			defer stopJobs(jobs, cfg.ShutdownTimeout, logger)
+		}
 	}
 
 	handler := httpapi.NewServer(httpapi.ServerConfig{
@@ -132,6 +145,11 @@ func run(logger *slog.Logger) error {
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
+	if jobs != nil {
+		if err := jobs.Stop(shutdownCtx); err != nil {
+			logger.Warn("background jobs did not finish before the shutdown deadline", "error", err)
+		}
+	}
 	logger.Info("gateway stopped")
 	return nil
 }
@@ -149,6 +167,29 @@ func buildSaaS(ctx context.Context, cfg config.SaaS, logger *slog.Logger, events
 		return nil, err
 	}
 	return services, nil
+}
+
+// buildJobs wires the background jobs over the SaaS services and starts them. They run in this
+// process; internal/adapter/jobs says how to move them into a service of their own.
+func buildJobs(s *saas.Services, appURL string, logger *slog.Logger) (*jobsadapter.Runner, error) {
+	runner, err := jobsadapter.New(jobsadapter.Deps{DB: s.DB(), Owners: s, Mail: s.Mail, AppURL: appURL, Logger: logger})
+	if err != nil {
+		return nil, err
+	}
+	if err := runner.Start(context.Background()); err != nil {
+		return nil, err
+	}
+	return runner, nil
+}
+
+// stopJobs is the error-path counterpart of the graceful stop in run: it bounds the wait so the
+// database is never closed under a running task.
+func stopJobs(r *jobsadapter.Runner, timeout time.Duration, logger *slog.Logger) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	if err := r.Stop(ctx); err != nil {
+		logger.Warn("background jobs did not finish in time", "error", err)
+	}
 }
 
 // newSaaSAPI hands the built services to the transport as the interfaces

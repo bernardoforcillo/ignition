@@ -18,6 +18,7 @@ import (
 
 	"github.com/bernardoforcillo/authlayer/org"
 	dropsstore "github.com/bernardoforcillo/authlayer/store/drops"
+	"github.com/bernardoforcillo/drops/pg"
 	"github.com/bernardoforcillo/featurelayer/entitlement"
 
 	"github.com/bernardoforcillo/ignition/go-packages/billing"
@@ -52,8 +53,14 @@ type Services struct {
 	Billing        *Checkout
 	BillingWebhook http.Handler
 
+	// Mail is the product mailer; background jobs send their emails through it.
+	Mail *mailer.Mailer
+
 	db *database.DB
 }
+
+// DB is the shared Postgres handle, for adapters (background jobs) that keep their own tables.
+func (s *Services) DB() *pg.DB { return s.db.DB }
 
 // Ready reports whether the database answers; /readyz uses it.
 func (s *Services) Ready(ctx context.Context) error { return s.db.Ping(ctx) }
@@ -123,6 +130,7 @@ func Build(ctx context.Context, cfg config.SaaS, db *database.DB, logger *slog.L
 		Workspaces: &Workspaces{Service: wsSvc, subs: subs, freePlan: freePlan},
 		Account:    account.NewService(authSvc, wsSvc, dir),
 		Features:   engine,
+		Mail:       mail,
 		db:         db,
 		directory:  dir,
 	}
@@ -223,6 +231,11 @@ func newCatalog(cfg config.Billing, freePlan entitlement.PlanID) (*billing.Catal
 type billingReader struct {
 	*stateStore
 	*customerStore
+}
+
+// OwnerIDs lists the account ids that own a workspace.
+func (s *Services) OwnerIDs(ctx context.Context, workspaceID string) ([]string, error) {
+	return s.directory.OwnerIDs(ctx, workspaceID)
 }
 
 // MemberEmails resolves account ids to email addresses for member lists.

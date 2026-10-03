@@ -9,6 +9,7 @@ import (
 
 	"github.com/bernardoforcillo/ignition/go-packages/database"
 	"github.com/bernardoforcillo/ignition/go-packages/features/pgstore"
+	jobsstore "github.com/bernardoforcillo/ignition/go-packages/jobs/pgstore"
 )
 
 // Migration IDs sort lexicographically into apply order and must stay
@@ -19,6 +20,7 @@ const (
 	billingEventsID  = "billing_0001_events"
 	billingCustomers = "billing_0002_customers"
 	billingStates    = "billing_0003_subscription_states"
+	jobNotifications = "gateway_0001_job_notifications"
 )
 
 const createBillingEvents = `
@@ -47,16 +49,30 @@ CREATE TABLE IF NOT EXISTS billing_subscriptions (
     updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 )`
 
+// job_notifications records that a one-off message (kind) went out for a subject (key), so a retried
+// job or a second replica never sends it twice: the primary key is what makes the claim atomic.
+const createJobNotifications = `
+CREATE TABLE IF NOT EXISTS job_notifications (
+    kind    TEXT        NOT NULL,
+    key     TEXT        NOT NULL,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (kind, key)
+)`
+
 // Migrations returns every schema step the SaaS surface needs, across the
-// identity, features and billing modules. Applying them is idempotent.
+// identity, features, billing and jobs modules. Applying them is idempotent.
 func Migrations() []database.Migration {
 	migs := []database.Migration{
 		{ID: identitySchemaID, Up: createIdentitySchema},
 		database.SQL(billingEventsID, createBillingEvents),
 		database.SQL(billingCustomers, createBillingCustomers),
 		database.SQL(billingStates, createBillingStates),
+		database.SQL(jobNotifications, createJobNotifications),
 	}
 	for _, m := range pgstore.Migrations() {
+		migs = append(migs, database.SQL(m.ID, m.SQL))
+	}
+	for _, m := range jobsstore.Migrations() {
 		migs = append(migs, database.SQL(m.ID, m.SQL))
 	}
 	return migs

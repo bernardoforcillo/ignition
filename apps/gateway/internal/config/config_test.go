@@ -13,7 +13,7 @@ var saasEnvKeys = []string{
 	"DATABASE_URL", "AUTH_SECRET", "APP_URL", "COMPANY_NAME", "MAIL_FROM", "MAIL_REPLY_TO",
 	"ASSET_BASE_URL", "RESEND_API_KEY", "ACCESS_TTL", "REFRESH_TTL",
 	"STRIPE_WEBHOOK_SECRET", "STRIPE_API_KEY", "BILLING_PRICES", "BILLING_FREE_PLAN", "TRUSTED_PROXIES", "LOG_FORMAT", "ENVIRONMENT", "POSTHOG_API_KEY", "POSTHOG_HOST",
-	"RESEND_BASE_URL", "STRIPE_API_BASE_URL",
+	"RESEND_BASE_URL", "STRIPE_API_BASE_URL", "JOBS_DISABLED",
 }
 
 // legacyEnv sets the minimum the proxy needs and clears every SaaS variable.
@@ -113,6 +113,23 @@ func TestLoad_SaaSTTLOverridesAndValidation(t *testing.T) {
 		if _, err := Load(); err == nil {
 			t.Errorf("ACCESS_TTL=%q accepted", bad)
 		}
+	}
+}
+
+func TestLoad_JobsAreOnUnlessDisabled(t *testing.T) {
+	saasEnv(t)
+	cfg, err := Load()
+	if err != nil || cfg.SaaS.JobsDisabled {
+		t.Fatalf("default: disabled=%v err=%v, want jobs on", cfg.SaaS.JobsDisabled, err)
+	}
+	t.Setenv("JOBS_DISABLED", "true")
+	cfg, err = Load()
+	if err != nil || !cfg.SaaS.JobsDisabled {
+		t.Fatalf("JOBS_DISABLED=true: disabled=%v err=%v", cfg.SaaS.JobsDisabled, err)
+	}
+	t.Setenv("JOBS_DISABLED", "maybe")
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "JOBS_DISABLED") {
+		t.Errorf("JOBS_DISABLED=maybe: err = %v", err)
 	}
 }
 

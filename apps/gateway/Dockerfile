@@ -34,6 +34,7 @@ COPY go-packages/billing/go.mod go-packages/billing/go.mod
 COPY go-packages/database/go.mod go-packages/database/go.sum go-packages/database/
 COPY go-packages/features/go.mod go-packages/features/go.sum go-packages/features/
 COPY go-packages/identity/go.mod go-packages/identity/go.sum go-packages/identity/
+COPY go-packages/jobs/go.mod go-packages/jobs/go.sum go-packages/jobs/
 COPY go-packages/mailer/go.mod go-packages/mailer/go.mod
 COPY go-packages/proto/go.mod go-packages/proto/go.sum go-packages/proto/
 COPY go-packages/telemetry/go.mod go-packages/telemetry/go.sum go-packages/telemetry/

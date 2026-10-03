@@ -10,6 +10,7 @@ import (
 	"github.com/bernardoforcillo/drops/pg"
 
 	"github.com/bernardoforcillo/ignition/go-packages/identity/account"
+	"github.com/bernardoforcillo/ignition/go-packages/identity/permissions"
 )
 
 // directory is the SQL the identity engines do not offer: workspace erasure and
@@ -97,6 +98,31 @@ func (d *directory) DeleteInvitations(ctx context.Context, email string) error {
 		return fmt.Errorf("deleting invitations: %w", err)
 	}
 	return nil
+}
+
+// OwnerIDs lists the accounts holding the owner role of a workspace, oldest membership first.
+// A workspace id that is not a uuid (or has no owner) yields none.
+func (d *directory) OwnerIDs(ctx context.Context, workspaceID string) ([]string, error) {
+	if !uuidPattern.MatchString(workspaceID) {
+		return nil, nil
+	}
+	rows, err := d.db.Query(ctx, `
+		SELECT user_id::text FROM organization_members
+		WHERE container_id = $1::uuid AND role_key = $2 ORDER BY joined_at, user_id`,
+		workspaceID, permissions.RoleOwner)
+	if err != nil {
+		return nil, fmt.Errorf("reading workspace owners: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scanning workspace owner: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }
 
 // Emails resolves account ids to their email addresses for a member list. Ids that are not uuids

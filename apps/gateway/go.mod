@@ -11,6 +11,7 @@ require (
 	github.com/bernardoforcillo/ignition/go-packages/database v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/features v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/identity v0.0.0
+	github.com/bernardoforcillo/ignition/go-packages/jobs v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/mailer v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/proto v0.0.0
 	github.com/bernardoforcillo/ignition/go-packages/telemetry v0.0.0
@@ -43,6 +44,8 @@ replace github.com/bernardoforcillo/ignition/go-packages/database => ../../go-pa
 replace github.com/bernardoforcillo/ignition/go-packages/features => ../../go-packages/features
 
 replace github.com/bernardoforcillo/ignition/go-packages/identity => ../../go-packages/identity
+
+replace github.com/bernardoforcillo/ignition/go-packages/jobs => ../../go-packages/jobs
 
 replace github.com/bernardoforcillo/ignition/go-packages/mailer => ../../go-packages/mailer
 

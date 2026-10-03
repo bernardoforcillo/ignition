@@ -142,7 +142,7 @@ func resetSchema(t *testing.T, db *database.DB) {
 	_, err := db.Exec(t.Context(), `DROP TABLE IF EXISTS
 		billing_events, billing_customers, billing_subscriptions, feature_subscriptions, feature_usage,
 		users, sessions, verifications, organizations, organization_members, organization_roles,
-		organization_invites, organization_invite_links, schema_migrations CASCADE`)
+		organization_invites, organization_invite_links, job_notifications, scheduled_job_runs, schema_migrations CASCADE`)
 	if err != nil {
 		t.Fatalf("reset: %v", err)
 	}

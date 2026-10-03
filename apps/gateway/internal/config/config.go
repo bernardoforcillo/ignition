@@ -82,6 +82,10 @@ type SaaS struct {
 	// fake that captures the emails); empty means the real API.
 	ResendBaseURL string
 
+	// JobsDisabled turns off the background jobs (cleanups, trial reminders) that otherwise run
+	// inside the gateway process whenever SaaS is on.
+	JobsDisabled bool
+
 	// Billing is nil unless STRIPE_WEBHOOK_SECRET is set.
 	Billing *Billing
 }
@@ -142,6 +146,8 @@ const (
 //	RESEND_API_KEY            optional; unset logs mails (recipient+subject) instead of sending
 //	RESEND_BASE_URL           TEST ONLY: Resend API origin, so an end-to-end test can capture mails;
 //	                          leave unset in every real deployment
+//	JOBS_DISABLED             "true" turns off the in-process background jobs (expired invitation,
+//	                          session and token cleanup; trial-ending reminders), default false
 //	ACCESS_TTL                access-token lifetime, default "15m"
 //	REFRESH_TTL               refresh-token lifetime, default "720h"
 //	STRIPE_WEBHOOK_SECRET     enables billing (POST /webhooks/stripe, BillingService) when set
@@ -279,6 +285,13 @@ func loadSaaS() (*SaaS, error) {
 		if r.value == "" {
 			return nil, fmt.Errorf("config: %s is required when DATABASE_URL is set", r.name)
 		}
+	}
+	if v := os.Getenv("JOBS_DISABLED"); v != "" {
+		disabled, err := strconv.ParseBool(v)
+		if err != nil {
+			return nil, fmt.Errorf("config: invalid JOBS_DISABLED %q: want true or false", v)
+		}
+		s.JobsDisabled = disabled
 	}
 	for _, d := range []struct {
 		name string
