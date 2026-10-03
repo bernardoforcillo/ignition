@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file saas/v1/workspace.proto.
  */
 export const file_saas_v1_workspace: GenFile = /*@__PURE__*/
-  fileDesc("ChdzYWFzL3YxL3dvcmtzcGFjZS5wcm90bxIHc2Fhcy52MSIzCglXb3Jrc3BhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJIjoKBk1lbWJlchIPCgd1c2VyX2lkGAEgASgJEhAKCHJvbGVfa2V5GAIgASgJEg0KBWVtYWlsGAMgASgJIjkKCkludml0YXRpb24SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcm9sZV9rZXkYAyABKAkiNAoWQ3JlYXRlV29ya3NwYWNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkiQAoXQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKwoTR2V0V29ya3NwYWNlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkiPQoUR2V0V29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKgoSTGlzdE1lbWJlcnNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSI3ChNMaXN0TWVtYmVyc1Jlc3BvbnNlEiAKB21lbWJlcnMYASADKAsyDy5zYWFzLnYxLk1lbWJlciJMChNJbnZpdGVNZW1iZXJSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIQCghyb2xlX2tleRgDIAEoCSI/ChRJbnZpdGVNZW1iZXJSZXNwb25zZRInCgppbnZpdGF0aW9uGAEgASgLMhMuc2Fhcy52MS5JbnZpdGF0aW9uIiQKE0FjY2VwdEludml0ZVJlcXVlc3QSDQoFdG9rZW4YASABKAkiPQoUQWNjZXB0SW52aXRlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiFwoVTGlzdFdvcmtzcGFjZXNSZXF1ZXN0Ik4KE1dvcmtzcGFjZU1lbWJlcnNoaXASJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2USEAoIcm9sZV9rZXkYAiABKAkiSgoWTGlzdFdvcmtzcGFjZXNSZXNwb25zZRIwCgp3b3Jrc3BhY2VzGAEgAygLMhwuc2Fhcy52MS5Xb3Jrc3BhY2VNZW1iZXJzaGlwMuwDChBXb3Jrc3BhY2VTZXJ2aWNlElEKDkxpc3RXb3Jrc3BhY2VzEh4uc2Fhcy52MS5MaXN0V29ya3NwYWNlc1JlcXVlc3QaHy5zYWFzLnYxLkxpc3RXb3Jrc3BhY2VzUmVzcG9uc2USVAoPQ3JlYXRlV29ya3NwYWNlEh8uc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXF1ZXN0GiAuc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXNwb25zZRJLCgxHZXRXb3Jrc3BhY2USHC5zYWFzLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHS5zYWFzLnYxLkdldFdvcmtzcGFjZVJlc3BvbnNlEkgKC0xpc3RNZW1iZXJzEhsuc2Fhcy52MS5MaXN0TWVtYmVyc1JlcXVlc3QaHC5zYWFzLnYxLkxpc3RNZW1iZXJzUmVzcG9uc2USSwoMSW52aXRlTWVtYmVyEhwuc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXF1ZXN0Gh0uc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXNwb25zZRJLCgxBY2NlcHRJbnZpdGUSHC5zYWFzLnYxLkFjY2VwdEludml0ZVJlcXVlc3QaHS5zYWFzLnYxLkFjY2VwdEludml0ZVJlc3BvbnNlQktaSWdpdGh1Yi5jb20vYmVybmFyZG9mb3JjaWxsby9pZ25pdGlvbi9nby1wYWNrYWdlcy9wcm90by9nZW4vc2Fhcy92MTtzYWFzdjFiBnByb3RvMw");
+  fileDesc("ChdzYWFzL3YxL3dvcmtzcGFjZS5wcm90bxIHc2Fhcy52MSIzCglXb3Jrc3BhY2USCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJIjoKBk1lbWJlchIPCgd1c2VyX2lkGAEgASgJEhAKCHJvbGVfa2V5GAIgASgJEg0KBWVtYWlsGAMgASgJIjkKCkludml0YXRpb24SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcm9sZV9rZXkYAyABKAkiNAoWQ3JlYXRlV29ya3NwYWNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkiQAoXQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKwoTR2V0V29ya3NwYWNlUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkiPQoUR2V0V29ya3NwYWNlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiKgoSTGlzdE1lbWJlcnNSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSI3ChNMaXN0TWVtYmVyc1Jlc3BvbnNlEiAKB21lbWJlcnMYASADKAsyDy5zYWFzLnYxLk1lbWJlciJMChNJbnZpdGVNZW1iZXJSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIQCghyb2xlX2tleRgDIAEoCSI/ChRJbnZpdGVNZW1iZXJSZXNwb25zZRInCgppbnZpdGF0aW9uGAEgASgLMhMuc2Fhcy52MS5JbnZpdGF0aW9uIiQKE0FjY2VwdEludml0ZVJlcXVlc3QSDQoFdG9rZW4YASABKAkiPQoUQWNjZXB0SW52aXRlUmVzcG9uc2USJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2UiFwoVTGlzdFdvcmtzcGFjZXNSZXF1ZXN0Ik4KE1dvcmtzcGFjZU1lbWJlcnNoaXASJQoJd29ya3NwYWNlGAEgASgLMhIuc2Fhcy52MS5Xb3Jrc3BhY2USEAoIcm9sZV9rZXkYAiABKAkiSgoWTGlzdFdvcmtzcGFjZXNSZXNwb25zZRIwCgp3b3Jrc3BhY2VzGAEgAygLMhwuc2Fhcy52MS5Xb3Jrc3BhY2VNZW1iZXJzaGlwIlIKF0NoYW5nZU1lbWJlclJvbGVSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhAKCHJvbGVfa2V5GAMgASgJIhoKGENoYW5nZU1lbWJlclJvbGVSZXNwb25zZSI8ChNSZW1vdmVNZW1iZXJSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIhYKFFJlbW92ZU1lbWJlclJlc3BvbnNlIi4KFkxpc3RJbnZpdGF0aW9uc1JlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIkMKF0xpc3RJbnZpdGF0aW9uc1Jlc3BvbnNlEigKC2ludml0YXRpb25zGAEgAygLMhMuc2Fhcy52MS5JbnZpdGF0aW9uIkYKF1Jldm9rZUludml0YXRpb25SZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIVCg1pbnZpdGF0aW9uX2lkGAIgASgJIhoKGFJldm9rZUludml0YXRpb25SZXNwb25zZTLBBgoQV29ya3NwYWNlU2VydmljZRJXChBDaGFuZ2VNZW1iZXJSb2xlEiAuc2Fhcy52MS5DaGFuZ2VNZW1iZXJSb2xlUmVxdWVzdBohLnNhYXMudjEuQ2hhbmdlTWVtYmVyUm9sZVJlc3BvbnNlEksKDFJlbW92ZU1lbWJlchIcLnNhYXMudjEuUmVtb3ZlTWVtYmVyUmVxdWVzdBodLnNhYXMudjEuUmVtb3ZlTWVtYmVyUmVzcG9uc2USVAoPTGlzdEludml0YXRpb25zEh8uc2Fhcy52MS5MaXN0SW52aXRhdGlvbnNSZXF1ZXN0GiAuc2Fhcy52MS5MaXN0SW52aXRhdGlvbnNSZXNwb25zZRJXChBSZXZva2VJbnZpdGF0aW9uEiAuc2Fhcy52MS5SZXZva2VJbnZpdGF0aW9uUmVxdWVzdBohLnNhYXMudjEuUmV2b2tlSW52aXRhdGlvblJlc3BvbnNlElEKDkxpc3RXb3Jrc3BhY2VzEh4uc2Fhcy52MS5MaXN0V29ya3NwYWNlc1JlcXVlc3QaHy5zYWFzLnYxLkxpc3RXb3Jrc3BhY2VzUmVzcG9uc2USVAoPQ3JlYXRlV29ya3NwYWNlEh8uc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXF1ZXN0GiAuc2Fhcy52MS5DcmVhdGVXb3Jrc3BhY2VSZXNwb25zZRJLCgxHZXRXb3Jrc3BhY2USHC5zYWFzLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHS5zYWFzLnYxLkdldFdvcmtzcGFjZVJlc3BvbnNlEkgKC0xpc3RNZW1iZXJzEhsuc2Fhcy52MS5MaXN0TWVtYmVyc1JlcXVlc3QaHC5zYWFzLnYxLkxpc3RNZW1iZXJzUmVzcG9uc2USSwoMSW52aXRlTWVtYmVyEhwuc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXF1ZXN0Gh0uc2Fhcy52MS5JbnZpdGVNZW1iZXJSZXNwb25zZRJLCgxBY2NlcHRJbnZpdGUSHC5zYWFzLnYxLkFjY2VwdEludml0ZVJlcXVlc3QaHS5zYWFzLnYxLkFjY2VwdEludml0ZVJlc3BvbnNlQktaSWdpdGh1Yi5jb20vYmVybmFyZG9mb3JjaWxsby9pZ25pdGlvbi9nby1wYWNrYWdlcy9wcm90by9nZW4vc2Fhcy92MTtzYWFzdjFiBnByb3RvMw");
 
 /**
  * @generated from message saas.v1.Workspace
@@ -341,9 +341,196 @@ export const ListWorkspacesResponseSchema: GenMessage<ListWorkspacesResponse> = 
   messageDesc(file_saas_v1_workspace, 15);
 
 /**
+ * @generated from message saas.v1.ChangeMemberRoleRequest
+ */
+export type ChangeMemberRoleRequest = Message<"saas.v1.ChangeMemberRoleRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: string role_key = 3;
+   */
+  roleKey: string;
+};
+
+/**
+ * Describes the message saas.v1.ChangeMemberRoleRequest.
+ * Use `create(ChangeMemberRoleRequestSchema)` to create a new message.
+ */
+export const ChangeMemberRoleRequestSchema: GenMessage<ChangeMemberRoleRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 16);
+
+/**
+ * @generated from message saas.v1.ChangeMemberRoleResponse
+ */
+export type ChangeMemberRoleResponse = Message<"saas.v1.ChangeMemberRoleResponse"> & {
+};
+
+/**
+ * Describes the message saas.v1.ChangeMemberRoleResponse.
+ * Use `create(ChangeMemberRoleResponseSchema)` to create a new message.
+ */
+export const ChangeMemberRoleResponseSchema: GenMessage<ChangeMemberRoleResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 17);
+
+/**
+ * @generated from message saas.v1.RemoveMemberRequest
+ */
+export type RemoveMemberRequest = Message<"saas.v1.RemoveMemberRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId: string;
+};
+
+/**
+ * Describes the message saas.v1.RemoveMemberRequest.
+ * Use `create(RemoveMemberRequestSchema)` to create a new message.
+ */
+export const RemoveMemberRequestSchema: GenMessage<RemoveMemberRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 18);
+
+/**
+ * @generated from message saas.v1.RemoveMemberResponse
+ */
+export type RemoveMemberResponse = Message<"saas.v1.RemoveMemberResponse"> & {
+};
+
+/**
+ * Describes the message saas.v1.RemoveMemberResponse.
+ * Use `create(RemoveMemberResponseSchema)` to create a new message.
+ */
+export const RemoveMemberResponseSchema: GenMessage<RemoveMemberResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 19);
+
+/**
+ * @generated from message saas.v1.ListInvitationsRequest
+ */
+export type ListInvitationsRequest = Message<"saas.v1.ListInvitationsRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+};
+
+/**
+ * Describes the message saas.v1.ListInvitationsRequest.
+ * Use `create(ListInvitationsRequestSchema)` to create a new message.
+ */
+export const ListInvitationsRequestSchema: GenMessage<ListInvitationsRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 20);
+
+/**
+ * @generated from message saas.v1.ListInvitationsResponse
+ */
+export type ListInvitationsResponse = Message<"saas.v1.ListInvitationsResponse"> & {
+  /**
+   * @generated from field: repeated saas.v1.Invitation invitations = 1;
+   */
+  invitations: Invitation[];
+};
+
+/**
+ * Describes the message saas.v1.ListInvitationsResponse.
+ * Use `create(ListInvitationsResponseSchema)` to create a new message.
+ */
+export const ListInvitationsResponseSchema: GenMessage<ListInvitationsResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 21);
+
+/**
+ * @generated from message saas.v1.RevokeInvitationRequest
+ */
+export type RevokeInvitationRequest = Message<"saas.v1.RevokeInvitationRequest"> & {
+  /**
+   * @generated from field: string workspace_id = 1;
+   */
+  workspaceId: string;
+
+  /**
+   * @generated from field: string invitation_id = 2;
+   */
+  invitationId: string;
+};
+
+/**
+ * Describes the message saas.v1.RevokeInvitationRequest.
+ * Use `create(RevokeInvitationRequestSchema)` to create a new message.
+ */
+export const RevokeInvitationRequestSchema: GenMessage<RevokeInvitationRequest> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 22);
+
+/**
+ * @generated from message saas.v1.RevokeInvitationResponse
+ */
+export type RevokeInvitationResponse = Message<"saas.v1.RevokeInvitationResponse"> & {
+};
+
+/**
+ * Describes the message saas.v1.RevokeInvitationResponse.
+ * Use `create(RevokeInvitationResponseSchema)` to create a new message.
+ */
+export const RevokeInvitationResponseSchema: GenMessage<RevokeInvitationResponse> = /*@__PURE__*/
+  messageDesc(file_saas_v1_workspace, 23);
+
+/**
  * @generated from service saas.v1.WorkspaceService
  */
 export const WorkspaceService: GenService<{
+  /**
+   * ChangeMemberRole sets a member's role. Needs the member:update permission
+   * and the privilege-escalation guard: nobody can grant more than they hold.
+   * The last owner cannot be demoted.
+   *
+   * @generated from rpc saas.v1.WorkspaceService.ChangeMemberRole
+   */
+  changeMemberRole: {
+    methodKind: "unary";
+    input: typeof ChangeMemberRoleRequestSchema;
+    output: typeof ChangeMemberRoleResponseSchema;
+  },
+  /**
+   * RemoveMember removes a member from the workspace (member:delete, with the
+   * same guard). The last owner cannot be removed.
+   *
+   * @generated from rpc saas.v1.WorkspaceService.RemoveMember
+   */
+  removeMember: {
+    methodKind: "unary";
+    input: typeof RemoveMemberRequestSchema;
+    output: typeof RemoveMemberResponseSchema;
+  },
+  /**
+   * ListInvitations lists the workspace's pending invitations (invite:read).
+   *
+   * @generated from rpc saas.v1.WorkspaceService.ListInvitations
+   */
+  listInvitations: {
+    methodKind: "unary";
+    input: typeof ListInvitationsRequestSchema;
+    output: typeof ListInvitationsResponseSchema;
+  },
+  /**
+   * RevokeInvitation cancels a pending invitation (invite:delete).
+   *
+   * @generated from rpc saas.v1.WorkspaceService.RevokeInvitation
+   */
+  revokeInvitation: {
+    methodKind: "unary";
+    input: typeof RevokeInvitationRequestSchema;
+    output: typeof RevokeInvitationResponseSchema;
+  },
   /**
    * ListWorkspaces returns the workspaces the caller belongs to, with the
    * caller's role in each. The web uses it to decide between onboarding (no

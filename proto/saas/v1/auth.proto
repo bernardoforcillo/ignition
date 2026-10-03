@@ -29,6 +29,17 @@ service AuthService {
   // ResetPassword sets a new password from the emailed token, then revokes
   // every session of the account so a stolen session does not survive it.
   rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+
+  // ListAuthProviders lists the external sign-in providers configured on this
+  // deployment (e.g. Google) so the web shows only the buttons that work.
+  // Public.
+  rpc ListAuthProviders(ListAuthProvidersRequest) returns (ListAuthProvidersResponse);
+
+  // ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
+  // OAuth callback redirected the browser back with, and returns the same
+  // session a password login returns. The provider's tokens never reach the
+  // browser. Public.
+  rpc ExchangeOAuthCode(ExchangeOAuthCodeRequest) returns (ExchangeOAuthCodeResponse);
 }
 
 message User {
@@ -88,3 +99,31 @@ message ResetPasswordRequest {
 }
 
 message ResetPasswordResponse {}
+
+message AuthProvider {
+  // id is the stable provider key, e.g. "google".
+  string id = 1;
+  // name is the label for the button, e.g. "Google".
+  string name = 2;
+  // start_url is the gateway path that begins the dance, e.g.
+  // "/auth/google/start"; the web navigates the browser there.
+  string start_url = 3;
+}
+
+message ListAuthProvidersRequest {}
+
+message ListAuthProvidersResponse {
+  repeated AuthProvider providers = 1;
+}
+
+message ExchangeOAuthCodeRequest {
+  string code = 1;
+}
+
+message ExchangeOAuthCodeResponse {
+  User user = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  // created is true when this sign-in provisioned a new account (first run).
+  bool created = 4;
+}

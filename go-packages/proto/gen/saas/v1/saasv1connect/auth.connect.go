@@ -52,6 +52,12 @@ const (
 	// AuthServiceResetPasswordProcedure is the fully-qualified name of the AuthService's ResetPassword
 	// RPC.
 	AuthServiceResetPasswordProcedure = "/saas.v1.AuthService/ResetPassword"
+	// AuthServiceListAuthProvidersProcedure is the fully-qualified name of the AuthService's
+	// ListAuthProviders RPC.
+	AuthServiceListAuthProvidersProcedure = "/saas.v1.AuthService/ListAuthProviders"
+	// AuthServiceExchangeOAuthCodeProcedure is the fully-qualified name of the AuthService's
+	// ExchangeOAuthCode RPC.
+	AuthServiceExchangeOAuthCodeProcedure = "/saas.v1.AuthService/ExchangeOAuthCode"
 )
 
 // AuthServiceClient is a client for the saas.v1.AuthService service.
@@ -75,6 +81,15 @@ type AuthServiceClient interface {
 	// ResetPassword sets a new password from the emailed token, then revokes
 	// every session of the account so a stolen session does not survive it.
 	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[v1.ResetPasswordResponse], error)
+	// ListAuthProviders lists the external sign-in providers configured on this
+	// deployment (e.g. Google) so the web shows only the buttons that work.
+	// Public.
+	ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error)
+	// ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
+	// OAuth callback redirected the browser back with, and returns the same
+	// session a password login returns. The provider's tokens never reach the
+	// browser. Public.
+	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the saas.v1.AuthService service. By default, it uses
@@ -130,6 +145,18 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
 			connect.WithClientOptions(opts...),
 		),
+		listAuthProviders: connect.NewClient[v1.ListAuthProvidersRequest, v1.ListAuthProvidersResponse](
+			httpClient,
+			baseURL+AuthServiceListAuthProvidersProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ListAuthProviders")),
+			connect.WithClientOptions(opts...),
+		),
+		exchangeOAuthCode: connect.NewClient[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse](
+			httpClient,
+			baseURL+AuthServiceExchangeOAuthCodeProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ExchangeOAuthCode")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -142,6 +169,8 @@ type authServiceClient struct {
 	logout               *connect.Client[v1.LogoutRequest, v1.LogoutResponse]
 	requestPasswordReset *connect.Client[v1.RequestPasswordResetRequest, v1.RequestPasswordResetResponse]
 	resetPassword        *connect.Client[v1.ResetPasswordRequest, v1.ResetPasswordResponse]
+	listAuthProviders    *connect.Client[v1.ListAuthProvidersRequest, v1.ListAuthProvidersResponse]
+	exchangeOAuthCode    *connect.Client[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse]
 }
 
 // SignUp calls saas.v1.AuthService.SignUp.
@@ -179,6 +208,16 @@ func (c *authServiceClient) ResetPassword(ctx context.Context, req *connect.Requ
 	return c.resetPassword.CallUnary(ctx, req)
 }
 
+// ListAuthProviders calls saas.v1.AuthService.ListAuthProviders.
+func (c *authServiceClient) ListAuthProviders(ctx context.Context, req *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error) {
+	return c.listAuthProviders.CallUnary(ctx, req)
+}
+
+// ExchangeOAuthCode calls saas.v1.AuthService.ExchangeOAuthCode.
+func (c *authServiceClient) ExchangeOAuthCode(ctx context.Context, req *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {
+	return c.exchangeOAuthCode.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the saas.v1.AuthService service.
 type AuthServiceHandler interface {
 	// SignUp registers an account and mails a verification link. It answers
@@ -200,6 +239,15 @@ type AuthServiceHandler interface {
 	// ResetPassword sets a new password from the emailed token, then revokes
 	// every session of the account so a stolen session does not survive it.
 	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[v1.ResetPasswordResponse], error)
+	// ListAuthProviders lists the external sign-in providers configured on this
+	// deployment (e.g. Google) so the web shows only the buttons that work.
+	// Public.
+	ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error)
+	// ExchangeOAuthCode redeems the single-use, short-lived code the gateway's
+	// OAuth callback redirected the browser back with, and returns the same
+	// session a password login returns. The provider's tokens never reach the
+	// browser. Public.
+	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -251,6 +299,18 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceListAuthProvidersHandler := connect.NewUnaryHandler(
+		AuthServiceListAuthProvidersProcedure,
+		svc.ListAuthProviders,
+		connect.WithSchema(authServiceMethods.ByName("ListAuthProviders")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceExchangeOAuthCodeHandler := connect.NewUnaryHandler(
+		AuthServiceExchangeOAuthCodeProcedure,
+		svc.ExchangeOAuthCode,
+		connect.WithSchema(authServiceMethods.ByName("ExchangeOAuthCode")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/saas.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthServiceSignUpProcedure:
@@ -267,6 +327,10 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceRequestPasswordResetHandler.ServeHTTP(w, r)
 		case AuthServiceResetPasswordProcedure:
 			authServiceResetPasswordHandler.ServeHTTP(w, r)
+		case AuthServiceListAuthProvidersProcedure:
+			authServiceListAuthProvidersHandler.ServeHTTP(w, r)
+		case AuthServiceExchangeOAuthCodeProcedure:
+			authServiceExchangeOAuthCodeHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -302,4 +366,12 @@ func (UnimplementedAuthServiceHandler) RequestPasswordReset(context.Context, *co
 
 func (UnimplementedAuthServiceHandler) ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[v1.ResetPasswordResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.AuthService.ResetPassword is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ListAuthProviders(context.Context, *connect.Request[v1.ListAuthProvidersRequest]) (*connect.Response[v1.ListAuthProvidersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.AuthService.ListAuthProviders is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("saas.v1.AuthService.ExchangeOAuthCode is not implemented"))
 }
