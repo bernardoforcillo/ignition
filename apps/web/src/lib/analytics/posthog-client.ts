@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import type { PostHog } from "posthog-js";
 
 import type { AnalyticsClient } from "./analytics";
 import { scrubProperties } from "./scrub";
@@ -41,40 +41,50 @@ export function readAnalyticsConfig(env: {
  */
 export function createPostHogClient(config: AnalyticsConfig): AnalyticsClient {
 	let started = false;
+	let loaded: PostHog | null = null;
+	// Calls made while the SDK is still downloading (it is a separate chunk, fetched only after
+	// consent, so visitors who decline never download it) run, in order, once it is ready.
+	const waiting: Array<(posthog: PostHog) => void> = [];
+
 	const start = () => {
 		if (started) return;
 		started = true;
-		initPostHog(config);
+		void import("posthog-js").then(({ default: posthog }) => {
+			initPostHog(posthog, config);
+			loaded = posthog;
+			for (const call of waiting.splice(0)) call(posthog);
+		});
+	};
+	/** Runs `call` now if the SDK is ready, later if it is loading, never if consent was not given. */
+	const run = (call: (posthog: PostHog) => void) => {
+		if (loaded) call(loaded);
+		else if (started) waiting.push(call);
 	};
 
 	return {
-		capture: (event, properties) => {
-			if (started) posthog.capture(event, properties);
-		},
-		captureException: (error, properties) => {
-			if (started) posthog.captureException(error, properties);
-		},
-		identify: (distinctId) => {
-			if (started) posthog.identify(distinctId);
-		},
-		reset: () => {
-			if (started) posthog.reset();
-		},
+		capture: (event, properties) =>
+			run((posthog) => posthog.capture(event, properties)),
+		captureException: (error, properties) =>
+			run((posthog) => posthog.captureException(error, properties)),
+		identify: (distinctId) => run((posthog) => posthog.identify(distinctId)),
+		reset: () => run((posthog) => posthog.reset()),
 		optIn: () => {
 			start();
-			posthog.opt_in_capturing();
+			run((posthog) => posthog.opt_in_capturing());
 		},
-		optOut: () => {
-			if (started) posthog.opt_out_capturing();
+		optOut: () => run((posthog) => posthog.opt_out_capturing()),
+		isFeatureEnabled: (key) => loaded?.isFeatureEnabled(key),
+		onFeatureFlags: (callback) => {
+			let unsubscribe: (() => void) | undefined;
+			run((posthog) => {
+				unsubscribe = posthog.onFeatureFlags(callback);
+			});
+			return () => unsubscribe?.();
 		},
-		isFeatureEnabled: (key) =>
-			started ? posthog.isFeatureEnabled(key) : undefined,
-		onFeatureFlags: (callback) =>
-			started ? posthog.onFeatureFlags(callback) : () => {},
 	};
 }
 
-function initPostHog(config: AnalyticsConfig): void {
+function initPostHog(posthog: PostHog, config: AnalyticsConfig): void {
 	posthog.init(config.apiKey, {
 		api_host: config.host,
 		opt_out_capturing_by_default: true,

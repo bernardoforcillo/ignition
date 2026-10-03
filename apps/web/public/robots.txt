@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# PLACEHOLDER origin: replace example.com with your public origin (see apps/web/README.md).
+Sitemap: https://example.com/sitemap.xml
