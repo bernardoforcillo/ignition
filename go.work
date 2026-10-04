@@ -1,3 +1,15 @@
 go 1.27.0
 
-use ./apps/gateway
+use (
+	./apps/gateway
+	./go-packages/billing
+	./go-packages/database
+	./go-packages/features
+	./go-packages/identity
+	./go-packages/jobs
+	./go-packages/mailer
+	./go-packages/proto
+	./go-packages/storage
+	./go-packages/telemetry
+	./tools
+)

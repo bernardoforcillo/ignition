@@ -1,0 +1,10 @@
+import type { ReactNode } from "react";
+
+export interface {{pascalCase name}}Props {
+	className?: string;
+	children?: ReactNode;
+}
+
+export function {{pascalCase name}}({ className = "", children }: {{pascalCase name}}Props) {
+	return <div className={className}>{children}</div>;
+}

@@ -1,3 +1,9 @@
 {
-  "mcpServers": {}
+	"mcpServers": {
+		"posthog": {
+			"type": "http",
+			"url": "https://mcp.posthog.com/mcp",
+			"serverUrl": "https://mcp.posthog.com/mcp"
+		}
+	}
 }

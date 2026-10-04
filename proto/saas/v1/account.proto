@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+// AccountService is the signed-in user's own account: who am I, and the two
+// data-protection rights (GDPR art. 15/20 export, art. 17 erasure). Every RPC
+// needs an access token and acts on the caller's own account only.
+package saas.v1;
+
+import "saas/v1/auth.proto";
+
+option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
+
+service AccountService {
+  // GetMe returns the caller's account.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse);
+
+  // ExportData returns everything the product holds about the caller as a
+  // machine-readable JSON document: the account, memberships and invitations.
+  // Secrets (password hash, tokens) are never included.
+  rpc ExportData(ExportDataRequest) returns (ExportDataResponse);
+
+  // DeleteAccount erases the caller's account after re-checking the password.
+  // It refuses while the caller is the only owner of a workspace that still
+  // has other members (transfer ownership first); workspaces the caller owns
+  // alone are deleted with the account. Sessions are revoked.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  User user = 1;
+}
+
+message ExportDataRequest {}
+
+message ExportDataResponse {
+  // data is the JSON document, UTF-8.
+  bytes data = 1;
+  // filename is a suggested download name, e.g. "ignition-export-2026-10-02.json".
+  string filename = 2;
+}
+
+message DeleteAccountRequest {
+  // password re-authenticates the destructive action.
+  string password = 1;
+}
+
+message DeleteAccountResponse {}

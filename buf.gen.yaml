@@ -1,0 +1,18 @@
+version: v2
+# One source of truth (proto/), two committed outputs: Go for the services,
+# TypeScript for the web. Plugins are local and pinned (go.mod `tool` directives for Go,
+# devDependencies for TypeScript), so generation needs no network beyond the lockfiles.
+clean: true
+plugins:
+  - local: [go, tool, protoc-gen-go]
+    out: go-packages/proto/gen
+    opt:
+      - paths=source_relative
+  - local: [go, tool, protoc-gen-connect-go]
+    out: go-packages/proto/gen
+    opt:
+      - paths=source_relative
+  - local: packages/proto/node_modules/.bin/protoc-gen-es
+    out: packages/proto/src/gen
+    opt:
+      - target=ts

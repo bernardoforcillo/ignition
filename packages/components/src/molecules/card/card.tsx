@@ -13,13 +13,13 @@ export interface CardProps
 export function Card({ title, className = "", children, ...rest }: CardProps) {
 	return (
 		<div
-			className={`rounded-card border border-brand-100 bg-white p-5 shadow-sm ${className}`}
+			className={`rounded-card border border-line bg-surface p-5 shadow-sm ${className}`}
 			{...rest}
 		>
 			{title ? (
-				<h3 className="mb-2 text-base font-semibold text-brand-900">{title}</h3>
+				<h2 className="mb-2 text-base font-semibold text-fg">{title}</h2>
 			) : null}
-			<div className="text-sm text-brand-700">{children}</div>
+			<div className="text-sm text-fg-muted">{children}</div>
 		</div>
 	);
 }

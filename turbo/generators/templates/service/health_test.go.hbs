@@ -1,0 +1,49 @@
+package httpapi
+
+import (
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func discard() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
+
+func TestProbes(t *testing.T) {
+	tests := []struct {
+		name  string
+		path  string
+		ready func() error
+		want  int
+	}{
+		{"liveness ignores dependencies", "/healthz", func() error { return errors.New("db down") }, http.StatusOK},
+		{"ready when no check is configured", "/readyz", nil, http.StatusOK},
+		{"ready when the dependency is up", "/readyz", func() error { return nil }, http.StatusOK},
+		{"not ready when the dependency is down", "/readyz", func() error { return errors.New("db down") }, http.StatusServiceUnavailable},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := NewServer(ServerConfig{Logger: discard(), Ready: tt.ready})
+			rec := httptest.NewRecorder()
+
+			h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tt.path, nil))
+
+			if rec.Code != tt.want {
+				t.Errorf("status = %d, want %d", rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+func TestPanicIsRecoveredAsInternalError(t *testing.T) {
+	h := recoverPanics(discard(), http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") }))
+	rec := httptest.NewRecorder()
+
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", rec.Code)
+	}
+}

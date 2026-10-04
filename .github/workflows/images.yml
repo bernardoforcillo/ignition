@@ -1,0 +1,169 @@
+# Build, scan, SBOM, sign and attest the gateway and web images. See docs/ci-cd.md.
+# PRs build and scan only; dev and main push to ghcr.io.
+# Tags: <UTC-timestamp>-<sha> (+ -canary on dev), plus `latest` on main (git-flow.md).
+name: Images
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    paths:
+      - "apps/gateway/**"
+      - "apps/web/**"
+      - "go-packages/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/images.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: images-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: image (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: gateway
+            dockerfile: apps/gateway/Dockerfile
+          - name: web
+            dockerfile: apps/web/Dockerfile
+    env:
+      PUSH: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      packages: write # push to ghcr.io
+      id-token: write # keyless cosign + build provenance
+      attestations: write # attest-build-provenance / SBOM attestation
+      security-events: write # Trivy SARIF
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compute image name and tags
+        id: meta
+        run: |
+          owner=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          image="ghcr.io/${owner}/ignition-${{ matrix.name }}"
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA::7}"
+          tags="${image}:${stamp}"
+          case "${GITHUB_REF}" in
+            refs/heads/main) tags="${tags}"$'\n'"${image}:latest" ;;
+            refs/heads/dev)  tags="${image}:${stamp}-canary" ;;
+          esac
+          {
+            echo "image=${image}"
+            echo "scan_tag=${image}:scan"
+            echo "tags<<EOF"; echo "${tags}"; echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        if: env.PUSH == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build once and load locally so it is scanned BEFORE anything is pushed.
+      - name: Build (local, for scanning)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          load: true
+          push: false
+          tags: ${{ steps.meta.outputs.scan_tag }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Trivy image scan (SARIF)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.meta.outputs.scan_tag }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          exit-code: "0"
+
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles(format('trivy-{0}.sarif', matrix.name)) != ''
+        with:
+          sarif_file: trivy-${{ matrix.name }}.sarif
+          category: trivy-image-${{ matrix.name }}
+
+      - name: Trivy gate (fixable HIGH/CRITICAL fails the build)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.meta.outputs.scan_tag }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+          exit-code: "1"
+
+      - name: Push
+        id: push
+        if: env.PUSH == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          provenance: false # provenance is attested below, bound to the digest
+
+      - name: SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.scan_tag }}
+          format: spdx-json
+          output-file: ${{ matrix.name }}.spdx.json
+          upload-artifact: true
+          artifact-name: sbom-${{ matrix.name }}-spdx
+          upload-release-assets: false
+
+      - name: SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.scan_tag }}
+          format: cyclonedx-json
+          output-file: ${{ matrix.name }}.cdx.json
+          upload-artifact: true
+          artifact-name: sbom-${{ matrix.name }}-cyclonedx
+          upload-release-assets: false
+
+      - uses: sigstore/cosign-installer@v3
+        if: env.PUSH == 'true'
+
+      - name: Sign image digest (cosign, keyless)
+        if: env.PUSH == 'true'
+        env:
+          REF: ${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "$REF"
+
+      - name: Attach SBOM attestations (cosign, keyless)
+        if: env.PUSH == 'true'
+        env:
+          REF: ${{ steps.meta.outputs.image }}@${{ steps.push.outputs.digest }}
+        run: |
+          cosign attest --yes --type spdxjson --predicate "${{ matrix.name }}.spdx.json" "$REF"
+          cosign attest --yes --type cyclonedx --predicate "${{ matrix.name }}.cdx.json" "$REF"
+
+      - name: Build provenance attestation
+        if: env.PUSH == 'true'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ${{ steps.meta.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

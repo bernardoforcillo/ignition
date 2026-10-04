@@ -7,10 +7,23 @@
 		"build": "turbo run build",
 		"lint": "turbo run lint",
 		"format": "turbo run format",
-		"typecheck": "turbo run typecheck"
+		"typecheck": "turbo run typecheck",
+		"prepare": "husky",
+		"gen": "turbo gen",
+		"gen:proto": "go tool buf generate",
+		"lint:proto": "go tool buf lint",
+		"gen:email": "pnpm --filter @ignition/mailer export",
+		"test:e2e": "pnpm --filter @ignition/e2e test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.14",
+		"@commitlint/cli": "^21.2.3",
+		"@commitlint/config-conventional": "^21.2.3",
+		"@turbo/gen": "^2.11.5",
+		"husky": "^9.1.7",
 		"turbo": "^2.11.5"
+	},
+	"engines": {
+		"node": ">=26"
 	}
 }

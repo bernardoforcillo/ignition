@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{name}}
+  namespace: ignition-{{env}}
+  labels:
+    app.kubernetes.io/name: {{name}}
+    app.kubernetes.io/part-of: ignition
+spec:
+  selector:
+    app.kubernetes.io/name: {{name}}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

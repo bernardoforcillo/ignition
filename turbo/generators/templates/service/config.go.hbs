@@ -1,0 +1,41 @@
+// Package config is the shared-foundations layer: environment-derived settings, read in one place
+// and validated at startup. Nothing else in the service calls os.Getenv.
+package config
+
+import (
+	"fmt"
+	"os"
+	"time"
+)
+
+// Config holds every environment-derived setting the service needs.
+type Config struct {
+	ListenAddr      string
+	ShutdownTimeout time.Duration
+}
+
+// Load builds a Config from environment variables:
+//
+//	LISTEN_ADDR       listen address, default ":{{port}}"
+//	SHUTDOWN_TIMEOUT  graceful shutdown timeout, default "10s"
+func Load() (Config, error) {
+	cfg := Config{
+		ListenAddr:      getEnv("LISTEN_ADDR", ":{{port}}"),
+		ShutdownTimeout: 10 * time.Second,
+	}
+	if v := os.Getenv("SHUTDOWN_TIMEOUT"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("config: invalid SHUTDOWN_TIMEOUT: %w", err)
+		}
+		cfg.ShutdownTimeout = d
+	}
+	return cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}

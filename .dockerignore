@@ -1,0 +1,20 @@
+**/node_modules
+**/dist
+**/.turbo
+**/.vite
+**/.git
+**/.github
+**/.husky
+**/.claude
+**/.agents
+**/.vscode
+**/.DS_Store
+infrastructure
+
+# Agent mirrors are symlinks; Docker COPY needs literal paths.
+AGENTS.md
+CLAUDE.md
+.agents
+.codex
+.cursor
+.claude

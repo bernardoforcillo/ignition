@@ -8,3 +8,16 @@ dist-ssr/
 
 # editors/OS
 .DS_Store
+
+# env
+.env
+.env.local
+
+# Claude Code (keep shared config, ignore personal overrides)
+.claude/settings.local.json
+
+# Local-only working docs: PRDs, design specs, implementation plans
+docs/superpowers/
+
+# agent worktrees
+.claude/worktrees/

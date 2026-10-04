@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PLACEHOLDER origin: replace https://example.com with your public origin (see apps/web/README.md). A test checks that every docs page is listed. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+	<url><loc>https://example.com/</loc></url>
+	<url><loc>https://example.com/docs/overview</loc></url>
+	<url><loc>https://example.com/docs/getting-started</loc></url>
+	<url><loc>https://example.com/docs/authentication</loc></url>
+	<url><loc>https://example.com/docs/workspaces</loc></url>
+	<url><loc>https://example.com/docs/billing</loc></url>
+	<url><loc>https://example.com/docs/your-data</loc></url>
+	<url><loc>https://example.com/docs/api</loc></url>
+	<url><loc>https://example.com/docs/self-hosting</loc></url>
+	<url><loc>https://example.com/docs/privacy</loc></url>
+</urlset>

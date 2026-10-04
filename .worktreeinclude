@@ -1,0 +1,3 @@
+# Gitignored files copied into Claude Code worktrees so isolated agents work.
+.env
+.env.local

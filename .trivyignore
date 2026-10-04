@@ -1,0 +1,6 @@
+# Trivy allow-list (filesystem and image scans). One finding per line, each with a justification:
+#
+#   # <why it is not exploitable here>; revisit by <date> or when <fix> ships
+#   CVE-YYYY-NNNN
+#
+# Prefer fixing (Renovate PR) over ignoring. Never ignore without a comment.

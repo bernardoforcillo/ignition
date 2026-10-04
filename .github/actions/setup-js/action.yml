@@ -1,0 +1,18 @@
+name: Set up JS
+description: Node (from .nvmrc), pnpm (from packageManager), cached pnpm store and a frozen install.
+inputs:
+  install:
+    description: Run `pnpm install --frozen-lockfile`
+    default: "true"
+runs:
+  using: composite
+  steps:
+    # Renovate pins every `uses:` below by digest.
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+    - if: inputs.install == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile

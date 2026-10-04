@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+// BillingService hands the caller to the payment provider's hosted pages.
+// It needs an access token and permission to update the workspace (owner or
+// admin), and is served only when billing is configured.
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
+
+service BillingService {
+  // GetSubscription returns what the workspace is currently entitled to as
+  // billing understands it: the plan, add-ons, status and period. Needs
+  // workspace membership.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+
+  // ListPrices returns the purchasable catalog (BILLING_PRICES) so the web can
+  // render plan cards without hard-coding provider price ids. PUBLIC: the
+  // landing page shows it to visitors without an account.
+  rpc ListPrices(ListPricesRequest) returns (ListPricesResponse);
+
+  // StartCheckout returns the hosted checkout URL for a catalog price.
+  rpc StartCheckout(StartCheckoutRequest) returns (StartCheckoutResponse);
+  // OpenPortal returns the hosted customer-portal URL for the workspace.
+  rpc OpenPortal(OpenPortalRequest) returns (OpenPortalResponse);
+}
+
+message StartCheckoutRequest {
+  string workspace_id = 1;
+  // price_id is the provider price id, one of those in BILLING_PRICES.
+  string price_id = 2;
+}
+
+message StartCheckoutResponse {
+  string url = 1;
+}
+
+message OpenPortalRequest {
+  string workspace_id = 1;
+}
+
+message OpenPortalResponse {
+  string url = 1;
+}
+
+message GetSubscriptionRequest {
+  string workspace_id = 1;
+}
+
+message GetSubscriptionResponse {
+  // plan_id is the features-catalog plan the workspace holds (e.g. "free").
+  string plan_id = 1;
+  repeated string add_on_ids = 2;
+  // status is billing's lifecycle state: trialing, active, past_due,
+  // canceled, incomplete, or empty when the provider never reported one.
+  string status = 3;
+  // current_period_end is an RFC 3339 timestamp, empty when unknown.
+  string current_period_end = 4;
+  // can_manage is true when the caller may open the customer portal: the
+  // workspace has a provider customer and the caller may update it.
+  bool can_manage = 5;
+}
+
+message ListPricesRequest {}
+
+message Price {
+  string price_id = 1;
+  // kind is "plan" or "addon".
+  string kind = 2;
+  // id is the plan or add-on id this price buys.
+  string id = 3;
+}
+
+message ListPricesResponse {
+  repeated Price prices = 1;
+}

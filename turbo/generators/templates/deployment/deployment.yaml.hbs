@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{name}}
+  namespace: ignition-{{env}}
+  labels:
+    app.kubernetes.io/name: {{name}}
+    app.kubernetes.io/part-of: ignition
+spec:
+  replicas: {{replicas}}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{name}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{name}}
+        app.kubernetes.io/part-of: ignition
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{name}}
+          image: ghcr.io/OWNER/ignition-{{name}}:latest
+          ports:
+            - name: http
+              containerPort: {{port}}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            # 30 x 5s = 150s to boot before anything gives up on the pod.
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

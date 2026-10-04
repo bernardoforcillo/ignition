@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+// FeatureService answers "may this workspace use this feature right now?".
+// It needs an access token and workspace membership.
+package saas.v1;
+
+option go_package = "github.com/bernardoforcillo/ignition/go-packages/proto/gen/saas/v1;saasv1";
+
+service FeatureService {
+  // CheckFeature evaluates a feature for the caller's workspace without
+  // consuming anything.
+  rpc CheckFeature(CheckFeatureRequest) returns (CheckFeatureResponse);
+}
+
+message CheckFeatureRequest {
+  string workspace_id = 1;
+  // feature_key is a stable key from the feature catalog, e.g. "api.calls".
+  string feature_key = 2;
+}
+
+message CheckFeatureResponse {
+  bool enabled = 1;
+  // reason says why the decision came out as it did, e.g. "flag_default",
+  // "no_flag", "not_entitled", "limit_reached", "flag_off".
+  string reason = 2;
+  // limit and remaining are set only for a metered feature with a finite limit.
+  optional int64 limit = 3;
+  optional int64 remaining = 4;
+}

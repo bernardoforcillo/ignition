@@ -4,10 +4,14 @@ The API gateway for this workspace. It is the single public entry point that:
 
 - reverse-proxies HTTP traffic to internal upstream services based on a
   configured path-prefix routing table (`internal/core` + `internal/adapter/proxy`),
-- serves a small Connect RPC control-plane API of its own (`proto/gateway/v1`,
-  currently just a `Ping` RPC to prove the transport is wired end-to-end), and
+- serves a small Connect RPC control-plane API of its own (`proto/gateway/v1` at the repo root,
+  currently just a `Ping` RPC to prove the transport is wired end-to-end),
 - exposes `/healthz` and `/readyz` as plain HTTP endpoints for liveness/readiness
-  probes.
+  probes, and
+- **optionally** serves the SaaS surface (accounts, workspaces, feature checks,
+  Stripe billing) built from the `go-packages/*` modules; see "SaaS surface"
+  below. It is off unless `DATABASE_URL` is set, and with it off the gateway
+  behaves as a pure proxy exactly as before.
 
 This is the first Go service in this template — there was no sibling app or
 established convention to mirror, so the internal layout follows the
@@ -51,8 +55,11 @@ GATEWAY_UPSTREAM_URL="http://localhost:9000" go run .
 
 ### As a container
 
+The build context is the **repository root**, because the gateway depends on the
+sibling modules in `go-packages/` (see "Dependencies and the workspace" below):
+
 ```sh
-docker build -t gateway apps/gateway
+docker build -f apps/gateway/Dockerfile -t gateway .
 docker run -p 8080:8080 -e GATEWAY_UPSTREAM_URL="http://host.docker.internal:9000" gateway
 ```
 
@@ -70,6 +77,51 @@ Factor III ("Config").
 | `RATE_LIMIT_RPS`            | disabled | Requests/second per client IP, token-bucket. Unset or `<=0` disables the limiter. |
 | `RATE_LIMIT_BURST`          | `20`    | Token bucket burst size (only relevant once `RATE_LIMIT_RPS` is set).   |
 | `GATEWAY_SHUTDOWN_TIMEOUT`  | `10s`   | Grace period for in-flight requests during shutdown.                    |
+| `LOG_FORMAT` | `json` | `json`, or `gcp` for Cloud Logging (`severity`, `message`, `timestamp`). All logs go to stdout either way. |
+| `ENVIRONMENT` | `development` | Tag on reported events, e.g. `production`. |
+| `POSTHOG_API_KEY` | — | Enables reporting to PostHog: **only** Error-level logs (as exceptions with a stack trace) and the server-authoritative `subscription_changed` event. Unset: nothing leaves the process. |
+| `POSTHOG_HOST` | `https://eu.i.posthog.com` | PostHog ingestion host (EU region by default). |
+| `TRUSTED_PROXIES`           | —       | Comma-separated CIDRs/IPs of the reverse proxies whose `X-Forwarded-For` is trusted (per-IP auth rate limits key on the client it names). Unset: the TCP peer is the client. |
+
+#### SaaS variables
+
+Read only when `DATABASE_URL` is set (that is what enables the SaaS surface);
+ignored otherwise. Secrets belong in a `secretKeyRef`, never in a ConfigMap.
+
+| Variable                | Default | Meaning |
+| ------------------------ | ------- | ------- |
+| `DATABASE_URL`           | —       | Postgres DSN. **Setting it enables the SaaS surface**; migrations run at startup. |
+| `AUTH_SECRET`            | —       | **Required with SaaS.** HS256 access-token signing key, at least 32 bytes. |
+| `APP_URL`                | —       | **Required with SaaS.** Public URL of the web app: base of email links and of Stripe return URLs. |
+| `COMPANY_NAME`           | —       | **Required with SaaS.** Name shown in emails. |
+| `MAIL_FROM`              | —       | **Required with SaaS.** Sender, e.g. `Ignition <hello@example.com>`. |
+| `MAIL_REPLY_TO`          | —       | Reply-to address. |
+| `ASSET_BASE_URL`         | `APP_URL` | Origin serving the email images (`<origin>/static/...`). |
+| `RESEND_API_KEY`         | —       | Resend key. Unset logs each email (recipient and subject only) instead of sending it: fine for local dev, not for production. |
+| `RESEND_BASE_URL`        | Resend's API | **Test only.** Resend API origin, so an end-to-end test can point the gateway at a fake that captures the emails (their text carries the verify/reset/invite links). Never set it in a deployment. |
+| `JOBS_DISABLED`          | `false` | `true` turns off the background jobs that otherwise run inside the gateway whenever SaaS is on (see "Background jobs"). Set it on the gateway when the jobs run in their own service. |
+| `ACCESS_TTL`             | `15m`   | Access-token lifetime. |
+| `REFRESH_TTL`            | `720h`  | Refresh-token lifetime. |
+| `STRIPE_WEBHOOK_SECRET`  | —       | `whsec_...`. **Setting it enables billing** (`BillingService` and `POST /webhooks/stripe`). |
+| `STRIPE_API_KEY`         | —       | Stripe key for checkout/portal calls; without it those RPCs fail (webhooks still work). |
+| `BILLING_PRICES`         | —       | Price catalog `price_id=plan:<plan>,price_id=addon:<add-on>,...`, e.g. `price_123=plan:pro,price_456=addon:extra-api-calls`. Plan and add-on ids must exist in the feature catalog (`go-packages/features/catalog.go`) or startup fails. Only these prices can be checked out. |
+| `STRIPE_API_BASE_URL`    | Stripe's API | **Test only.** Stripe API origin for an end-to-end fake of checkout/portal. Never set it in a deployment. |
+| `BILLING_FREE_PLAN`      | the features catalog's free plan (`free`) | Plan a new or lapsed workspace holds. |
+| `STORAGE_PROVIDER`       | `disabled` | `gcs`, `s3` or `disabled`. Selects the object store behind `FileService` (see "Files"); `disabled` makes every `FileService` RPC answer `unimplemented`. |
+| `STORAGE_BUCKET`         | —       | Required with a provider: the private bucket the files live in. |
+| `STORAGE_GCS_CREDENTIALS_JSON` | —  | `gcs`, required: the service account key JSON (a secret). The account needs object read, write and delete on the bucket. |
+| `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | — | `s3`, required: the access key pair (secrets). |
+| `STORAGE_ENDPOINT`       | AWS S3  | `s3`: service origin, e.g. `https://<account>.r2.cloudflarestorage.com` (R2), `http://minio:9000` (MinIO) or `https://storage.googleapis.com` (GCS with an HMAC key). |
+| `STORAGE_REGION`         | `us-east-1` | `s3`: signing region (`auto` for R2). |
+| `STORAGE_S3_PATH_STYLE`  | `false` | `s3`: put the bucket in the path instead of the host name (MinIO needs `true`). |
+| `STORAGE_MAX_FILE_BYTES` | `26214400` (25 MiB) | Largest single file; at most 5 GiB (one signed PUT). |
+| `STORAGE_ALLOWED_TYPES`  | png, jpeg, gif, webp, pdf, plain text, csv, json, zip | Comma-separated exact media types. Nothing a browser executes (HTML, SVG) is in the default; do not add it. |
+| `STORAGE_UPLOAD_URL_TTL`, `STORAGE_DOWNLOAD_URL_TTL` | `10m`, `5m` | Lifetime of the signed URLs; at most `1h`. |
+| `STORAGE_PENDING_TTL`    | `1h`    | How long an upload may stay unconfirmed before `files.cleanup` removes it; must exceed `STORAGE_UPLOAD_URL_TTL`. |
+| `STORAGE_GCS_ENDPOINT`   | Google's API | **Test only.** GCS API origin for an emulator. Never set it in a deployment. |
+
+Optional pool settings of `go-packages/database` (`DATABASE_MAX_OPEN_CONNS`,
+etc.) are not wired; the module's defaults apply.
 
 At least one of `GATEWAY_ROUTES` or `GATEWAY_UPSTREAM_URL` must be set — the
 process refuses to start with zero routes configured.
@@ -83,7 +135,8 @@ GATEWAY_ROUTES="/api/users=http://users-service:8081,/api/orders=http://orders-s
 ## Endpoints
 
 - `GET /healthz` — liveness. Always 200 once the process is up; no dependency checks.
-- `GET /readyz` — readiness. 200 once at least one route is configured, 503 otherwise.
+- `GET /readyz` — readiness. 200 once at least one route is configured (and,
+  with SaaS on, the database answers a ping), 503 otherwise.
 - `POST /gateway.v1.GatewayService/Ping` (Connect, gRPC, or gRPC-Web) — the
   gateway's own control-plane RPC. Try it with `curl` over Connect's plain
   HTTP/1.1 JSON protocol:
@@ -94,9 +147,140 @@ GATEWAY_ROUTES="/api/users=http://users-service:8081,/api/orders=http://orders-s
     -d '{"message":"hello"}'
   ```
 
+- With SaaS on: the Connect procedures and webhook listed under "SaaS surface".
+  They are registered before the proxy catch-all, so they always win over it.
 - Everything else — reverse-proxied to whichever configured route's path
   prefix matches, longest prefix wins. Gated by the rate-limit and auth
   middleware (both no-ops by default; see the config table above).
+
+## SaaS surface
+
+Enabled by `DATABASE_URL`. `main.go` opens the database and calls
+`saas.Build` (`internal/adapter/saas`), which runs all migrations (identity
+schema, features stores, billing tables) through `go-packages/database`, then
+wires `go-packages/{identity,features,billing,mailer}`. Any replica can start
+first: migrations are advisory-locked and idempotent.
+
+### Background jobs
+
+With SaaS on, `internal/adapter/jobs` runs periodic tasks in the gateway process,
+scheduled by `go-packages/jobs` (its README has the model and guarantees). The schedule lives
+in Postgres (`scheduled_job_runs`), so with any number of replicas each tick runs once; a
+crashed replica's run is taken over after its lease. `JOBS_DISABLED=true` turns them off.
+
+| Task | Every | What |
+| ---- | ----- | ---- |
+| `invitations.cleanup` | 1h | Deletes workspace invitations past their expiry. Logs the count. |
+| `sessions.cleanup` | 24h | Deletes refresh sessions expired for more than 7 days and verification tokens expired for more than a day; a session that has not expired is never touched. Logs the counts. |
+| `trials.remind` | 24h | Emails every owner of a workspace whose provider trial (`billing_subscriptions`: status `trialing`, `current_period_end`) ends within 3 days, with the `trial-ending` template and a link to `{APP_URL}/app/billing`. Once per owner and trial end date (`job_notifications`, unique `(kind, key)`), so retries and replicas never double-send; one failing workspace does not stop the others and the run is retried with backoff. |
+
+| `files.cleanup` | 15m | Only with object storage on. Deletes the object and then the record of an upload never confirmed within `STORAGE_PENDING_TTL`, and of every file of an erased workspace. It first claims the record (`pending` to `abandoned`), so a `CompleteUpload` racing with it either wins before or finds nothing after; a storage failure leaves the `abandoned` record and the next run retries it. Logs the count. |
+
+A reminder is claimed in `job_notifications` before it is sent and released if the send fails,
+so the rare crash between the two loses that one reminder rather than sending it twice.
+
+To move the jobs into their own service (a different scaling profile, long tasks): scaffold it
+with `pnpm gen service`, build the same `saas.Services` there (or just the database and mailer)
+and the runner from `internal/adapter/jobs`, then set `JOBS_DISABLED=true` on the gateway. The
+schedule is in the database, so nothing migrates; during the switch both may run and the
+claims keep every tick single.
+
+### Files
+
+`FileService` stores workspace files in a bucket without the bytes ever passing through the gateway
+(`system-design.md`, large files). The flow:
+
+1. `CreateUpload(workspace_id, name, content_type, size_bytes)` validates the type against
+   `STORAGE_ALLOWED_TYPES` and the size against `STORAGE_MAX_FILE_BYTES`, reserves the bytes against
+   the workspace's `storage.bytes` quota and returns a **pending** file plus a signed `PUT` URL
+   (`upload_url`, `upload_method`, `upload_headers`, `expires_at`). The object key is
+   `workspaces/<workspace id>/<uuid>`, generated here: the name is display-only.
+2. The client uploads straight to the bucket with exactly those headers. The signature binds the
+   content type and the exact length, so the storage service refuses anything else.
+3. `CompleteUpload` calls `Stat` on the object and, if size and content type match, marks the file
+   **ready** (idempotent). A mismatching object is deleted along with its record.
+4. `ListFiles` pages ready files newest first (`page_size`, `next_page_token`; a keyset on
+   `(created_at, id)`) and returns `used_bytes` and `quota_bytes` (absent: unlimited).
+   `GetDownloadUrl` returns a signed `GET` that expires in `STORAGE_DOWNLOAD_URL_TTL` and forces a
+   download under the original name. `DeleteFile` removes the object, then the record.
+
+Rules worth knowing:
+
+- **Quota.** `storage.bytes` is a limit in the feature catalog (`go-packages/features/catalog.go`: free
+  100 MiB, pro 10 GiB, add-ons can raise it). It is a gauge, not a monthly meter: the amount in use is the
+  sum of the workspace's pending and ready files, so deleting a file frees it. The check and the insert are
+  one transaction under a per-workspace advisory lock, so concurrent uploads cannot both take the last
+  bytes, on any number of replicas. A plan without the feature is `permission_denied`, a used-up quota
+  `resource_exhausted`.
+- **Tenancy.** Every query filters by the workspace the caller was authorized for; a file id from another
+  workspace is `not_found`, exactly like a missing one.
+- **Roles.** `file:read` and `file:write` (`go-packages/identity/permissions`). Owners and admins hold them.
+- **Bucket.** Keep it private, enable CORS for `APP_URL` (`PUT, GET, HEAD`; headers `Content-Type` and, on
+  GCS, `x-goog-content-length-range`) and see `go-packages/storage/README.md` for the signing details and
+  the choice of not using a vendor SDK.
+- **Provider notes.** GCS signs with the service account key (`STORAGE_GCS_CREDENTIALS_JSON`); under
+  Workload Identity use `s3` against `https://storage.googleapis.com` with an HMAC key instead.
+
+Connect procedures (`/proto/saas/v1` at the repo root, package `saas.v1`; JSON over HTTP works
+with plain `curl` as for `Ping`):
+
+| Service | Procedure | Auth | Notes |
+| ------- | --------- | ---- | ----- |
+| `AuthService` | `SignUp`, `VerifyEmail`, `Login`, `Refresh` | public | `SignUp` answers identically whether or not the email exists. |
+| `AuthService` | `RequestPasswordReset`, `ResetPassword` | public | `RequestPasswordReset` answers identically for any address (budgets: 10/hour per client IP, reported as `resource_exhausted`; 3/hour per address, silent). The link is `{APP_URL}/reset-password?token=`. `ResetPassword` applies the password policy (`invalid_argument`), is single use (`unauthenticated` when spent or expired) and revokes every session. |
+| `AuthService` | `Logout` | bearer | Revokes the session behind a refresh token. |
+| `WorkspaceService` | `ListWorkspaces`, `CreateWorkspace`, `GetWorkspace`, `ListMembers`, `InviteMember`, `AcceptInvite` | bearer | Membership and role permissions are enforced by the workspace service. A new workspace starts on the free plan. |
+| `FeatureService` | `CheckFeature` | bearer + member | Returns `enabled`, `reason` and, for a finite meter, `limit` and `remaining`. Consumes nothing. |
+| `BillingService` | `StartCheckout`, `OpenPortal` | bearer + `organization:update` (owner/admin) | Served only when billing is enabled. Return URLs are built from `APP_URL`, never taken from the client. |
+| `BillingService` | `GetSubscription`, `ListPrices` | bearer (+ member for `GetSubscription`) | Same availability. `GetSubscription` returns plan and add-ons from the entitlement store (the free plan before any), status and period end as the provider last reported them (`billing_subscriptions`, written by the subscription sink; empty until then) and `can_manage` (provider customer exists and the caller may update the workspace). `ListPrices` is `BILLING_PRICES`. |
+| `FileService` | `CreateUpload`, `CompleteUpload`, `ListFiles`, `GetDownloadUrl`, `DeleteFile` | bearer + `file:write` (create, complete, delete) or `file:read` (list, download) | Served always; answers `unimplemented` unless `STORAGE_PROVIDER` is set (see "Files"). Owners and admins hold both permissions; members hold none until a custom role grants them. |
+| `AccountService` | `GetMe`, `ExportData`, `DeleteAccount` | bearer | The caller's own account. `ExportData` returns a JSON document (account, memberships, pending invitations for the address; no hash or tokens). `DeleteAccount` re-checks the password (`permission_denied` if wrong, not `unauthenticated`), refuses with `failed_precondition` while the caller owns a workspace that still has other members or a workspace the provider still bills, otherwise erases the workspaces owned alone, leaves the others, deletes the account and its sessions. |
+
+Plain HTTP: `POST /webhooks/stripe` (billing enabled only; verified by Stripe
+signature, not a bearer token; 400/405/413/422/500 per `go-packages/billing`'s
+`httpwebhook`).
+
+Authentication is `Authorization: Bearer <access token>`, verified locally from
+the signature (no store call). Everything not listed as public is denied
+without a token by default (`internal/adapter/httpapi/interceptor.go`).
+
+Things worth knowing:
+
+- **Errors** are mapped once (`httpapi/errors.go`): a domain sentinel becomes a
+  Connect code with a constant message; any other failure is logged and answered
+  with `internal error`. Non-members get `not_found`, not `permission_denied`.
+- **Email links** point at the web app: `{APP_URL}/verify-email`, `/reset-password`,
+  `/invite/accept` (each with `?token=`) and `/login`.
+- **Rate limiting of the public auth RPCs** uses the identity service's own
+  per-IP budgets (20 logins / 15 min, 10 sign-ups / hour, 10 reset requests / hour), backed by an
+  in-memory fixed-window limiter (`adapter/saas/ratelimit.go`). It is per
+  replica. The key is the real client: set `TRUSTED_PROXIES` to the networks of
+  the reverse proxies in front of the gateway (the ingress controller) and
+  `X-Forwarded-For` is read from the right, skipping trusted hops
+  (`httpapi/clientip.go`). The header is ignored unless the TCP peer itself is a
+  trusted proxy, so a client cannot spoof its budget; with `TRUSTED_PROXIES`
+  unset the peer address is used. Amaro's route limiter cannot be used here because it does not apply to
+  mounted Connect handlers.
+- **Billing** keeps a workspace-to-Stripe-customer mapping (`billing_customers`).
+  The subscription sink writes it from the customer id that `billing` puts on
+  every subscription it pushes, lapsed ones included, so a canceled workspace can
+  still open the portal. `OpenPortal` answers `failed_precondition` only for a
+  workspace the provider has never reported.
+- **Account erasure** is a hard delete (`adapter/saas/directory.go` removes a
+  workspace and its members, roles, invitations, entitlements and billing rows in
+  one transaction). It does not cancel anything at Stripe, which is why a
+  workspace the provider still bills (`active`, `trialing`, `past_due`) blocks it:
+  cancel through the portal first. Invitations addressed to the deleted address
+  are removed; invitations the user sent elsewhere keep the (now dangling) id.
+- **Access tokens are stateless**: `Logout` revokes the refresh token, but an
+  issued access token lives until `ACCESS_TTL` expires.
+
+## Dependencies and the workspace
+
+`go.mod` requires the local modules with relative `replace` directives
+(`../../go-packages/<name>`), so the gateway builds both inside the repo's
+`go.work` and standalone (`GOWORK=off go build ./...`), which is what the
+Docker build relies on. Hence the repo-root build context above.
 
 ## Package layout
 
@@ -107,12 +291,10 @@ applied via that file's own "Applying this to Go" section:
 apps/gateway/
   main.go                          composition root — the only file that
                                     imports a concrete adapter directly
-  proto/gateway/v1/gateway.proto   Connect RPC schema (source of truth)
   internal/
-    gen/                           generated from proto/ via `buf generate`;
-                                    checked in so `go build` never requires
-                                    the buf/protoc toolchain
     core/                          domain layer — routing decision + ports
+                                    (also SubscriptionInfo/PriceInfo, the
+                                    billing read models)
       route.go                     Route, Router: given a path, which
                                     upstream owns it (the one real business
                                     decision a gateway makes)
@@ -125,6 +307,18 @@ apps/gateway/
                                     shared foundations sits beneath domain
                                     and must not import upward into it
     adapter/
+      saas/                        composition adapter for the SaaS surface:
+                                    Build() = migrations + identity,
+                                    features, billing, mailer wiring; also
+                                    the billing sink/event store, the
+                                    new-workspace free plan and the
+                                    in-memory auth rate limiter
+      objectstore/                 core.ObjectStore over go-packages/storage
+                                    (GCS or S3-compatible signed URLs)
+      jobs/                        background jobs: the periodic
+                                    tasks, their SQL and the runner over
+                                    go-packages/jobs (stopped before the
+                                    database closes on shutdown)
       proxy/                       capabilities/adapter layer — implements
                                     core.Forwarder using
                                     net/http/httputil.ReverseProxy
@@ -139,6 +333,17 @@ apps/gateway/
                                     directly
         health.go                  /healthz, /readyz
         gatewayservice.go          Connect GatewayService.Ping implementation
+        saas.go                    SaaS struct, consumer-side interfaces
+                                    (authService, workspaceService,
+                                    featureChecker, checkoutStarter) and the
+                                    mounting of the SaaS routes
+        authservice.go, workspaceservice.go,
+        featureservice.go, billingservice.go,
+        accountservice.go,
+        fileservice.go             one Connect handler per service
+        interceptor.go             bearer-token authentication; the public
+                                    procedure allow-list
+        errors.go                  the one domain-error -> Connect mapper
         middleware/                the one hand-rolled middleware left:
                                     structured (slog) panic recovery.
                                     Logging, auth, and rate limiting come
@@ -151,7 +356,9 @@ user intent" in the UI sense, so that layer is simply absent — not every
 deployable populates all five layers.
 
 Dependency direction is enforced by what each package is allowed to import:
-`core` imports only the standard library; `adapter/proxy` and `adapter/httpapi`
+`core` imports only the standard library (`core/errors.go` holds the one
+SaaS-facing sentinel, `ErrNoBillingCustomer`; `core/files.go` holds the file use
+cases and the ports they need: repository, object store, quota); `adapter/proxy` and `adapter/httpapi`
 import `core` (never the reverse); `config` imports neither `core` nor any
 adapter; `main.go` is the only place that imports a concrete adapter package
 directly and wires it in behind the interface (`core.Forwarder`,
@@ -189,20 +396,10 @@ directly and wires it in behind the interface (`core.Forwarder`,
   guidance — nothing here assumes in-process state survives a restart or a
   request landing on a different replica.
 
-## Regenerating the Connect/protobuf code
+## Protobuf contract
 
-The generated code under `internal/gen/` is checked in, so a plain `go build`
-never needs the buf toolchain. Regenerate it after changing
-`proto/gateway/v1/gateway.proto`:
-
-```sh
-# one-time setup
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-# buf itself: https://buf.build/docs/installation
-
-cd apps/gateway
-buf generate
-```
-
-Commit the resulting diff under `internal/gen/` along with the `.proto` change.
+The `.proto` files are not owned by the gateway: they live once in `/proto` at
+the repo root and are generated into the shared `go-packages/proto` module (this
+service imports it) and `@ignition/proto` (the web). Change a contract with
+`pnpm gen:proto` and commit both outputs; see
+`.claude/rules/protobuf-codegen.md`.
