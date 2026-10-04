@@ -21,13 +21,18 @@ export function useAnalyticsBridge(): void {
 		if (decision === "granted" && current) analytics.identify(current);
 	}, [decision]);
 
-	useEffect(
-		() =>
-			router.subscribe("onResolved", ({ toLocation }) => {
-				analytics.pageview(toLocation.pathname);
-			}),
-		[],
-	);
+	useEffect(() => {
+		// Route components are lazy, so the first navigation can resolve before this effect
+		// subscribes (more often on a fast machine). Report the page already shown, otherwise a
+		// full page load would never produce its pageview. While the router is still resolving,
+		// the subscription below reports it.
+		if (router.state.status === "idle" && router.state.resolvedLocation) {
+			analytics.pageview(router.state.resolvedLocation.pathname);
+		}
+		return router.subscribe("onResolved", ({ toLocation }) => {
+			analytics.pageview(toLocation.pathname);
+		});
+	}, []);
 
 	useEffect(() => {
 		const current = useAuthStore.getState().user?.id ?? "";
